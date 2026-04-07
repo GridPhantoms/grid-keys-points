@@ -15,8 +15,10 @@ export default function GridKeysPoints() {
   const [rememberWallet, setRememberWallet] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keys, setKeys] = useState<any[]>([]);
+  const [phantomRewards, setPhantomRewards] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [traitLookup, setTraitLookup] = useState<Record<string, string[]>>({});
+  const [rewardsLookup, setRewardsLookup] = useState<Record<string, number>>({});
   const [sortMode, setSortMode] = useState<'key' | 'points'>('key');
 
   const pointsMap: Record<string, number> = {
@@ -75,7 +77,7 @@ export default function GridKeysPoints() {
     "Reward Modulation - Exodus": 500,
   };
 
-  // Load CSVs from public folder
+  // Load traits CSVs
   useEffect(() => {
     const loadCSVs = async () => {
       try {
@@ -89,7 +91,6 @@ export default function GridKeysPoints() {
 
         const lookup: Record<string, string[]> = {};
 
-        // Parse Genesis
         const genesisLines = genesisText.trim().split('\n');
         genesisLines.slice(1).forEach(line => {
           if (!line.trim()) return;
@@ -97,19 +98,15 @@ export default function GridKeysPoints() {
           const name = values[0] || '';
           const match = name.match(/#(\d+)/);
           if (!match) return;
-
           const tokenId = match[1];
           const traits: string[] = [];
           for (let i = 3; i < values.length; i++) {
             const trait = values[i]?.trim();
-            if (trait && trait !== '' && trait !== 'string') {
-              traits.push(trait);
-            }
+            if (trait && trait !== '' && trait !== 'string') traits.push(trait);
           }
           lookup[`Genesis-${tokenId}`] = traits;
         });
 
-        // Parse Exodus
         const exodusLines = exodusText.trim().split('\n');
         exodusLines.slice(1).forEach(line => {
           if (!line.trim()) return;
@@ -117,28 +114,63 @@ export default function GridKeysPoints() {
           const name = values[0] || '';
           const match = name.match(/#(\d+)/);
           if (!match) return;
-
           const tokenId = match[1];
           const traits: string[] = [];
           for (let i = 3; i < values.length; i++) {
             const trait = values[i]?.trim();
-            if (trait && trait !== '' && trait !== 'string') {
-              traits.push(trait);
-            }
+            if (trait && trait !== '' && trait !== 'string') traits.push(trait);
           }
           lookup[`Exodus-${tokenId}`] = traits;
         });
 
         setTraitLookup(lookup);
       } catch (e) {
-        console.error("Failed to load CSVs:", e);
+        console.error("Failed to load traits CSVs:", e);
       }
     };
 
     loadCSVs();
   }, []);
 
-  // Load saved wallet from cookie on page load
+  // Load airdrop CSVs and build rewards lookup
+  useEffect(() => {
+    const loadAirdrops = async () => {
+      try {
+        const files = [
+          '/airdrops/2025-12Airdrop.csv',
+          '/airdrops/2025-10Airdrop.csv',
+          '/airdrops/2026-01Airdrop.csv',
+          '/airdrops/2025-11Airdrop.csv',
+          '/airdrops/2026-02Airdrop.csv'
+        ];
+
+        const lookup: Record<string, number> = {};
+
+        for (const file of files) {
+          const res = await fetch(file);
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+
+          lines.forEach(line => {
+            if (!line.trim()) return;
+            const [wallet, amountStr] = line.split(',');
+            if (!wallet || !amountStr) return;
+            const normalized = wallet.trim().toLowerCase();
+            const amount = parseFloat(amountStr.trim());
+            lookup[normalized] = (lookup[normalized] || 0) + amount;
+          });
+        }
+
+        setRewardsLookup(lookup);
+      } catch (e) {
+        console.error("Failed to load airdrop CSVs:", e);
+      }
+    };
+
+    loadAirdrops();
+  }, []);
+
+  // Load saved wallet from cookie
   useEffect(() => {
     const savedWallet = getCookie(WALLET_COOKIE_NAME);
     if (savedWallet) {
@@ -147,9 +179,8 @@ export default function GridKeysPoints() {
     }
   }, []);
 
-  // Cookie helpers (never expires)
   const setCookie = (name: string, value: string) => {
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; Max-Age=315360000`; // 10 years
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; Max-Age=315360000`;
   };
 
   const getCookie = (name: string): string | null => {
@@ -173,15 +204,12 @@ export default function GridKeysPoints() {
         total += points;
         return;
       }
-
       let points = pointsMap[trait] || 0;
       if (points === 0) {
         const match = Object.keys(pointsMap).find(k => k.endsWith(` - ${trait}`));
         if (match) points = pointsMap[match];
       }
-
       total += points;
-
       if (points > highestPoints) {
         highestPoints = points;
         topTrait = trait;
@@ -198,6 +226,7 @@ export default function GridKeysPoints() {
     setLoading(true);
     setError('');
     setKeys([]);
+    setPhantomRewards(null);
 
     try {
       const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
@@ -242,11 +271,14 @@ export default function GridKeysPoints() {
 
       setKeys(processedKeys);
 
-      if (processedKeys.length === 0) {
+      if (processedKeys.length > 0) {
+        const normalizedWallet = address.toLowerCase();
+        const rewards = rewardsLookup[normalizedWallet] || 0;
+        setPhantomRewards(rewards);
+
+        if (rememberWallet) setCookie(WALLET_COOKIE_NAME, address);
+      } else {
         setError("No Keys with trait data found for this wallet.");
-      } else if (rememberWallet) {
-        // Save wallet permanently
-        setCookie(WALLET_COOKIE_NAME, address);
       }
 
     } catch (err: any) {
@@ -260,6 +292,7 @@ export default function GridKeysPoints() {
   const handleClear = () => {
     setAddress('');
     setKeys([]);
+    setPhantomRewards(null);
     setError('');
     deleteCookie(WALLET_COOKIE_NAME);
     setRememberWallet(false);
@@ -267,11 +300,8 @@ export default function GridKeysPoints() {
 
   const getSortedKeys = (collectionKeys: any[]) => {
     return [...collectionKeys].sort((a, b) => {
-      if (sortMode === 'key') {
-        return parseInt(a.tokenId) - parseInt(b.tokenId);
-      } else {
-        return b.points - a.points;
-      }
+      if (sortMode === 'key') return parseInt(a.tokenId) - parseInt(b.tokenId);
+      return b.points - a.points;
     });
   };
 
@@ -343,24 +373,34 @@ export default function GridKeysPoints() {
         </div>
 
         {keys.length > 0 && (
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 mb-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
-                <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{totalPoints.toLocaleString()}</p>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
+            <div className="md:col-span-4 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                  <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
+                  <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{totalPoints.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500 mb-1">GENESIS KEYS</p>
+                  <p className="text-4xl md:text-5xl font-bold">{totalGenesis}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500 mb-1">EXODUS KEYS</p>
+                  <p className="text-4xl md:text-5xl font-bold">{totalExodus}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500 mb-1">TOTAL KEYS</p>
+                  <p className="text-4xl md:text-5xl font-bold">{totalKeys}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 mb-1">GENESIS KEYS</p>
-                <p className="text-4xl md:text-5xl font-bold">{totalGenesis}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 mb-1">EXODUS KEYS</p>
-                <p className="text-4xl md:text-5xl font-bold">{totalExodus}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 mb-1">TOTAL KEYS</p>
-                <p className="text-4xl md:text-5xl font-bold">{totalKeys}</p>
-              </div>
+            </div>
+
+            <div className="bg-zinc-950 border border-cyan-500/30 rounded-2xl p-6 text-center flex flex-col justify-center">
+              <p className="text-[10px] text-cyan-400 mb-1 tracking-widest">LIFETIME PHANTOM REWARDS</p>
+              <p className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
+                {phantomRewards !== null ? phantomRewards.toLocaleString() : '—'}
+              </p>
+              <p className="text-sm text-cyan-400 mt-1">$BYTES</p>
             </div>
           </div>
         )}
@@ -369,11 +409,7 @@ export default function GridKeysPoints() {
           <div className="mb-16">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-medium text-zinc-400">GENESIS KEYS ({totalGenesis})</h2>
-              <select
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as 'key' | 'points')}
-                className="bg-zinc-900 border border-zinc-800 text-sm rounded-xl px-4 py-2 text-zinc-400 focus:outline-none focus:border-cyan-500"
-              >
+              <select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'key' | 'points')} className="bg-zinc-900 border border-zinc-800 text-sm rounded-xl px-4 py-2 text-zinc-400 focus:outline-none focus:border-cyan-500">
                 <option value="key">Sort by Key #</option>
                 <option value="points">Sort by Points (High to Low)</option>
               </select>
@@ -388,11 +424,7 @@ export default function GridKeysPoints() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-medium text-zinc-400">EXODUS KEYS ({totalExodus})</h2>
-              <select
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as 'key' | 'points')}
-                className="bg-zinc-900 border border-zinc-800 text-sm rounded-xl px-4 py-2 text-zinc-400 focus:outline-none focus:border-cyan-500"
-              >
+              <select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'key' | 'points')} className="bg-zinc-900 border border-zinc-800 text-sm rounded-xl px-4 py-2 text-zinc-400 focus:outline-none focus:border-cyan-500">
                 <option value="key">Sort by Key #</option>
                 <option value="points">Sort by Points (High to Low)</option>
               </select>
@@ -410,7 +442,7 @@ export default function GridKeysPoints() {
         )}
       </div>
 
-      {/* Footer */}
+      {/* Updated Footer with Snapshot Voting link */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
@@ -418,6 +450,7 @@ export default function GridKeysPoints() {
               <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
               <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
               <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
+              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot Voting</a>
             </div>
             <div className="text-xs text-zinc-500 text-center md:text-right">
               © 2026 Grid Phantoms Ltd. All rights reserved.
@@ -438,9 +471,7 @@ function Card({ keyData }: { keyData: any }) {
     <div className="group bg-zinc-950 border border-zinc-900 hover:border-cyan-500/50 rounded-2xl overflow-hidden transition-all duration-300">
       <div className="relative aspect-square bg-black">
         <img src={keyData.image} alt={`Key #${keyData.tokenId}`} className="w-full h-full object-cover" />
-        <div className="absolute top-3 right-3 bg-black/90 px-2.5 py-0.5 rounded text-[10px] font-mono tracking-widest">
-          #{keyData.tokenId}
-        </div>
+        <div className="absolute top-3 right-3 bg-black/90 px-2.5 py-0.5 rounded text-[10px] font-mono tracking-widest">#{keyData.tokenId}</div>
       </div>
 
       <div className="p-4">

@@ -317,20 +317,19 @@ export default function GridKeysPoints() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Navigation Bar */}
+      {/* UPDATED NAVIGATION WITH TRAIT CHARTS */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="font-bold text-2xl tracking-[-1px]">
-              <span className="text-white">GRID</span>
-              <span className="text-cyan-400">PHANTOMS</span>
-            </div>
+          <div className="font-bold text-2xl tracking-[-1px]">
+            <span className="text-white">GRID</span>
+            <span className="text-cyan-400">PHANTOMS</span>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            <Link href="/trait-charts" className="text-cyan-400 font-medium">Trait Charts</Link>
           </div>
 
           {/* Mobile Hamburger */}
@@ -348,12 +347,14 @@ export default function GridKeysPoints() {
             <div className="flex flex-col gap-4 px-6 text-sm">
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
               <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Trait Charts</Link>
             </div>
           </div>
         )}
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1">
+        {/* The rest of your page (everything below the nav) stays exactly the same */}
         <div className="max-w-md mx-auto mb-10">
           <label className="block text-xs text-zinc-500 mb-2">WALLET ADDRESS</label>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -522,4 +523,4 @@ function Card({ keyData }: { keyData: any }) {
       </div>
     </div>
   );
-}
+} 

@@ -288,6 +288,10 @@ export default function GridKeysPoints() {
       setError(err.message || "Failed to load keys.");
     } finally {
       setLoading(false);
+      // Force zoom reset after button tap
+      setTimeout(() => {
+        document.documentElement.style.zoom = "1.0";
+      }, 100);
     }
   };
 
@@ -317,7 +321,6 @@ export default function GridKeysPoints() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Clean Navigation with Hamburger Menu */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -325,14 +328,12 @@ export default function GridKeysPoints() {
             <span className="text-cyan-400">PHANTOMS</span>
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
             <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
           </div>
 
-          {/* Mobile Hamburger */}
           <button 
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden text-3xl text-white"
@@ -341,7 +342,6 @@ export default function GridKeysPoints() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
@@ -370,6 +370,7 @@ export default function GridKeysPoints() {
               placeholder="0x..."
             />
             <button
+              type="button"
               onClick={handleLoad}
               disabled={loading || !address}
               className="bg-cyan-500 hover:bg-cyan-600 px-8 py-4 rounded-xl font-medium text-sm disabled:bg-zinc-700 transition-colors whitespace-nowrap"
@@ -377,6 +378,7 @@ export default function GridKeysPoints() {
               {loading ? 'LOADING...' : 'LOAD KEYS'}
             </button>
             <button
+              type="button"
               onClick={handleClear}
               className="px-6 py-4 border border-zinc-700 rounded-xl text-sm hover:bg-zinc-900 transition-colors"
             >

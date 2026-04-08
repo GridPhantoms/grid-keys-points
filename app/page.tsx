@@ -359,6 +359,11 @@ export default function GridKeysPoints() {
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck="false"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 text-sm font-mono focus:border-cyan-500 focus:outline-none"

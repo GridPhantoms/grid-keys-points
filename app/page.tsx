@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 const GENESIS_CONTRACT = "0xF26e168D053F6779f7172A1d0b0A6cD8d7446493".toLowerCase();
 const EXODUS_CONTRACT = "0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa".toLowerCase();
@@ -20,6 +21,7 @@ export default function GridKeysPoints() {
   const [traitLookup, setTraitLookup] = useState<Record<string, string[]>>({});
   const [rewardsLookup, setRewardsLookup] = useState<Record<string, number>>({});
   const [sortMode, setSortMode] = useState<'key' | 'points'>('key');
+  const [menuOpen, setMenuOpen] = useState(false);   // for mobile hamburger
 
   const pointsMap: Record<string, number> = {
     "Grid Dominion - Whispering Strike": 200,
@@ -77,7 +79,7 @@ export default function GridKeysPoints() {
     "Reward Modulation - Exodus": 500,
   };
 
-  // Load traits CSVs
+  // Load traits CSVs (unchanged)
   useEffect(() => {
     const loadCSVs = async () => {
       try {
@@ -132,7 +134,7 @@ export default function GridKeysPoints() {
     loadCSVs();
   }, []);
 
-  // Load airdrop CSVs and build rewards lookup
+  // Load airdrop CSVs
   useEffect(() => {
     const loadAirdrops = async () => {
       try {
@@ -315,20 +317,41 @@ export default function GridKeysPoints() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <header className="border-b border-zinc-900 bg-zinc-950 py-6 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-[-2.5px] leading-none">GRID PHANTOMS</h1>
-              <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-[-2.5px] leading-none mt-1">KEY POINTS</p>
-            </div>
-            <div className="text-right">
-              <p className="text-zinc-500 text-sm md:text-base">Trait Point Calculator</p>
-              <p className="text-[10px] text-zinc-600">v1.0</p>
+      {/* Navigation Bar */}
+      <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <div className="font-bold text-2xl tracking-[-1px]">
+              <span className="text-white">GRID</span>
+              <span className="text-cyan-400">PHANTOMS</span>
             </div>
           </div>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex gap-8 text-sm">
+            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+          </div>
+
+          {/* Mobile Hamburger */}
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden text-2xl"
+          >
+            ☰
+          </button>
         </div>
-      </header>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden border-t border-zinc-900 bg-zinc-950 py-4">
+            <div className="flex flex-col gap-4 px-6 text-sm">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            </div>
+          </div>
+        )}
+      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1">
         <div className="max-w-md mx-auto mb-10">
@@ -442,7 +465,7 @@ export default function GridKeysPoints() {
         )}
       </div>
 
-      {/* Updated Footer with Snapshot Voting link */}
+      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">

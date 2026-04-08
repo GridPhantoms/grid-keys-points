@@ -10,8 +10,12 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "GRID PHANTOMS • KEY POINTS",
-  description: "Genesis & Exodus Keys Trait Point Calculator",
+  title: "GRID PHANTOMS APP",
+  description: "Tools for Grid Phantoms Keyholders",
+  icons: {
+    icon: "/favicons/favicon.ico",
+    apple: "/favicons/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -20,8 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable}`}>
-      <body className="bg-black text-white font-sans">{children}</body>
+    <html lang="en" className={spaceGrotesk.variable}>
+      <body className="min-h-full flex flex-col bg-black text-white">
+        {children}
+      </body>
     </html>
   );
 }

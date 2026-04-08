@@ -11,6 +11,7 @@ export default function Leaderboard() {
   const [loadingKeyholders, setLoadingKeyholders] = useState(false);
   const [errorKeyholders, setErrorKeyholders] = useState('');
   const [lastSnapshot] = useState("April 7, 2026");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Load BYTES leaderboard
   useEffect(() => {
@@ -95,7 +96,6 @@ export default function Leaderboard() {
     }
   };
 
-  // Consistent truncation (last 6 characters)
   const truncateWallet = (wallet: string) => {
     if (!wallet || wallet.length < 12) return wallet;
     return `${wallet.slice(0, 6)}...${wallet.slice(-6)}`;
@@ -113,11 +113,33 @@ export default function Leaderboard() {
             <span className="text-white">GRID</span>
             <span className="text-cyan-400">PHANTOMS</span>
           </Link>
-          <div className="flex gap-6 text-sm">
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-            <Link href="/leaderboard" className="text-cyan-400 font-medium">Leaderboards</Link>
+            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
           </div>
+
+          {/* Mobile Hamburger */}
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden text-3xl text-white"
+          >
+            ☰
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+            <div className="flex flex-col gap-6 px-6 text-lg">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -152,10 +174,9 @@ export default function Leaderboard() {
                     className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      {/* Wallet side */}
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="text-2xl font-mono text-zinc-500 w-8 flex-shrink-0">#{i+1}</span>
-                        <span className="font-mono text-sm text-zinc-400 truncate">
+                        <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
+                        <span className="font-mono text-sm text-zinc-400 truncate flex-1">
                           {truncateWallet(entry.wallet)}
                         </span>
                         <a 
@@ -168,7 +189,6 @@ export default function Leaderboard() {
                         </a>
                       </div>
 
-                      {/* Reward amount - stacked on mobile */}
                       <div className="text-right sm:text-left flex-shrink-0">
                         <div className="text-3xl font-bold text-cyan-400">
                           {entry.bytes.toLocaleString()}
@@ -198,14 +218,16 @@ export default function Leaderboard() {
               <div className="space-y-4">
                 {keyholderLeaderboard.map((entry, i) => (
                   <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5">
-                    <div className="flex items-center gap-3 mb-4 flex-wrap">
-                      <span className="text-2xl font-mono text-zinc-500 w-8">#{i+1}</span>
-                      <span className="font-mono text-sm text-zinc-400">{truncateWallet(entry.wallet)}</span>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
+                      <span className="font-mono text-sm text-zinc-400 truncate flex-1 min-w-0">
+                        {truncateWallet(entry.wallet)}
+                      </span>
                       <a 
                         href={getOpenSeaProfile(entry.wallet)} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors ml-2 whitespace-nowrap"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors ml-1 whitespace-nowrap flex-shrink-0"
                       >
                         [OpenSea Profile]
                       </a>
@@ -235,13 +257,3 @@ export default function Leaderboard() {
     </div>
   );
 }
-
-// Helper functions
-const truncateWallet = (wallet: string) => {
-  if (!wallet || wallet.length < 12) return wallet;
-  return `${wallet.slice(0, 6)}...${wallet.slice(-6)}`;
-};
-
-const getOpenSeaProfile = (wallet: string) => {
-  return `https://opensea.io/${wallet}`;
-};

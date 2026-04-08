@@ -21,7 +21,7 @@ export default function GridKeysPoints() {
   const [traitLookup, setTraitLookup] = useState<Record<string, string[]>>({});
   const [rewardsLookup, setRewardsLookup] = useState<Record<string, number>>({});
   const [sortMode, setSortMode] = useState<'key' | 'points'>('key');
-  const [menuOpen, setMenuOpen] = useState(false);   // for mobile hamburger
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const pointsMap: Record<string, number> = {
     "Grid Dominion - Whispering Strike": 200,
@@ -79,7 +79,7 @@ export default function GridKeysPoints() {
     "Reward Modulation - Exodus": 500,
   };
 
-  // Load traits CSVs (unchanged)
+  // Load traits CSVs
   useEffect(() => {
     const loadCSVs = async () => {
       try {
@@ -317,25 +317,25 @@ export default function GridKeysPoints() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* UPDATED NAVIGATION WITH TRAIT CHARTS */}
+      {/* Clean Navigation with Hamburger Menu */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="font-bold text-2xl tracking-[-1px]">
+          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
             <span className="text-white">GRID</span>
             <span className="text-cyan-400">PHANTOMS</span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-            <Link href="/trait-charts" className="text-cyan-400 font-medium">Trait Charts</Link>
+            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
           </div>
 
           {/* Mobile Hamburger */}
           <button 
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-2xl"
+            className="md:hidden text-3xl text-white"
           >
             ☰
           </button>
@@ -343,18 +343,17 @@ export default function GridKeysPoints() {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-zinc-900 bg-zinc-950 py-4">
-            <div className="flex flex-col gap-4 px-6 text-sm">
+          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+            <div className="flex flex-col gap-6 px-6 text-lg">
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
               <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Trait Charts</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
             </div>
           </div>
         )}
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1">
-        {/* The rest of your page (everything below the nav) stays exactly the same */}
         <div className="max-w-md mx-auto mb-10">
           <label className="block text-xs text-zinc-500 mb-2">WALLET ADDRESS</label>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -466,7 +465,6 @@ export default function GridKeysPoints() {
         )}
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
@@ -523,4 +521,4 @@ function Card({ keyData }: { keyData: any }) {
       </div>
     </div>
   );
-} 
+}

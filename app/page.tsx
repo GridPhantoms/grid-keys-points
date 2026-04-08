@@ -288,10 +288,6 @@ export default function GridKeysPoints() {
       setError(err.message || "Failed to load keys.");
     } finally {
       setLoading(false);
-      // Force zoom reset after button tap
-      setTimeout(() => {
-        document.documentElement.style.zoom = "1.0";
-      }, 100);
     }
   };
 
@@ -364,6 +360,7 @@ export default function GridKeysPoints() {
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck="false"
+              style={{ fontSize: '16px' }}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 text-sm font-mono focus:border-cyan-500 focus:outline-none"

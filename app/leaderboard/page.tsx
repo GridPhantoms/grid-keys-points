@@ -108,7 +108,7 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -155,7 +155,7 @@ export default function Leaderboard() {
         )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-12 flex-1">
         <h1 className="text-5xl font-bold tracking-[-2px] mb-2">LEADERBOARDS</h1>
         <p className="text-zinc-500 mb-10">Keyholder rankings across Grid Phantoms</p>
 
@@ -267,6 +267,24 @@ export default function Leaderboard() {
           </div>
         )}
       </div>
+
+      {/* Updated Footer - Centered on mobile */}
+      <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
+            <div className="flex flex-wrap gap-8 text-sm justify-center md:justify-start">
+              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
+              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
+              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
+              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot</a>
+              <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
+            </div>
+            <div className="text-xs text-zinc-500 text-center md:text-right">
+              © 2026 Grid Phantoms Ltd. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

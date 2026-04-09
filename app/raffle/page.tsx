@@ -9,7 +9,7 @@ export default function RaffleTracker() {
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [countdownEnd, setCountdownEnd] = useState<number | null>(null);
-  const [lastSnapshot] = useState("April 9, 2026 21:13 UTC");
+  const [lastSnapshot] = useState("April 9, 2026 23:20 UTC"); // Updated UTC time
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -161,10 +161,12 @@ export default function RaffleTracker() {
                 <div className="font-mono text-sm text-zinc-400 break-all">
                   {entrant.wallet}
                 </div>
-                <div className="flex flex-col items-end md:items-start">
-                  <p className="text-3xl font-bold text-white">{entrant.tickets} tickets</p>
-                  <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
-                </div>
+<div className="flex flex-col items-end md:items-start">
+  <p className="text-3xl font-bold text-white">
+    {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
+  </p>
+  <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
+</div>
               </div>
             ))}
           </div>

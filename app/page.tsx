@@ -319,36 +319,38 @@ export default function GridKeysPoints() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-            <span className="text-white">GRID</span>
-            <span className="text-cyan-400">PHANTOMS</span>
-          </Link>
+  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+    <Link href="/" className="font-bold text-2xl tracking-[-1px]">
+      <span className="text-white">GRID</span>
+      <span className="text-cyan-400">PHANTOMS</span>
+    </Link>
 
-          <div className="hidden md:flex gap-8 text-sm">
-            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-          </div>
+    <div className="hidden md:flex gap-8 text-sm">
+      <Link href="/" className="text-cyan-400 font-medium">Home</Link>
+      <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+      <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+      <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+    </div>
 
-          <button 
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-3xl text-white"
-          >
-            ☰
-          </button>
-        </div>
+    <button 
+      onClick={() => setMenuOpen(!menuOpen)} 
+      className="md:hidden text-3xl text-white focus:outline-none"
+    >
+      ☰
+    </button>
+  </div>
 
-        {menuOpen && (
-          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-            <div className="flex flex-col gap-6 px-6 text-lg">
-              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+  {menuOpen && (
+    <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+      <div className="flex flex-col gap-6 px-6 text-lg">
+        <Link href="/" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Home</Link>
+        <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+        <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+      </div>
+    </div>
+  )}
+</nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1">
         <div className="max-w-md mx-auto mb-10">

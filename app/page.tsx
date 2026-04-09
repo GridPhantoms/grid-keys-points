@@ -280,7 +280,7 @@ export default function GridKeysPoints() {
 
         if (rememberWallet) setCookie(WALLET_COOKIE_NAME, address);
       } else {
-        setError("No Keys with trait data found for this wallet.");
+        setError("No Keys found in this wallet.\n\nMint Exodus Keys here.");
       }
 
     } catch (err: any) {
@@ -396,7 +396,19 @@ export default function GridKeysPoints() {
             </label>
           </div>
 
-          {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+          {error && (
+            <div className="mt-6 text-center">
+              <p className="text-red-400 text-lg font-medium">No Keys found in this wallet.</p>
+              <a 
+                href="https://manifold.xyz/@gridphantoms/id/4067746032" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-3 inline-block text-cyan-400 hover:text-cyan-300 text-lg underline"
+              >
+                Mint Exodus Keys here.
+              </a>
+            </div>
+          )}
         </div>
 
         {keys.length > 0 && (

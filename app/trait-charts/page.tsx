@@ -1,14 +1,16 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function TraitCharts() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -20,7 +22,12 @@ export default function TraitCharts() {
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-            <Link href="/trait-charts" className="text-cyan-400 font-medium">Trait Charts</Link>
+            <Link 
+              href="/trait-charts" 
+              className={`transition-colors ${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+            >
+              Trait Charts
+            </Link>
           </div>
 
           {/* Mobile Hamburger */}
@@ -38,59 +45,69 @@ export default function TraitCharts() {
             <div className="flex flex-col gap-6 px-6 text-lg">
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
               <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+              <Link 
+                href="/trait-charts" 
+                onClick={() => setMenuOpen(false)} 
+                className={`transition-colors ${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+              >
+                Trait Charts
+              </Link>
             </div>
           </div>
         )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <h1 className="text-5xl font-bold tracking-[-2px] mb-8">Trait Charts</h1>
-        <p className="text-zinc-500 mb-12 max-w-2xl">
-          Complete point value reference for all traits in both collections.
-        </p>
+      <div className="max-w-7xl mx-auto px-6 py-12 flex-1">
+        <h1 className="text-5xl font-bold tracking-[-2px] mb-10 text-center">Trait Charts</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Genesis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Genesis Chart */}
           <div>
-            <h2 className="text-3xl font-semibold mb-6 flex items-center gap-3">
-              Genesis Keys
-              <span className="text-cyan-400 text-xl">•</span>
-            </h2>
-            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl">
+            <h2 className="text-2xl font-semibold mb-4 text-center">Genesis Keys</h2>
+            <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-4">
               <Image 
                 src="/charts/genesis-trait-charts.png" 
                 alt="Genesis Keys Trait Point Chart" 
                 width={1200} 
-                height={800}
-                className="w-full h-auto max-w-full"
+                height={800} 
+                className="w-full h-auto rounded-2xl"
                 priority
               />
             </div>
           </div>
 
-          {/* Exodus */}
+          {/* Exodus Chart */}
           <div>
-            <h2 className="text-3xl font-semibold mb-6 flex items-center gap-3">
-              Exodus Keys
-              <span className="text-cyan-400 text-xl">•</span>
-            </h2>
-            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl">
+            <h2 className="text-2xl font-semibold mb-4 text-center">Exodus Keys</h2>
+            <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-4">
               <Image 
                 src="/charts/exodus-trait-charts.png" 
                 alt="Exodus Keys Trait Point Chart" 
                 width={1200} 
-                height={800}
-                className="w-full h-auto max-w-full"
+                height={800} 
+                className="w-full h-auto rounded-2xl"
+                priority
               />
             </div>
           </div>
         </div>
-
-        <div className="mt-16 text-center text-zinc-500 text-sm">
-          These charts show every trait category and its corresponding point value.
-        </div>
       </div>
+
+      <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex gap-8 text-sm">
+              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
+              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
+              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
+              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot Voting</a>
+            </div>
+            <div className="text-xs text-zinc-500 text-center md:text-right">
+              © 2026 Grid Phantoms Ltd. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

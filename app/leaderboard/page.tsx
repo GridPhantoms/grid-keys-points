@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Leaderboard() {
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<'bytes' | 'points'>('bytes');
   const [bytesLeaderboard, setBytesLeaderboard] = useState<any[]>([]);
   const [keyholderLeaderboard, setKeyholderLeaderboard] = useState<any[]>([]);
@@ -117,7 +119,12 @@ export default function Leaderboard() {
           {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            <Link 
+              href="/leaderboard" 
+              className={`transition-colors ${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+            >
+              Leaderboards
+            </Link>
             <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
           </div>
 
@@ -135,7 +142,13 @@ export default function Leaderboard() {
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+              <Link 
+                href="/leaderboard" 
+                onClick={() => setMenuOpen(false)} 
+                className={`transition-colors ${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+              >
+                Leaderboards
+              </Link>
               <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
             </div>
           </div>

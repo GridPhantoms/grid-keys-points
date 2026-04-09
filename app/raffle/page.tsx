@@ -9,8 +9,8 @@ export default function RaffleTracker() {
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [countdownEnd, setCountdownEnd] = useState<number | null>(null);
-  const [lastSnapshot] = useState("April 9, 2026 12:39 UTC");
-  const [menuOpen, setMenuOpen] = useState(false);   // ← Added for hamburger menu
+  const [lastSnapshot] = useState("April 9, 2026 21:13 UTC");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const loadSnapshot = async () => {
@@ -65,7 +65,7 @@ export default function RaffleTracker() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* FULL NAV WITH HAMBURGER MENU */}
+      {/* Nav with Hamburger Menu */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -137,7 +137,7 @@ export default function RaffleTracker() {
           {totalTickets < 30 ? (
             <div className="mt-8 text-center">
               <p className="text-xl text-amber-400">
-                {30 - totalTickets} more Exodus Keys needed before 7-day countdown begins
+                {30 - totalTickets} more Exodus Key mints needed before 7-day countdown begins
               </p>
             </div>
           ) : (
@@ -182,7 +182,7 @@ export default function RaffleTracker() {
         </div>
       </div>
 
-      {/* Updated Footer */}
+      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">

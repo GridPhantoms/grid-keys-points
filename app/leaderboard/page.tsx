@@ -170,58 +170,62 @@ export default function Leaderboard() {
           </button>
         </div>
 
-        {/* BYTES TAB - single line title on mobile */}
-        {activeTab === 'bytes' && (
-          <div>
-            <h2 className="text-2xl font-semibold mb-6 whitespace-nowrap overflow-hidden text-ellipsis">
-              Top Lifetime Phantom Rewards
-            </h2>
-            <div className="space-y-3">
-              {loadingBytes ? (
-                <p className="text-zinc-500">Loading...</p>
-              ) : (
-                bytesLeaderboard.map((entry, i) => (
-                  <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
-                        
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className="font-mono text-sm text-zinc-400 truncate">
-                            {truncateWallet(entry.wallet)}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(entry.wallet)}
-                            className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
-                            title="Copy address"
-                          >
-                            {copiedWallet === entry.wallet ? '✓' : '❏'}
-                          </button>
-                        </div>
+{/* BYTES TAB */}
+{activeTab === 'bytes' && (
+  <div>
+    <h2 className="text-2xl font-semibold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+      Top Lifetime Phantom Rewards
+    </h2>
+    <div className="text-xs text-zinc-500 mb-6">
+      Current ranking of the top 50 reward recipients.
+    </div>
 
-                        <a 
-                          href={getOpenSeaProfile(entry.wallet)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
-                        >
-                          [OpenSea Profile]
-                        </a>
-                      </div>
+    <div className="space-y-3">
+      {loadingBytes ? (
+        <p className="text-zinc-500">Loading...</p>
+      ) : (
+        bytesLeaderboard.map((entry, i) => (
+          <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
+                
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="font-mono text-sm text-zinc-400 truncate">
+                    {truncateWallet(entry.wallet)}
+                  </span>
+                  <button
+                    onClick={() => copyToClipboard(entry.wallet)}
+                    className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
+                    title="Copy address"
+                  >
+                    {copiedWallet === entry.wallet ? '✓' : '❏'}
+                  </button>
+                </div>
 
-                      <div className="text-right sm:text-left flex-shrink-0">
-                        <div className="text-3xl font-bold text-cyan-400">
-                          {entry.bytes.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-zinc-500">$BYTES</div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+                <a 
+                  href={getOpenSeaProfile(entry.wallet)} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  [OpenSea Profile]
+                </a>
+              </div>
+
+              <div className="text-right sm:text-left flex-shrink-0">
+                <div className="text-3xl font-bold text-cyan-400">
+                  {entry.bytes.toLocaleString()}
+                </div>
+                <div className="text-sm text-zinc-500">$BYTES</div>
+              </div>
             </div>
           </div>
-        )}
+        ))
+      )}
+    </div>
+  </div>
+)}
 
         {/* KEYHOLDER TAB */}
         {activeTab === 'points' && (

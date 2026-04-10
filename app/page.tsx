@@ -223,6 +223,7 @@ export default function GridKeysPoints() {
     return { points: total, topTrait, topTraitPoints };
   };
 
+  // ====================== FIXED HANDLE LOAD ======================
   const handleLoad = async () => {
     if (!address) return;
 
@@ -235,17 +236,27 @@ export default function GridKeysPoints() {
       const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
       if (!apiKey) throw new Error("Alchemy API key is missing");
 
-      const url = `https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${address}&contractAddresses[]=${GENESIS_CONTRACT}&contractAddresses[]=${EXODUS_CONTRACT}&withMetadata=true&limit=100`;
+      const baseUrl = `https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner`;
 
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Alchemy request failed");
+      // Separate calls to avoid 100 NFT limit
+      const [genesisRes, exodusRes] = await Promise.all([
+        fetch(`${baseUrl}?owner=${address}&contractAddresses[]=${GENESIS_CONTRACT}&withMetadata=true&limit=100`),
+        fetch(`${baseUrl}?owner=${address}&contractAddresses[]=${EXODUS_CONTRACT}&withMetadata=true&limit=100`)
+      ]);
 
-      const data = await response.json();
-      const nfts = data.ownedNfts || [];
+      const genesisData = await genesisRes.json();
+      const exodusData = await exodusRes.json();
+
+      const allNfts = [
+        ...(genesisData.ownedNfts || []),
+        ...(exodusData.ownedNfts || [])
+      ];
+
+      console.log(`✅ Fetched ${allNfts.length} total NFTs from Alchemy`);
 
       const processedKeys: any[] = [];
 
-      nfts.forEach((nft: any) => {
+      allNfts.forEach((nft: any) => {
         const tokenId = nft.tokenId.toString();
         const contract = nft.contract?.address?.toLowerCase();
         const isGenesis = contract === GENESIS_CONTRACT;
@@ -319,38 +330,38 @@ export default function GridKeysPoints() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-    <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-      <span className="text-white">GRID</span>
-      <span className="text-cyan-400">PHANTOMS</span>
-    </Link>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
+            <span className="text-white">GRID</span>
+            <span className="text-cyan-400">PHANTOMS</span>
+          </Link>
 
-    <div className="hidden md:flex gap-8 text-sm">
-      <Link href="/" className="text-cyan-400 font-medium">Home</Link>
-      <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-      <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-      <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-    </div>
+          <div className="hidden md:flex gap-8 text-sm">
+            <Link href="/" className="text-cyan-400 font-medium">Home</Link>
+            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+            <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+          </div>
 
-    <button 
-      onClick={() => setMenuOpen(!menuOpen)} 
-      className="md:hidden text-3xl text-white focus:outline-none"
-    >
-      ☰
-    </button>
-  </div>
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)} 
+            className="md:hidden text-3xl text-white focus:outline-none"
+          >
+            ☰
+          </button>
+        </div>
 
-  {menuOpen && (
-    <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-      <div className="flex flex-col gap-6 px-6 text-lg">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Home</Link>
-        <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-        <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-      </div>
-    </div>
-  )}
-</nav>
+        {menuOpen && (
+          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+            <div className="flex flex-col gap-6 px-6 text-lg">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+              <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+            </div>
+          </div>
+        )}
+      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1">
         <div className="max-w-md mx-auto mb-10">
@@ -488,7 +499,6 @@ export default function GridKeysPoints() {
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
-            {/* Links - centered on mobile */}
             <div className="flex flex-wrap gap-8 text-sm justify-center md:justify-start">
               <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
               <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
@@ -497,7 +507,6 @@ export default function GridKeysPoints() {
               <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
             </div>
 
-            {/* Copyright */}
             <div className="text-xs text-zinc-500 text-center md:text-right">
               © 2026 Grid Phantoms Ltd. All rights reserved.
             </div>

@@ -8,9 +8,11 @@ export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [countdownEnd, setCountdownEnd] = useState<number | null>(null);
-  const [lastSnapshot] = useState("April 9, 2026 23:20 UTC"); // Updated UTC time
+  const [lastSnapshot] = useState("April 10, 2026 02:12 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Exact timestamp of the 30th mint (Token #406) — 2026-04-10 02:10:23 UTC
+  const RAFFLE_30TH_MINT_TIMESTAMP = 1775787023000; // milliseconds
 
   useEffect(() => {
     const loadSnapshot = async () => {
@@ -55,13 +57,34 @@ export default function RaffleTracker() {
     loadSnapshot();
   }, []);
 
-  const formatCountdown = (endTime: number) => {
-    const diff = Math.max(0, endTime - Date.now());
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${days}d ${hours}h ${minutes}m`;
-  };
+  // Live countdown (updates every second)
+  const [countdown, setCountdown] = useState("Calculating...");
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = Date.now();
+      const endTime = RAFFLE_30TH_MINT_TIMESTAMP + 7 * 24 * 60 * 60 * 1000; // +7 days
+
+      const diff = endTime - now;
+
+      if (diff <= 0) {
+        setCountdown("Raffle has ended");
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -123,32 +146,35 @@ export default function RaffleTracker() {
         </div>
 
         {/* Status */}
-        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Raffle Status</h2>
-            <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">Live</span>
-          </div>
+<div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-2xl font-semibold">Raffle Status</h2>
+    <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">Live</span>
+  </div>
 
-          <div className="text-center">
-            <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
-            <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
-          </div>
+  <div className="text-center">
+    <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
+    <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
+  </div>
 
-          {totalTickets < 30 ? (
-            <div className="mt-8 text-center">
-              <p className="text-xl text-amber-400">
-                {30 - totalTickets} more Exodus Key mints needed before 7-day countdown begins
-              </p>
-            </div>
-          ) : (
-            <div className="mt-8 text-center">
-              <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
-              <p className="text-5xl font-mono font-bold text-white tracking-widest">
-                {countdownEnd ? formatCountdown(countdownEnd) : '—'}
-              </p>
-            </div>
-          )}
-        </div>
+  {totalTickets < 30 ? (
+    <div className="mt-8 text-center">
+      <p className="text-xl text-amber-400">
+        {30 - totalTickets} more Exodus Key mints needed before 7-day countdown begins
+      </p>
+    </div>
+  ) : (
+    <div className="mt-8 text-center">
+      <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
+      <p className="text-5xl font-mono font-bold text-white tracking-widest">
+        {countdown}
+      </p>
+      <p className="text-sm text-zinc-500 mt-3">
+        (ends April 17, 2026 at 02:10:23 UTC)
+      </p>
+    </div>
+  )}
+</div>
 
         {/* Entrant Ledger */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">
@@ -161,12 +187,12 @@ export default function RaffleTracker() {
                 <div className="font-mono text-sm text-zinc-400 break-all">
                   {entrant.wallet}
                 </div>
-<div className="flex flex-col items-end md:items-start">
-  <p className="text-3xl font-bold text-white">
-    {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
-  </p>
-  <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
-</div>
+                <div className="flex flex-col items-end md:items-start">
+                  <p className="text-3xl font-bold text-white">
+                    {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
+                  </p>
+                  <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
+                </div>
               </div>
             ))}
           </div>

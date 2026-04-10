@@ -223,7 +223,6 @@ export default function GridKeysPoints() {
     return { points: total, topTrait, topTraitPoints };
   };
 
-  // ====================== FIXED HANDLE LOAD ======================
   const handleLoad = async () => {
     if (!address) return;
 
@@ -238,7 +237,6 @@ export default function GridKeysPoints() {
 
       const baseUrl = `https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner`;
 
-      // Separate calls to avoid 100 NFT limit
       const [genesisRes, exodusRes] = await Promise.all([
         fetch(`${baseUrl}?owner=${address}&contractAddresses[]=${GENESIS_CONTRACT}&withMetadata=true&limit=100`),
         fetch(`${baseUrl}?owner=${address}&contractAddresses[]=${EXODUS_CONTRACT}&withMetadata=true&limit=100`)
@@ -251,8 +249,6 @@ export default function GridKeysPoints() {
         ...(genesisData.ownedNfts || []),
         ...(exodusData.ownedNfts || [])
       ];
-
-      console.log(`✅ Fetched ${allNfts.length} total NFTs from Alchemy`);
 
       const processedKeys: any[] = [];
 
@@ -426,36 +422,112 @@ export default function GridKeysPoints() {
         </div>
 
         {keys.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
-            <div className="md:col-span-4 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                <div>
-                  <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
-                  <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{totalPoints.toLocaleString()}</p>
+          <>
+            {/* Main Stats + Lifetime Rewards (original position) */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
+              <div className="md:col-span-4 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                  <div>
+                    <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
+                    <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{totalPoints.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 mb-1">GENESIS KEYS</p>
+                    <p className="text-4xl md:text-5xl font-bold">{totalGenesis}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 mb-1">EXODUS KEYS</p>
+                    <p className="text-4xl md:text-5xl font-bold">{totalExodus}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 mb-1">TOTAL KEYS</p>
+                    <p className="text-4xl md:text-5xl font-bold">{totalKeys}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-zinc-500 mb-1">GENESIS KEYS</p>
-                  <p className="text-4xl md:text-5xl font-bold">{totalGenesis}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-zinc-500 mb-1">EXODUS KEYS</p>
-                  <p className="text-4xl md:text-5xl font-bold">{totalExodus}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-zinc-500 mb-1">TOTAL KEYS</p>
-                  <p className="text-4xl md:text-5xl font-bold">{totalKeys}</p>
-                </div>
+              </div>
+
+              <div className="bg-zinc-950 border border-cyan-500/30 rounded-2xl p-6 text-center flex flex-col justify-center">
+                <p className="text-[10px] text-cyan-400 mb-1 tracking-widest">LIFETIME PHANTOM REWARDS</p>
+                <p className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
+                  {phantomRewards !== null ? phantomRewards.toLocaleString() : '—'}
+                </p>
+                <p className="text-sm text-cyan-400 mt-1">$BYTES</p>
               </div>
             </div>
 
-            <div className="bg-zinc-950 border border-cyan-500/30 rounded-2xl p-6 text-center flex flex-col justify-center">
-              <p className="text-[10px] text-cyan-400 mb-1 tracking-widest">LIFETIME PHANTOM REWARDS</p>
-              <p className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
-                {phantomRewards !== null ? phantomRewards.toLocaleString() : '—'}
-              </p>
-              <p className="text-sm text-cyan-400 mt-1">$BYTES</p>
+            {/* ROLE BADGES - grey border, reordered, new Grid Council role */}
+            <div className="mb-12 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
+              <p className="text-[10px] text-cyan-400 mb-4 tracking-widest">ROLES UNLOCKED</p>
+              
+              <div className="flex flex-wrap gap-4">
+                {/* Genesis - most powerful first */}
+                {totalGenesis >= 69 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/genesis-keylord.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Genesis Keylord</span>
+                  </div>
+                )}
+                {totalGenesis >= 21 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/genesis-keymaster.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Genesis Keymaster</span>
+                  </div>
+                )}
+                {totalGenesis >= 3 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/genesis-strategist.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Genesis Strategist</span>
+                  </div>
+                )}
+                {totalGenesis >= 1 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/genesis-keyholder.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Genesis Keyholder</span>
+                  </div>
+                )}
+
+                {/* Exodus - most powerful first */}
+                {totalExodus >= 69 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/exodus-keylord.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Exodus Keylord</span>
+                  </div>
+                )}
+                {totalExodus >= 42 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/exodus-keywarden.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Exodus Keywarden</span>
+                  </div>
+                )}
+                {totalExodus >= 21 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/exodus-keymaster.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Exodus Keymaster</span>
+                  </div>
+                )}
+                {totalExodus >= 3 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/exodus-strategist.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Exodus Strategist</span>
+                  </div>
+                )}
+                {totalExodus >= 1 && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/exodus-keyholder.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Exodus Keyholder</span>
+                  </div>
+                )}
+
+                {/* Grid Council - last */}
+                {(totalGenesis >= 21 || totalExodus >= 21) && (
+                  <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
+                    <img src="/roles/grid-council.png" alt="" className="w-8 h-8" />
+                    <span className="font-medium text-sm">Grid Council</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {sortedGenesis.length > 0 && (
@@ -495,7 +567,7 @@ export default function GridKeysPoints() {
         )}
       </div>
 
-      {/* Updated Footer - Centered on mobile, left/right on desktop */}
+      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
@@ -506,7 +578,6 @@ export default function GridKeysPoints() {
               <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot</a>
               <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
             </div>
-
             <div className="text-xs text-zinc-500 text-center md:text-right">
               © 2026 Grid Phantoms Ltd. All rights reserved.
             </div>

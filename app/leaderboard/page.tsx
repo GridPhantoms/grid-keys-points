@@ -12,8 +12,28 @@ export default function Leaderboard() {
   const [loadingBytes, setLoadingBytes] = useState(true);
   const [loadingKeyholders, setLoadingKeyholders] = useState(false);
   const [errorKeyholders, setErrorKeyholders] = useState('');
-  const [lastSnapshot] = useState("April 7, 2026");
+  const [lastSnapshot] = useState("April 10, 2026 18:41 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedWallet(text);
+      setTimeout(() => setCopiedWallet(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const truncateWallet = (wallet: string) => {
+    if (!wallet || wallet.length < 12) return wallet;
+    return `0x${wallet.slice(2, 4)}...${wallet.slice(-6)}`;
+  };
+
+  const getOpenSeaProfile = (wallet: string) => {
+    return `https://opensea.io/${wallet}`;
+  };
 
   // Load BYTES leaderboard
   useEffect(() => {
@@ -79,12 +99,7 @@ export default function Leaderboard() {
         const totalKeys = genesisQty + exodusQty;
 
         if (totalKeys > 0) {
-          holders.push({
-            wallet,
-            totalKeys,
-            genesisQty,
-            exodusQty
-          });
+          holders.push({ wallet, totalKeys, genesisQty, exodusQty });
         }
       });
 
@@ -99,50 +114,42 @@ export default function Leaderboard() {
     }
   };
 
-  const truncateWallet = (wallet: string) => {
-    if (!wallet || wallet.length < 12) return wallet;
-    return `${wallet.slice(0, 6)}...${wallet.slice(-6)}`;
-  };
-
-  const getOpenSeaProfile = (wallet: string) => {
-    return `https://opensea.io/${wallet}`;
-  };
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* NAV */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-    <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-      <span className="text-white">GRID</span>
-      <span className="text-cyan-400">PHANTOMS</span>
-    </Link>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
+            <span className="text-white">GRID</span>
+            <span className="text-cyan-400">PHANTOMS</span>
+          </Link>
 
-    <div className="hidden md:flex gap-8 text-sm">
-      <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-      <Link href="/leaderboard" className="text-cyan-400 font-medium">Leaderboards</Link>
-      <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-      <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-    </div>
+          <div className="hidden md:flex gap-8 text-sm">
+            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+            <Link href="/leaderboard" className="text-cyan-400 font-medium">Leaderboards</Link>
+            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+            <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+          </div>
 
-    <button 
-      onClick={() => setMenuOpen(!menuOpen)} 
-      className="md:hidden text-3xl text-white focus:outline-none"
-    >
-      ☰
-    </button>
-  </div>
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)} 
+            className="md:hidden text-3xl text-white focus:outline-none"
+          >
+            ☰
+          </button>
+        </div>
 
-  {menuOpen && (
-    <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-      <div className="flex flex-col gap-6 px-6 text-lg">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-        <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Leaderboards</Link>
-        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-        <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-      </div>
-    </div>
-  )}
-</nav>
+        {menuOpen && (
+          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+            <div className="flex flex-col gap-6 px-6 text-lg">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+              <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+            </div>
+          </div>
+        )}
+      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-12 flex-1">
         <h1 className="text-5xl font-bold tracking-[-2px] mb-2">LEADERBOARDS</h1>
@@ -163,52 +170,58 @@ export default function Leaderboard() {
           </button>
         </div>
 
+        {/* BYTES TAB */}
         {activeTab === 'bytes' && (
-          <div>
-            <h2 className="text-2xl font-semibold mb-6">Top Lifetime Phantom Rewards</h2>
-            <div className="space-y-3">
-              {loadingBytes ? (
-                <p className="text-zinc-500">Loading...</p>
-              ) : (
-                bytesLeaderboard.map((entry, i) => (
-                  <div 
-                    key={i} 
-                    className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
-                        <span className="font-mono text-sm text-zinc-400 truncate flex-1">
+          <div className="space-y-3">
+            {loadingBytes ? (
+              <p className="text-zinc-500">Loading...</p>
+            ) : (
+              bytesLeaderboard.map((entry, i) => (
+                <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
+                      
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-mono text-sm text-zinc-400 truncate">
                           {truncateWallet(entry.wallet)}
                         </span>
-                        <a 
-                          href={getOpenSeaProfile(entry.wallet)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors ml-2 whitespace-nowrap flex-shrink-0"
+                        <button
+                          onClick={() => copyToClipboard(entry.wallet)}
+                          className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
+                          title="Copy address"
                         >
-                          [OpenSea Profile]
-                        </a>
+                          {copiedWallet === entry.wallet ? '✓' : '❏'}
+                        </button>
                       </div>
 
-                      <div className="text-right sm:text-left flex-shrink-0">
-                        <div className="text-3xl font-bold text-cyan-400">
-                          {entry.bytes.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-zinc-500">$BYTES</div>
+                      <a 
+                        href={getOpenSeaProfile(entry.wallet)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
+                      >
+                        [OpenSea Profile]
+                      </a>
+                    </div>
+
+                    <div className="text-right sm:text-left flex-shrink-0">
+                      <div className="text-3xl font-bold text-cyan-400">
+                        {entry.bytes.toLocaleString()}
                       </div>
+                      <div className="text-sm text-zinc-500">$BYTES</div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
+        {/* KEYHOLDER TAB */}
         {activeTab === 'points' && (
           <div>
             <h2 className="text-2xl font-semibold mb-6">Keyholder Leaderboard</h2>
-            
             <div className="text-xs text-zinc-500 mb-6">
               Last snapshot: {lastSnapshot}
             </div>
@@ -219,23 +232,34 @@ export default function Leaderboard() {
             {keyholderLeaderboard.length > 0 && (
               <div className="space-y-4">
                 {keyholderLeaderboard.map((entry, i) => (
-                  <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5">
-                    <div className="flex items-center gap-3 mb-4">
+                  <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
+                    <div className="flex items-center gap-3">
                       <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
-                      <span className="font-mono text-sm text-zinc-400 truncate flex-1 min-w-0">
-                        {truncateWallet(entry.wallet)}
-                      </span>
+                      
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-mono text-sm text-zinc-400 truncate">
+                          {truncateWallet(entry.wallet)}
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(entry.wallet)}
+                          className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
+                          title="Copy address"
+                        >
+                          {copiedWallet === entry.wallet ? '✓' : '❏'}
+                        </button>
+                      </div>
+
                       <a 
                         href={getOpenSeaProfile(entry.wallet)} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors ml-1 whitespace-nowrap flex-shrink-0"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
                       >
                         [OpenSea Profile]
                       </a>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center mt-4">
                       <div>
                         <div className="text-2xl font-bold text-white">{entry.totalKeys}</div>
                         <div className="text-xs text-zinc-500">Total Keys</div>
@@ -257,7 +281,7 @@ export default function Leaderboard() {
         )}
       </div>
 
-      {/* Updated Footer - Centered on mobile */}
+      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">

@@ -8,7 +8,7 @@ export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastSnapshot] = useState("April 10, 2026 02:12 UTC");
+  const [lastSnapshot] = useState("April 10, 2026 10:25 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Exact timestamp of the 30th mint (Token #406) — 2026-04-10 02:10:23 UTC

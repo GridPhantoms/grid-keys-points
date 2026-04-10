@@ -145,7 +145,7 @@ export default function RaffleTracker() {
           </a>
         </div>
 
-        {/* Status */}
+{/* Status */}
 <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
   <div className="flex justify-between items-center mb-6">
     <h2 className="text-2xl font-semibold">Raffle Status</h2>
@@ -166,11 +166,14 @@ export default function RaffleTracker() {
   ) : (
     <div className="mt-8 text-center">
       <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
-      <p className="text-5xl font-mono font-bold text-white tracking-widest">
+      
+      {/* Improved mobile countdown */}
+      <p className="text-3xl md:text-5xl font-mono font-bold text-white tracking-normal break-words">
         {countdown}
       </p>
+      
       <p className="text-sm text-zinc-500 mt-3">
-        (ends April 17, 2026 at 02:10:23 UTC)
+        (on April 17, 2026 at 02:10:23 UTC)
       </p>
     </div>
   )}

@@ -87,14 +87,14 @@ export default function MintProgress() {
           Grid Phantoms Mint Progress
         </h1>
 
-        {/* Quote Box - Now directly under the title */}
-        <div className="mb-16 mx-auto max-w-5xl">
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 text-center">
-            <p className="text-xl italic text-zinc-400">
-              “Stack Keys. Run vote subroutine. Gather $BYTES. Stay bored; the Code favors the patient.”
-            </p>
-          </div>
-        </div>
+        {/* Quote Box */}
+<div className="my-12 mx-auto max-w-5xl">
+  <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 md:p-8 text-center">
+    <p className="text-sm italic text-zinc-500 leading-relaxed">
+      Stack Keys. Run vote subroutine. Gather $BYTES. Embrace your boredom. The Code favors the patient.
+    </p>
+  </div>
+</div>
 
         <div className="space-y-24">
           {/* Genesis */}

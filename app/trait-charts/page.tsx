@@ -11,6 +11,7 @@ export default function TraitCharts() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* UPDATED NAV - consistent with all other pages */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -18,22 +19,18 @@ export default function TraitCharts() {
             <span className="text-cyan-400">PHANTOMS</span>
           </Link>
 
-          {/* Desktop Nav - All 4 links with correct active state */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
             <Link 
               href="/trait-charts" 
-              className={`transition-colors ${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+              className={`${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
             >
               Trait Charts
             </Link>
-            <Link 
-              href="/raffle" 
-              className={`transition-colors ${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
-            >
-              Raffle Tracker
-            </Link>
+            <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+            <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
           </div>
 
           {/* Mobile Hamburger */}
@@ -45,7 +42,7 @@ export default function TraitCharts() {
           </button>
         </div>
 
-        {/* Mobile Menu - All 4 links with correct active state */}
+        {/* Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
@@ -54,17 +51,12 @@ export default function TraitCharts() {
               <Link 
                 href="/trait-charts" 
                 onClick={() => setMenuOpen(false)} 
-                className={`transition-colors ${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
+                className={`${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
               >
                 Trait Charts
               </Link>
-              <Link 
-                href="/raffle" 
-                onClick={() => setMenuOpen(false)} 
-                className={`transition-colors ${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}
-              >
-                Raffle Tracker
-              </Link>
+              <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
             </div>
           </div>
         )}

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function RaffleTracker() {
+  const pathname = usePathname();
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function RaffleTracker() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Nav with Hamburger Menu */}
+      {/* UPDATED NAV - consistent with all other pages */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -100,7 +102,8 @@ export default function RaffleTracker() {
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
             <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
             <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-            <Link href="/raffle" className="text-cyan-400 font-medium">Raffle Tracker</Link>
+            <Link href="/raffle" className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Raffle Tracker</Link>
+            <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
           </div>
 
           <button 
@@ -117,7 +120,8 @@ export default function RaffleTracker() {
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
               <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
               <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-              <Link href="/raffle" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Raffle Tracker</Link>
+              <Link href="/raffle" onClick={() => setMenuOpen(false)} className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Raffle Tracker</Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
             </div>
           </div>
         )}
@@ -145,39 +149,38 @@ export default function RaffleTracker() {
           </a>
         </div>
 
-{/* Status */}
-<div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
-  <div className="flex justify-between items-center mb-6">
-    <h2 className="text-2xl font-semibold">Raffle Status</h2>
-    <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">Live</span>
-  </div>
+        {/* Status */}
+        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold">Raffle Status</h2>
+            <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">Live</span>
+          </div>
 
-  <div className="text-center">
-    <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
-    <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
-  </div>
+          <div className="text-center">
+            <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
+            <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
+          </div>
 
-  {totalTickets < 30 ? (
-    <div className="mt-8 text-center">
-      <p className="text-xl text-amber-400">
-        {30 - totalTickets} more Exodus Key mints needed before 7-day countdown begins
-      </p>
-    </div>
-  ) : (
-    <div className="mt-8 text-center">
-      <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
-      
-      {/* Improved mobile countdown */}
-      <p className="text-3xl md:text-5xl font-mono font-bold text-white tracking-normal break-words">
-        {countdown}
-      </p>
-      
-      <p className="text-sm text-zinc-500 mt-3">
-        (on April 17, 2026 at 02:10:23 UTC)
-      </p>
-    </div>
-  )}
-</div>
+          {totalTickets < 30 ? (
+            <div className="mt-8 text-center">
+              <p className="text-xl text-amber-400">
+                {30 - totalTickets} more Exodus Key mints needed before 7-day countdown begins
+              </p>
+            </div>
+          ) : (
+            <div className="mt-8 text-center">
+              <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
+              
+              <p className="text-3xl md:text-5xl font-mono font-bold text-white tracking-normal break-words">
+                {countdown}
+              </p>
+              
+              <p className="text-sm text-zinc-500 mt-3">
+                (on April 17, 2026 at 02:10:23 UTC)
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Entrant Ledger */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">

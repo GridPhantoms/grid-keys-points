@@ -116,7 +116,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* NAV */}
+      {/* UPDATED NAV - consistent across all pages */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -126,9 +126,10 @@ export default function Leaderboard() {
 
           <div className="hidden md:flex gap-8 text-sm">
             <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-            <Link href="/leaderboard" className="text-cyan-400 font-medium">Leaderboards</Link>
+            <Link href="/leaderboard" className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Leaderboards</Link>
             <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
             <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+            <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
           </div>
 
           <button 
@@ -143,9 +144,10 @@ export default function Leaderboard() {
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
               <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Leaderboards</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Leaderboards</Link>
               <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
               <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
             </div>
           </div>
         )}
@@ -170,62 +172,62 @@ export default function Leaderboard() {
           </button>
         </div>
 
-{/* BYTES TAB */}
-{activeTab === 'bytes' && (
-  <div>
-    <h2 className="text-2xl font-semibold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
-      Top Lifetime Phantom Rewards
-    </h2>
-    <div className="text-xs text-zinc-500 mb-6">
-      Current ranking of the top 50 reward recipients.
-    </div>
+        {/* BYTES TAB */}
+        {activeTab === 'bytes' && (
+          <div>
+            <h2 className="text-2xl font-semibold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+              Top Lifetime Phantom Rewards
+            </h2>
+            <div className="text-xs text-zinc-500 mb-6">
+              Current ranking of the top 50 reward recipients.
+            </div>
 
-    <div className="space-y-3">
-      {loadingBytes ? (
-        <p className="text-zinc-500">Loading...</p>
-      ) : (
-        bytesLeaderboard.map((entry, i) => (
-          <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
-                
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="font-mono text-sm text-zinc-400 truncate">
-                    {truncateWallet(entry.wallet)}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(entry.wallet)}
-                    className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
-                    title="Copy address"
-                  >
-                    {copiedWallet === entry.wallet ? '✓' : '❏'}
-                  </button>
-                </div>
+            <div className="space-y-3">
+              {loadingBytes ? (
+                <p className="text-zinc-500">Loading...</p>
+              ) : (
+                bytesLeaderboard.map((entry, i) => (
+                  <div key={i} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-2xl font-mono text-zinc-500 w-12 flex-shrink-0 text-right">#{i+1}</span>
+                        
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="font-mono text-sm text-zinc-400 truncate">
+                            {truncateWallet(entry.wallet)}
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(entry.wallet)}
+                            className="text-white hover:text-cyan-300 text-xl leading-none transition-colors flex-shrink-0"
+                            title="Copy address"
+                          >
+                            {copiedWallet === entry.wallet ? '✓' : '❏'}
+                          </button>
+                        </div>
 
-                <a 
-                  href={getOpenSeaProfile(entry.wallet)} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
-                >
-                  [OpenSea Profile]
-                </a>
-              </div>
+                        <a 
+                          href={getOpenSeaProfile(entry.wallet)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap flex-shrink-0"
+                        >
+                          [OpenSea Profile]
+                        </a>
+                      </div>
 
-              <div className="text-right sm:text-left flex-shrink-0">
-                <div className="text-3xl font-bold text-cyan-400">
-                  {entry.bytes.toLocaleString()}
-                </div>
-                <div className="text-sm text-zinc-500">$BYTES</div>
-              </div>
+                      <div className="text-right sm:text-left flex-shrink-0">
+                        <div className="text-3xl font-bold text-cyan-400">
+                          {entry.bytes.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-zinc-500">$BYTES</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        ))
-      )}
-    </div>
-  </div>
-)}
+        )}
 
         {/* KEYHOLDER TAB */}
         {activeTab === 'points' && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const GENESIS_CONTRACT = "0xF26e168D053F6779f7172A1d0b0A6cD8d7446493".toLowerCase();
 const EXODUS_CONTRACT = "0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa".toLowerCase();
@@ -12,6 +13,7 @@ const EXODUS_IMAGE = "https://i.imgur.com/ticSkU9.jpg";
 const WALLET_COOKIE_NAME = 'gridphantoms_last_wallet';
 
 export default function GridKeysPoints() {
+  const pathname = usePathname();
   const [address, setAddress] = useState('');
   const [rememberWallet, setRememberWallet] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -325,6 +327,7 @@ export default function GridKeysPoints() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Updated Nav */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -333,10 +336,11 @@ export default function GridKeysPoints() {
           </Link>
 
           <div className="hidden md:flex gap-8 text-sm">
-            <Link href="/" className="text-cyan-400 font-medium">Home</Link>
-            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-            <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+            <Link href="/" className={`${pathname === '/' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Home</Link>
+            <Link href="/leaderboard" className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Leaderboards</Link>
+            <Link href="/trait-charts" className={`${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Trait Charts</Link>
+            <Link href="/raffle" className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Raffle Tracker</Link>
+            <Link href="/mint-progress" className={`${pathname === '/mint-progress' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Mint Progress</Link>
           </div>
 
           <button 
@@ -350,10 +354,11 @@ export default function GridKeysPoints() {
         {menuOpen && (
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
-              <Link href="/" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-              <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+              <Link href="/" onClick={() => setMenuOpen(false)} className={`${pathname === '/' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className={`${pathname === '/trait-charts' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Trait Charts</Link>
+              <Link href="/raffle" onClick={() => setMenuOpen(false)} className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Raffle Tracker</Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className={`${pathname === '/mint-progress' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Mint Progress</Link>
             </div>
           </div>
         )}
@@ -423,7 +428,7 @@ export default function GridKeysPoints() {
 
         {keys.length > 0 && (
           <>
-            {/* Main Stats + Lifetime Rewards (original position) */}
+            {/* Main Stats + Lifetime Rewards */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
               <div className="md:col-span-4 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
@@ -455,12 +460,11 @@ export default function GridKeysPoints() {
               </div>
             </div>
 
-            {/* ROLE BADGES - grey border, reordered, new Grid Council role */}
+            {/* ROLE BADGES */}
             <div className="mb-12 bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
               <p className="text-[10px] text-cyan-400 mb-4 tracking-widest">ROLES UNLOCKED</p>
               
               <div className="flex flex-wrap gap-4">
-                {/* Genesis - most powerful first */}
                 {totalGenesis >= 69 && (
                   <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
                     <img src="/roles/genesis-keylord.png" alt="" className="w-8 h-8" />
@@ -486,7 +490,6 @@ export default function GridKeysPoints() {
                   </div>
                 )}
 
-                {/* Exodus - most powerful first */}
                 {totalExodus >= 69 && (
                   <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
                     <img src="/roles/exodus-keylord.png" alt="" className="w-8 h-8" />
@@ -518,7 +521,6 @@ export default function GridKeysPoints() {
                   </div>
                 )}
 
-                {/* Grid Council - last */}
                 {(totalGenesis >= 21 || totalExodus >= 21) && (
                   <div className="flex items-center gap-3 bg-black/50 border border-zinc-800 rounded-2xl px-5 py-3">
                     <img src="/roles/grid-council.png" alt="" className="w-8 h-8" />

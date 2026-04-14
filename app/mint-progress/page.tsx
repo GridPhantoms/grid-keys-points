@@ -91,7 +91,7 @@ export default function MintProgress() {
         <div className="mb-16 mx-auto max-w-5xl">
           <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 text-center">
             <p className="text-xl italic text-zinc-400">
-              “Stack Keys, stack $BYTES, vote, and stay bored.”
+              “Stack Keys. Run vote subroutine. Gather $BYTES. Stay bored; the Code favors the patient.”
             </p>
           </div>
         </div>

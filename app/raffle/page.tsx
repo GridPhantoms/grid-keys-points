@@ -238,15 +238,15 @@ export default function RaffleTracker() {
         </div>
 
         <div className="text-center mt-12">
-          <a 
-            href="#" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline"
-          >
-            Raffle entry requirements can be found here →
-          </a>
-        </div>
+  <a 
+    href="https://x.com/GridPhantoms/status/2046751946850078956" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="text-cyan-400 hover:text-cyan-300 underline"
+  >
+    Raffle entry requirements can be found here →
+  </a>
+</div>
       </div>
 
       {/* Footer */}

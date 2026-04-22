@@ -10,7 +10,7 @@ export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastSnapshot] = useState("April 17, 2026 01:46 UTC");
+  const [lastSnapshot] = useState("April 22, 2026 00:04 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Exact timestamp of the 30th mint (Token #406) — 2026-04-10 02:10:23 UTC
@@ -59,13 +59,13 @@ export default function RaffleTracker() {
     loadSnapshot();
   }, []);
 
-  // Live countdown (updates every second)
+  // Live countdown
   const [countdown, setCountdown] = useState("Calculating...");
 
   useEffect(() => {
     const updateCountdown = () => {
       const now = Date.now();
-      const endTime = RAFFLE_30TH_MINT_TIMESTAMP + 7 * 24 * 60 * 60 * 1000; // +7 days
+      const endTime = RAFFLE_30TH_MINT_TIMESTAMP + 7 * 24 * 60 * 60 * 1000;
 
       const diff = endTime - now;
 
@@ -84,13 +84,12 @@ export default function RaffleTracker() {
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* UPDATED NAV - consistent with all other pages */}
+      {/* Nav */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -117,37 +116,69 @@ export default function RaffleTracker() {
         {menuOpen && (
           <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
             <div className="flex flex-col gap-6 px-6 text-lg">
-              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400">Trait Charts</Link>
               <Link href="/raffle" onClick={() => setMenuOpen(false)} className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400'}`}>Raffle Tracker</Link>
-              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400">Mint Progress</Link>
             </div>
           </div>
         )}
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12 flex-1">
-        {/* Prize Showcase */}
-        <div className="text-center mb-12">
-          <Image 
-            src="/images/phantoms-s1.png" 
-            alt="Neo Tokyo Citizen #3989" 
-            width={800} 
-            height={800} 
-            className="w-full max-w-[280px] md:max-w-lg mx-auto h-auto rounded-3xl shadow-2xl border border-cyan-500/30"
-            priority
-          />
-          <h1 className="text-4xl font-bold mt-8">Up for raffle is Neo Tokyo Citizen #3989</h1>
-          <a 
-            href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/3989" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
-          >
-            View on OpenSea →
-          </a>
-        </div>
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 flex-1">
+{/* Two Prizes Side-by-Side */}
+<div className="mb-12">
+  <h2 className="text-3xl font-bold text-center mb-8">Up for Raffle</h2>
+  
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+    
+    {/* First Prize - Left on desktop */}
+    <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+      <Image 
+        src="/images/first-prize-1841.png" 
+        alt="Day 1 Neo Tokyo Citizen #1841" 
+        width={600} 
+        height={600} 
+        className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+        priority
+      />
+      <p className="mt-6 font-semibold text-lg">First Prize</p>
+      <p className="text-xl">Day 1 Neo Tokyo Citizen #1841</p>
+      <a 
+        href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/1841" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
+      >
+        View on OpenSea →
+      </a>
+    </div>
+
+    {/* Second Prize - Right on desktop */}
+    <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+      <Image 
+        src="/images/second-prize-1851.png" 
+        alt="Neo Tokyo Outer Citizen #1851" 
+        width={600} 
+        height={600} 
+        className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+        priority
+      />
+      <p className="mt-6 font-semibold text-lg">Second Prize</p>
+      <p className="text-xl">Neo Tokyo Outer Citizen #1851</p>
+      <a 
+        href="https://opensea.io/item/ethereum/0x4481507cc228fa19d203bd42110d679571f7912e/1851" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
+      >
+        View on OpenSea →
+      </a>
+    </div>
+
+  </div>
+</div>
 
         {/* Status */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
@@ -170,11 +201,9 @@ export default function RaffleTracker() {
           ) : (
             <div className="mt-8 text-center">
               <p className="text-sm text-zinc-400 mb-2">Raffle ends in</p>
-              
               <p className="text-3xl md:text-5xl font-mono font-bold text-white tracking-normal break-words">
                 {countdown}
               </p>
-              
               <p className="text-sm text-zinc-500 mt-3">
                 (on April 17, 2026 at 02:10:23 UTC)
               </p>
@@ -182,31 +211,35 @@ export default function RaffleTracker() {
           )}
         </div>
 
-        {/* Entrant Ledger */}
+        {/* Entrant Ledger - starts empty */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-1">Entrant Ledger</h2>
           <p className="text-sm text-zinc-500 mb-6">Snapshot: {lastSnapshot}</p>
           
           <div className="space-y-4">
-            {entrants.map((entrant, i) => (
-              <div key={i} className="bg-black/50 border border-zinc-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="font-mono text-sm text-zinc-400 break-all">
-                  {entrant.wallet}
+            {entrants.length === 0 ? (
+              <p className="text-zinc-500 text-center py-12">No entrants yet — be the first to mint!</p>
+            ) : (
+              entrants.map((entrant, i) => (
+                <div key={i} className="bg-black/50 border border-zinc-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="font-mono text-sm text-zinc-400 break-all">
+                    {entrant.wallet}
+                  </div>
+                  <div className="flex flex-col items-end md:items-start">
+                    <p className="text-3xl font-bold text-white">
+                      {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
+                    </p>
+                    <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end md:items-start">
-                  <p className="text-3xl font-bold text-white">
-                    {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
-                  </p>
-                  <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         <div className="text-center mt-12">
           <a 
-            href="https://x.com/GridPhantoms/status/2042036764567593115" 
+            href="#" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-cyan-400 hover:text-cyan-300 underline"

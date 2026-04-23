@@ -43,15 +43,13 @@ function AnimatedNumber({
     return () => clearInterval(timer);
   }, [value, duration, decimals]);
 
-  // Live animation display
   const liveFormatted = decimals 
     ? displayValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : Math.floor(displayValue).toLocaleString('en-US');
 
-  // Final clean display (after animation ends)
   const finalFormatted = decimals 
     ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : Math.floor(value).toString();   // clean no-comma for Total Keys
+    : Math.floor(value).toString();
 
   return (
     <span className="tabular-nums">
@@ -66,9 +64,9 @@ export default function EngineRoom() {
   const [neoS1Count, setNeoS1Count] = useState(0);
   const [neoS2Count, setNeoS2Count] = useState(0);
   const [neoItemsCount, setNeoItemsCount] = useState(0);
-  const [genesisKeyholders, setGenesisKeyholders] = useState(0);
-  const [exodusKeyholders, setExodusKeyholders] = useState(0);
-  const [uniquePhantoms, setUniquePhantoms] = useState(0);
+  const [liberatedSlaves, setLiberatedSlaves] = useState(0);
+  const [totalVotesCast, setTotalVotesCast] = useState(0);
+  const [avgKeysPerPhantom, setAvgKeysPerPhantom] = useState(0);
   const [totalPhantomRewards, setTotalPhantomRewards] = useState(0);
   const [exodusMinted, setExodusMinted] = useState(0);
   const [voterParticipationRate, setVoterParticipationRate] = useState(0);
@@ -98,21 +96,7 @@ export default function EngineRoom() {
         const holdersRes = await fetch('/holders-snapshot.csv');
         const holdersText = await holdersRes.text();
         const holderLines = holdersText.trim().split('\n').filter(l => l.trim());
-
-        let genesisCount = 0;
-        let exodusCount = 0;
-
-        holderLines.slice(1).forEach(line => {
-          const [, gStr, eStr] = line.split(',');
-          const g = parseInt(gStr?.trim() || '0');
-          const e = parseInt(eStr?.trim() || '0');
-          if (g > 0) genesisCount++;
-          if (e > 0) exodusCount++;
-        });
-
-        setGenesisKeyholders(genesisCount);
-        setExodusKeyholders(exodusCount);
-        setUniquePhantoms(holderLines.length - 1);
+        setLiberatedSlaves(holderLines.length - 1);
 
         const airdropFiles = [
           '/airdrops/2025-12Airdrop.csv',
@@ -124,6 +108,7 @@ export default function EngineRoom() {
         ];
 
         let totalRewards = 0;
+        let totalVotes = 0;
         let totalRateSum = 0;
         let airdropCount = 0;
 
@@ -139,6 +124,7 @@ export default function EngineRoom() {
               const amt = parseFloat(amtStr.trim());
               if (amt > 0) {
                 totalRewards += amt;
+                totalVotes += 1;
                 recipientSet.add(wallet.trim().toLowerCase());
               }
             }
@@ -151,7 +137,11 @@ export default function EngineRoom() {
         }
 
         setTotalPhantomRewards(Math.round(totalRewards));
+        setTotalVotesCast(totalVotes);
         setVoterParticipationRate(airdropCount > 0 ? totalRateSum / airdropCount : 0);
+
+        const avg = (holderLines.length - 1) > 0 ? TOTAL_KEYS / (holderLines.length - 1) : 0;
+        setAvgKeysPerPhantom(avg);
 
         const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
         if (apiKey) {
@@ -208,7 +198,6 @@ export default function EngineRoom() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Nav */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -245,12 +234,12 @@ export default function EngineRoom() {
       <div className="max-w-5xl mx-auto px-6 py-12 flex-1">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold tracking-[-2px] mb-3">Engine Room</h1>
-          <p className="text-xl text-zinc-400">Vault Metrics • Keyholder Stats • Rebellion Vitals</p>
+          <p className="text-xl text-zinc-400">Vault Metrics • Rebellion Vitals</p>
           <p className="text-sm text-zinc-500 mt-2">Last Snapshot: {LAST_SNAPSHOT}</p>
         </div>
 
-        {/* Top Stats - Animation + correct formatting */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        {/* Top Vault Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">VALUE OF SAKURA'S VAULT</p>
             <p className="text-5xl font-bold text-cyan-400 tracking-tighter">
@@ -273,46 +262,8 @@ export default function EngineRoom() {
           </div>
         </div>
 
-        {/* Keyholder Stats */}
-        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 mb-12">
-          <p className="text-sm text-cyan-400 mb-6 tracking-widest text-center">KEYHOLDER STATS</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <p className="text-sm text-zinc-500">Genesis Keyholders</p>
-              <p className="text-4xl font-bold text-white">{genesisKeyholders}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-500">Exodus Keyholders</p>
-              <p className="text-4xl font-bold text-white">{exodusKeyholders}</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-500">Total Unique Keyholders</p>
-              <p className="text-4xl font-bold text-white">{uniquePhantoms}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Rebellion Vitals */}
-        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 mb-12">
-          <p className="text-sm text-cyan-400 mb-6 tracking-widest text-center">REBELLION VITALS</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <p className="text-sm text-zinc-500">Exodus Mint Progress</p>
-              <p className="text-4xl font-bold text-cyan-400">{exodusMintProgress.toFixed(2)}%</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-500">Avg. Voter Participation</p>
-              <p className="text-4xl font-bold text-cyan-400">{voterParticipationRate.toFixed(1)}%</p>
-            </div>
-            <div>
-              <p className="text-sm text-zinc-500">Days Since Genesis</p>
-              <p className="text-4xl font-bold text-cyan-400">{daysSinceGenesis}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Rewards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Airdrop Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-3">TOTAL PHANTOM REWARDS AIRDROPPED</p>
             <p className="text-5xl font-bold text-white tracking-tighter">
@@ -329,9 +280,40 @@ export default function EngineRoom() {
             <p className="text-lg text-zinc-400 mt-1">USD</p>
           </div>
         </div>
+
+        {/* Merged Rebellion Vitals Section (6 stats) */}
+        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 mb-12">
+          <p className="text-sm text-cyan-400 mb-8 tracking-widest text-center">REBELLION VITALS</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+            <div>
+              <p className="text-sm text-zinc-500">Total Liberated Slaves</p>
+              <p className="text-4xl font-bold text-white">{liberatedSlaves}</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Total Votes Cast</p>
+              <p className="text-4xl font-bold text-white">{totalVotesCast.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Avg. Keys per Phantom</p>
+              <p className="text-4xl font-bold text-white">{avgKeysPerPhantom.toFixed(2)}</p>
+            </div>
+
+            <div>
+              <p className="text-sm text-zinc-500">Exodus Mint Progress</p>
+              <p className="text-4xl font-bold text-cyan-400">{exodusMintProgress.toFixed(2)}%</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Avg. Voter Participation</p>
+              <p className="text-4xl font-bold text-cyan-400">{voterParticipationRate.toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-500">Days Since Genesis</p>
+              <p className="text-4xl font-bold text-cyan-400">{daysSinceGenesis}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">

@@ -4,17 +4,65 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+function AnimatedNumber({ 
+  value, 
+  duration = 1800, 
+  prefix = "", 
+  suffix = "", 
+  decimals = false 
+}: { 
+  value: number; 
+  duration?: number; 
+  prefix?: string; 
+  suffix?: string;
+  decimals?: boolean;
+}) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (value <= 0) {
+      setDisplayValue(value);
+      return;
+    }
+
+    let start = 0;
+    const increment = decimals 
+      ? Math.max(0.01, value / (duration / 16)) 
+      : Math.max(1, Math.ceil(value / (duration / 16)));
+
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= value) {
+        setDisplayValue(value);
+        clearInterval(timer);
+      } else {
+        setDisplayValue(start);
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [value, duration, decimals]);
+
+  // Live animation display
+  const liveFormatted = decimals 
+    ? displayValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.floor(displayValue).toLocaleString('en-US');
+
+  // Final clean display (after animation ends)
+  const finalFormatted = decimals 
+    ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Math.floor(value).toString();   // clean no-comma for Total Keys
+
+  return (
+    <span className="tabular-nums">
+      {prefix}{displayValue >= value ? finalFormatted : liveFormatted}{suffix}
+    </span>
+  );
+}
+
 export default function EngineRoom() {
   const pathname = usePathname();
-  const [snapshot, setSnapshot] = useState({
-    debank_portfolio_usd: 48000,
-    black_price_usd: 0.042,
-    veblack_balance: 109527.37,
-    bytes_price_usd: 0.85,
-    neo_s1_floor_usd: 2100,
-    neo_s2_floor_usd: 850,
-    neo_items_cache_floor_usd: 150,
-  });
+  const [snapshot, setSnapshot] = useState<any>({});
   const [neoS1Count, setNeoS1Count] = useState(0);
   const [neoS2Count, setNeoS2Count] = useState(0);
   const [neoItemsCount, setNeoItemsCount] = useState(0);
@@ -32,7 +80,6 @@ export default function EngineRoom() {
   const TOTAL_KEYS = TOTAL_GENESIS_KEYS + 508;
 
   const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
-
   const LAST_SNAPSHOT = "April 22, 2026 16:30 UTC";
 
   useEffect(() => {
@@ -149,18 +196,19 @@ export default function EngineRoom() {
   const daysSinceGenesis = Math.floor((Date.now() - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
 
   const neoValue = 
-    (neoS1Count * snapshot.neo_s1_floor_usd) +
-    (neoS2Count * snapshot.neo_s2_floor_usd) +
-    (neoItemsCount * snapshot.neo_items_cache_floor_usd);
+    (neoS1Count * (snapshot.neo_s1_floor_usd || 0)) +
+    (neoS2Count * (snapshot.neo_s2_floor_usd || 0)) +
+    (neoItemsCount * (snapshot.neo_items_cache_floor_usd || 0));
 
-  const totalVaultValue = snapshot.debank_portfolio_usd + neoValue + (snapshot.veblack_balance * snapshot.black_price_usd);
+  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + neoValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
 
   const vaultValuePerKey = TOTAL_KEYS > 0 ? totalVaultValue / TOTAL_KEYS : 0;
 
-  const airdropUSD = totalPhantomRewards * snapshot.bytes_price_usd;
+  const airdropUSD = totalPhantomRewards * (snapshot.bytes_price_usd || 0);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Nav */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -201,24 +249,26 @@ export default function EngineRoom() {
           <p className="text-sm text-zinc-500 mt-2">Last Snapshot: {LAST_SNAPSHOT}</p>
         </div>
 
-        {/* Vault Cards */}
+        {/* Top Stats - Animation + correct formatting */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">VALUE OF SAKURA'S VAULT</p>
             <p className="text-5xl font-bold text-cyan-400 tracking-tighter">
-              ${totalVaultValue.toLocaleString()}
+              <AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} />
             </p>
           </div>
 
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">TOTAL KEYS</p>
-            <p className="text-5xl font-bold text-white tracking-tighter">{TOTAL_KEYS}</p>
+            <p className="text-5xl font-bold text-white tracking-tighter">
+              <AnimatedNumber value={TOTAL_KEYS} duration={1400} decimals={false} />
+            </p>
           </div>
 
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">VAULT VALUE PER KEY</p>
             <p className="text-5xl font-bold text-white tracking-tighter">
-              ${vaultValuePerKey.toFixed(2)}
+              <AnimatedNumber value={vaultValuePerKey} prefix="$" duration={1600} decimals={true} />
             </p>
           </div>
         </div>
@@ -281,15 +331,16 @@ export default function EngineRoom() {
         </div>
       </div>
 
+      {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
             <div className="flex flex-wrap gap-8 text-sm justify-center md:justify-start">
-              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white">Discord</a>
-              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white">X</a>
-              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white">OpenSea</a>
-              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white">Snapshot</a>
-              <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white">Exodus Mint</a>
+              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
+              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
+              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
+              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot</a>
+              <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
             </div>
             <div className="text-xs text-zinc-500 text-center md:text-right">
               © 2026 Grid Phantoms Ltd. All rights reserved.

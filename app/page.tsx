@@ -336,26 +336,53 @@ export default function GridKeysPoints() {
     </Link>
 
     <div className="hidden md:flex gap-8 text-sm">
-      <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+      <Link 
+        href="/" 
+        className={`${pathname === '/' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
+      >
+        Home
+      </Link>
       <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
       <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
       <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
       <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-      <Link href="/engine" className="text-cyan-400 font-medium">Engine Room</Link>
+      <Link 
+        href="/engine" 
+        className="hover:text-cyan-400 transition-colors"
+      >
+        Engine Room
+      </Link>
     </div>
 
-    <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-3xl text-white">☰</button>
+    <button 
+      onClick={() => setMenuOpen(!menuOpen)} 
+      className="md:hidden text-3xl text-white focus:outline-none"
+    >
+      ☰
+    </button>
   </div>
 
   {menuOpen && (
     <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
       <div className="flex flex-col gap-6 px-6 text-lg">
-        <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
-        <Link href="/leaderboard" onClick={() => setMenuOpen(false)}>Leaderboards</Link>
-        <Link href="/trait-charts" onClick={() => setMenuOpen(false)}>Trait Charts</Link>
-        <Link href="/raffle" onClick={() => setMenuOpen(false)}>Raffle Tracker</Link>
-        <Link href="/mint-progress" onClick={() => setMenuOpen(false)}>Mint Progress</Link>
-        <Link href="/engine" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Engine Room</Link>
+        <Link 
+          href="/" 
+          onClick={() => setMenuOpen(false)} 
+          className={`${pathname === '/' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
+        >
+          Home
+        </Link>
+        <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+        <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
+        <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
+        <Link 
+          href="/engine" 
+          onClick={() => setMenuOpen(false)} 
+          className="hover:text-cyan-400 transition-colors"
+        >
+          Engine Room
+        </Link>
       </div>
     </div>
   )}

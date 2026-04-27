@@ -75,10 +75,9 @@ export default function EngineRoom() {
 
   const TOTAL_GENESIS_KEYS = 555;
   const TOTAL_EXODUS_SUPPLY = 3333;
-  const TOTAL_KEYS = TOTAL_GENESIS_KEYS + 508;
 
   const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
-  const LAST_SNAPSHOT = "April 22, 2026 16:30 UTC";
+  const LAST_SNAPSHOT = "April 27, 2026 15:17 UTC";
 
   useEffect(() => {
     const loadData = async () => {
@@ -140,9 +139,6 @@ export default function EngineRoom() {
         setTotalVotesCast(totalVotes);
         setVoterParticipationRate(airdropCount > 0 ? totalRateSum / airdropCount : 0);
 
-        const avg = (holderLines.length - 1) > 0 ? TOTAL_KEYS / (holderLines.length - 1) : 0;
-        setAvgKeysPerPhantom(avg);
-
         const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
         if (apiKey) {
           let totalMinted = 0;
@@ -182,7 +178,18 @@ export default function EngineRoom() {
     loadData();
   }, []);
 
-  const exodusMintProgress = (exodusMinted / TOTAL_EXODUS_SUPPLY) * 100;
+  // Dynamic Total Keys (live Exodus minted count)
+  const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
+
+  // Avg Keys per Phantom - calculated live
+  const avgKeysPerPhantomCalc = liberatedSlaves > 0 
+    ? TOTAL_KEYS / liberatedSlaves 
+    : 0;
+
+  const exodusMintProgress = TOTAL_EXODUS_SUPPLY > 0 
+    ? (exodusMinted / TOTAL_EXODUS_SUPPLY) * 100 
+    : 0;
+
   const daysSinceGenesis = Math.floor((Date.now() - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
 
   const neoValue = 
@@ -198,6 +205,7 @@ export default function EngineRoom() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Nav */}
       <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="font-bold text-2xl tracking-[-1px]">
@@ -211,10 +219,10 @@ export default function EngineRoom() {
             <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
             <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
             <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-            <Link href="/engine" className="text-cyan-400 font-medium">Engine Room</Link>
+            <Link href="/engine" className={`${pathname === '/engine' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Engine Room</Link>
           </div>
 
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-3xl text-white">☰</button>
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-3xl text-white focus:outline-none">☰</button>
         </div>
 
         {menuOpen && (
@@ -238,7 +246,7 @@ export default function EngineRoom() {
           <p className="text-sm text-zinc-500 mt-2">Last Snapshot: {LAST_SNAPSHOT}</p>
         </div>
 
-        {/* Top Vault Stats */}
+        {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-2">VALUE OF SAKURA'S VAULT</p>
@@ -273,7 +281,7 @@ export default function EngineRoom() {
           </div>
 
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
-            <p className="text-sm text-zinc-500 mb-3">≈ VALUE OF AIRDROPS</p>
+            <p className="text-sm text-zinc-500 mb-3">CURRENT VALUE OF AIRDROPS</p>
             <p className="text-5xl font-bold text-white tracking-tighter">
               ${airdropUSD.toFixed(0)}
             </p>
@@ -281,7 +289,7 @@ export default function EngineRoom() {
           </div>
         </div>
 
-        {/* Merged Rebellion Vitals Section (6 stats) */}
+        {/* Rebellion Vitals */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 mb-12">
           <p className="text-sm text-cyan-400 mb-8 tracking-widest text-center">REBELLION VITALS</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
@@ -295,7 +303,7 @@ export default function EngineRoom() {
             </div>
             <div>
               <p className="text-sm text-zinc-500">Avg. Keys per Phantom</p>
-              <p className="text-4xl font-bold text-white">{avgKeysPerPhantom.toFixed(2)}</p>
+              <p className="text-4xl font-bold text-white">{avgKeysPerPhantomCalc.toFixed(2)}</p>
             </div>
 
             <div>

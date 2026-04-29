@@ -10,11 +10,11 @@ export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastSnapshot] = useState("April 29, 2026 16:45 UTC");
+  const [lastSnapshot] = useState("April 29, 2026 16:52 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Exact timestamp of the 30th mint (Token #406) — 2026-04-10 02:10:23 UTC
-  const RAFFLE_30TH_MINT_TIMESTAMP = 1775787023000; // milliseconds
+ // Exact timestamp of the 30th mint — April 29, 2026 16:52 UTC
+const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
 
   useEffect(() => {
     const loadSnapshot = async () => {
@@ -229,7 +229,7 @@ export default function RaffleTracker() {
                 {countdown}
               </p>
               <p className="text-sm text-zinc-500 mt-3">
-                (on April 17, 2026 at 02:10:23 UTC)
+                (on May 6, 2026 at 16:52 UTC)
               </p>
             </div>
           )}

@@ -13,8 +13,8 @@ export default function RaffleTracker() {
   const [lastSnapshot] = useState("April 29, 2026 16:52 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
 
- // Exact timestamp of the 30th mint — April 29, 2026 16:52 UTC
-const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
+  // Exact timestamp of the 30th mint — April 29, 2026 16:52 UTC
+  const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
 
   useEffect(() => {
     const loadSnapshot = async () => {
@@ -90,119 +90,117 @@ const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Nav */}
-<nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-    <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-      <span className="text-white">GRID</span>
-      <span className="text-cyan-400">PHANTOMS</span>
-    </Link>
+      <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
+            <span className="text-white">GRID</span>
+            <span className="text-cyan-400">PHANTOMS</span>
+          </Link>
 
-    <div className="hidden md:flex gap-8 text-sm">
-      <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-      <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-      <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-      <Link 
-        href="/raffle" 
-        className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
-      >
-        Raffle Tracker
-      </Link>
-      <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-      <Link 
-        href="/engine" 
-        className="hover:text-cyan-400 transition-colors"
-      >
-        Engine Room
-      </Link>
-    </div>
+          <div className="hidden md:flex gap-8 text-sm">
+            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+            <Link 
+              href="/raffle" 
+              className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
+            >
+              Raffle Tracker
+            </Link>
+            <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
+            <Link 
+              href="/engine" 
+              className="hover:text-cyan-400 transition-colors"
+            >
+              Engine Room
+            </Link>
+          </div>
 
-    <button 
-      onClick={() => setMenuOpen(!menuOpen)} 
-      className="md:hidden text-3xl text-white focus:outline-none"
-    >
-      ☰
-    </button>
-  </div>
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)} 
+            className="md:hidden text-3xl text-white focus:outline-none"
+          >
+            ☰
+          </button>
+        </div>
 
-  {menuOpen && (
-    <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-      <div className="flex flex-col gap-6 px-6 text-lg">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-        <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-        <Link 
-          href="/raffle" 
-          onClick={() => setMenuOpen(false)} 
-          className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
-        >
-          Raffle Tracker
-        </Link>
-        <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-        <Link 
-          href="/engine" 
-          onClick={() => setMenuOpen(false)} 
-          className="hover:text-cyan-400 transition-colors"
-        >
-          Engine Room
-        </Link>
-      </div>
-    </div>
-  )}
-</nav>
+        {menuOpen && (
+          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
+            <div className="flex flex-col gap-6 px-6 text-lg">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/leaderboard" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
+              <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
+              <Link 
+                href="/raffle" 
+                onClick={() => setMenuOpen(false)} 
+                className={`${pathname === '/raffle' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
+              >
+                Raffle Tracker
+              </Link>
+              <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
+              <Link 
+                href="/engine" 
+                onClick={() => setMenuOpen(false)} 
+                className="hover:text-cyan-400 transition-colors"
+              >
+                Engine Room
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 flex-1">
-{/* Two Prizes Side-by-Side */}
-<div className="mb-12">
-  <h2 className="text-3xl font-bold text-center mb-8">Up for Raffle</h2>
-  
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-    
-    {/* First Prize - Left on desktop */}
-    <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
-      <Image 
-        src="/images/first-prize-1841.png" 
-        alt="Day 1 Neo Tokyo Citizen #1841" 
-        width={600} 
-        height={600} 
-        className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
-        priority
-      />
-      <p className="mt-6 font-semibold text-lg">First Prize</p>
-      <p className="text-xl">Day 1 Neo Tokyo Citizen #1841</p>
-      <a 
-        href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/1841" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
-      >
-        View on OpenSea →
-      </a>
-    </div>
+        {/* Two Prizes Side-by-Side */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold text-center mb-8">Up for Raffle</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* First Prize */}
+            <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+              <Image 
+                src="/images/first-prize-1841.png" 
+                alt="Day 1 Neo Tokyo Citizen #1841" 
+                width={600} 
+                height={600} 
+                className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+                priority
+              />
+              <p className="mt-6 font-semibold text-lg">First Prize</p>
+              <p className="text-xl">Day 1 Neo Tokyo Citizen #1841</p>
+              <a 
+                href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/1841" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
+              >
+                View on OpenSea →
+              </a>
+            </div>
 
-    {/* Second Prize - Right on desktop */}
-    <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
-      <Image 
-        src="/images/second-prize-1851.png" 
-        alt="Neo Tokyo Outer Citizen #1851" 
-        width={600} 
-        height={600} 
-        className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
-        priority
-      />
-      <p className="mt-6 font-semibold text-lg">Second Prize</p>
-      <p className="text-xl">Neo Tokyo Outer Citizen #1851</p>
-      <a 
-        href="https://opensea.io/item/ethereum/0x4481507cc228fa19d203bd42110d679571f7912e/1851" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
-      >
-        View on OpenSea →
-      </a>
-    </div>
-
-  </div>
-</div>
+            {/* Second Prize */}
+            <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+              <Image 
+                src="/images/second-prize-1851.png" 
+                alt="Neo Tokyo Outer Citizen #1851" 
+                width={600} 
+                height={600} 
+                className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+                priority
+              />
+              <p className="mt-6 font-semibold text-lg">Second Prize</p>
+              <p className="text-xl">Neo Tokyo Outer Citizen #1851</p>
+              <a 
+                href="https://opensea.io/item/ethereum/0x4481507cc228fa19d203bd42110d679571f7912e/1851" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
+              >
+                View on OpenSea →
+              </a>
+            </div>
+          </div>
+        </div>
 
         {/* Status */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
@@ -235,7 +233,7 @@ const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
           )}
         </div>
 
-        {/* Entrant Ledger - starts empty */}
+        {/* Entrant Ledger */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-1">Entrant Ledger</h2>
           <p className="text-sm text-zinc-500 mb-6">Snapshot: {lastSnapshot}</p>
@@ -262,15 +260,15 @@ const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
         </div>
 
         <div className="text-center mt-12">
-  <a 
-    href="https://x.com/GridPhantoms/status/2046751946850078956" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="text-cyan-400 hover:text-cyan-300 underline"
-  >
-    Raffle entry requirements can be found here →
-  </a>
-</div>
+          <a 
+            href="https://x.com/GridPhantoms/status/2046751946850078956" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 underline"
+          >
+            Raffle entry requirements can be found here →
+          </a>
+        </div>
       </div>
 
       {/* Footer */}

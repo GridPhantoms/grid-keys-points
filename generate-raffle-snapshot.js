@@ -167,11 +167,20 @@ function formatUtc(timestampMs = Date.now()) {
   return `${get('month')} ${Number(get('day'))}, ${get('year')} ${get('hour')}:${get('minute')} UTC`;
 }
 
-function writeCsv(ticketCounts) {
+function buildCsv(ticketCounts) {
   const rows = [...ticketCounts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([wallet, quantity]) => `${wallet},${quantity}`);
-  fs.writeFileSync(path.join(process.cwd(), 'public', 'raffle-snapshot.csv'), `wallet,quantity\n${rows.join('\n')}\n`);
+  return `wallet,quantity\n${rows.join('\n')}\n`;
+}
+
+function readExistingCsv() {
+  const filePath = path.join(process.cwd(), 'public', 'raffle-snapshot.csv');
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+}
+
+function writeCsv(csv) {
+  fs.writeFileSync(path.join(process.cwd(), 'public', 'raffle-snapshot.csv'), csv);
 }
 
 function updateRaffleSnapshotTime(snapshotTime) {
@@ -215,12 +224,10 @@ async function main() {
     ticketCounts.set(mint.wallet, (ticketCounts.get(mint.wallet) || 0) + 1);
   }
 
-  writeCsv(ticketCounts);
-  const snapshotTime = formatUtc();
-  updateRaffleSnapshotTime(snapshotTime);
-
   const totalTickets = [...ticketCounts.values()].reduce((sum, n) => sum + n, 0);
-  console.log(`Raffle snapshot time: ${snapshotTime}`);
+  const nextCsv = buildCsv(ticketCounts);
+  const existingCsv = readExistingCsv();
+
   console.log(`Wallets: ${ticketCounts.size}`);
   console.log(`Tickets: ${totalTickets}`);
   if (HUMAN_EXCEPTION_MINTS.length > 0) {
@@ -230,6 +237,16 @@ async function main() {
     console.log(`30th post-announcement mint: ${formatUtc(thirtiethMint.timestamp * 1000)} block ${thirtiethMint.blockNum}`);
     console.log(`Raffle end: ${formatUtc(raffleEnd * 1000)}`);
   }
+
+  if (nextCsv === existingCsv) {
+    console.log('No raffle snapshot data changes; leaving snapshot time unchanged.');
+    return;
+  }
+
+  writeCsv(nextCsv);
+  const snapshotTime = formatUtc();
+  updateRaffleSnapshotTime(snapshotTime);
+  console.log(`Raffle snapshot time: ${snapshotTime}`);
 }
 
 main().catch((err) => {

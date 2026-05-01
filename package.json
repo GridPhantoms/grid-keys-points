@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "snapshot:holders": "node generate-holders-snapshot.js",
-    "snapshot:raffle": "node generate-raffle-snapshot.js"
+    "snapshot:raffle": "node generate-raffle-snapshot.js",
+    "snapshot:vault": "node generate-vault-snapshot.js"
   },
   "dependencies": {
     "ethers": "^6.16.0",

@@ -113,8 +113,8 @@ function formatUtcSnapshot(date = new Date()) {
   const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
   const day = date.toLocaleString('en-US', { day: 'numeric', timeZone: 'UTC' });
   const year = date.toLocaleString('en-US', { year: 'numeric', timeZone: 'UTC' });
-  const hour = date.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'UTC' });
-  const minute = date.toLocaleString('en-US', { minute: '2-digit', timeZone: 'UTC' });
+  const hour = String(date.getUTCHours()).padStart(2, '0');
+  const minute = String(date.getUTCMinutes()).padStart(2, '0');
   return `${month} ${day}, ${year} ${hour}:${minute} UTC`;
 }
 

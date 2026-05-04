@@ -139,19 +139,17 @@ export default function EngineRoom() {
         setTotalVotesCast(totalVotes);
         setVoterParticipationRate(airdropCount > 0 ? totalRateSum / airdropCount : 0);
 
+        const mintedRes = await fetch('/api/exodus-minted', { cache: 'no-store' });
+        const mintedData = await mintedRes.json();
+
+        if (!mintedRes.ok || typeof mintedData.minted !== 'number') {
+          throw new Error(mintedData.error || 'Unable to load Exodus minted count');
+        }
+
+        setExodusMinted(mintedData.minted);
+
         const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
         if (apiKey) {
-          let totalMinted = 0;
-          let pageKey: string | undefined;
-          do {
-            const url = `https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForContract?contractAddress=0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa&limit=100${pageKey ? `&pageKey=${pageKey}` : ''}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            totalMinted += (data.nfts || []).length;
-            pageKey = data.pageKey;
-          } while (pageKey);
-          setExodusMinted(totalMinted);
-
           const wallet = "0x6a1bc919e847c12725904965e05971b818b47ad0";
           const [s1Res, s2Res, itemsRes] = await Promise.all([
             fetch(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${wallet}&contractAddresses[]=0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f&limit=100`),

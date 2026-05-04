@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const EXODUS_CONTRACT = "0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa".toLowerCase();
 const TOTAL_EXODUS_SUPPLY = 3333;
 
 export default function MintProgress() {
@@ -16,22 +15,14 @@ export default function MintProgress() {
   useEffect(() => {
     const fetchExodusCount = async () => {
       try {
-        const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-        if (!apiKey) throw new Error("Alchemy API key missing");
+        const res = await fetch('/api/exodus-minted', { cache: 'no-store' });
+        const data = await res.json();
 
-        let total = 0;
-        let pageKey: string | undefined;
+        if (!res.ok || typeof data.minted !== 'number') {
+          throw new Error(data.error || 'Unable to load Exodus minted count');
+        }
 
-        do {
-          const url = `https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForContract?contractAddress=${EXODUS_CONTRACT}&withMetadata=false&limit=100${pageKey ? `&pageKey=${pageKey}` : ''}`;
-          const res = await fetch(url);
-          const data = await res.json();
-
-          total += (data.nfts || []).length;
-          pageKey = data.pageKey;
-        } while (pageKey);
-
-        setExodusMinted(total);
+        setExodusMinted(data.minted);
       } catch (err) {
         console.error(err);
       } finally {

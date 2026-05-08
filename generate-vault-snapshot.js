@@ -3,7 +3,7 @@ const path = require('path');
 
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const ENGINE_PAGE_PATH = path.join(process.cwd(), 'app', 'engine', 'page.tsx');
-const VEBLACK_BALANCE = 109527.37;
+const VEBLACK_BALANCE = 109607.18;
 
 const SOURCES = {
   black: 'https://api.dexscreener.com/latest/dex/pairs/avalanche/0x0d9fd6dd9b1ff55fb0a9bb0e5f1b6a2d65b741a3',

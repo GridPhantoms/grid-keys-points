@@ -103,7 +103,8 @@ export default function EngineRoom() {
           '/airdrops/2026-01Airdrop.csv',
           '/airdrops/2025-11Airdrop.csv',
           '/airdrops/2026-02Airdrop.csv',
-          '/airdrops/2026-03Airdrop.csv'
+          '/airdrops/2026-03Airdrop.csv',
+          '/airdrops/2026-04Airdrop.csv'
         ];
 
         let totalRewards = 0;

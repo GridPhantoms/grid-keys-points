@@ -77,7 +77,7 @@ export default function EngineRoom() {
   const TOTAL_EXODUS_SUPPLY = 3333;
 
   const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
-  const LAST_SNAPSHOT = "May 13, 2026 13:59 UTC";
+  const LAST_SNAPSHOT = "May 14, 2026 12:48 UTC";
 
   useEffect(() => {
     const loadData = async () => {

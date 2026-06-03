@@ -10,11 +10,12 @@ export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [entrants, setEntrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastSnapshot] = useState("May 6, 2026 16:22 UTC");
+  const [lastSnapshot] = useState("June 3, 2026 22:58 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Exact timestamp of the 30th mint — April 29, 2026 16:52 UTC
-  const RAFFLE_30TH_MINT_TIMESTAMP = 1777481520000; // milliseconds
+  // Exact timestamp of the 30th eligible mint. Updated by the raffle snapshot generator once reached.
+  const RAFFLE_30TH_MINT_TIMESTAMP: number | null = null; // milliseconds
+  const RAFFLE_END_LABEL = "TBD — 7 days after the 30th eligible Exodus Key mint";
 
   useEffect(() => {
     const loadSnapshot = async () => {
@@ -65,7 +66,13 @@ export default function RaffleTracker() {
   useEffect(() => {
     const updateCountdown = () => {
       const now = Date.now();
-      const endTime = RAFFLE_30TH_MINT_TIMESTAMP + 7 * 24 * 60 * 60 * 1000;
+      const thirtiethMintTimestamp = RAFFLE_30TH_MINT_TIMESTAMP;
+      if (!thirtiethMintTimestamp) {
+        setCountdown("Countdown begins after the 30th eligible mint");
+        return;
+      }
+
+      const endTime = thirtiethMintTimestamp + 7 * 24 * 60 * 60 * 1000;
 
       const diff = endTime - now;
 
@@ -159,17 +166,17 @@ export default function RaffleTracker() {
             {/* First Prize */}
             <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
               <Image 
-                src="/images/first-prize-1841.png" 
-                alt="Day 1 Neo Tokyo Citizen #1841" 
-                width={600} 
-                height={600} 
+                src="/images/first-prize-3984.jpg" 
+                alt="Neo Tokyo Citizen #3984" 
+                width={798} 
+                height={800} 
                 className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
                 priority
               />
               <p className="mt-6 font-semibold text-lg">First Prize</p>
-              <p className="text-xl">Day 1 Neo Tokyo Citizen #1841</p>
+              <p className="text-xl">Neo Tokyo Citizen #3984</p>
               <a 
-                href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/1841" 
+                href="https://opensea.io/item/ethereum/0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f/3984" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
@@ -181,17 +188,17 @@ export default function RaffleTracker() {
             {/* Second Prize */}
             <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
               <Image 
-                src="/images/second-prize-1851.png" 
-                alt="Neo Tokyo Outer Citizen #1851" 
-                width={600} 
-                height={600} 
+                src="/images/second-prize-3220.jpg" 
+                alt="Neo Tokyo Outer Citizen #3220" 
+                width={1040} 
+                height={1036} 
                 className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
                 priority
               />
               <p className="mt-6 font-semibold text-lg">Second Prize</p>
-              <p className="text-xl">Neo Tokyo Outer Citizen #1851</p>
+              <p className="text-xl">Neo Tokyo Outer Citizen #3220</p>
               <a 
-                href="https://opensea.io/item/ethereum/0x4481507cc228fa19d203bd42110d679571f7912e/1851" 
+                href="https://opensea.io/item/ethereum/0x4481507cc228fa19d203bd42110d679571f7912e/3220" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
@@ -227,7 +234,7 @@ export default function RaffleTracker() {
                 {countdown}
               </p>
               <p className="text-sm text-zinc-500 mt-3">
-                (on May 6, 2026 at 16:52 UTC)
+                ({RAFFLE_END_LABEL})
               </p>
             </div>
           )}

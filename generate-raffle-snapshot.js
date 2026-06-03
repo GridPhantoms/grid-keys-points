@@ -3,21 +3,11 @@ const path = require('path');
 
 const EXODUS_CONTRACT = '0xddf1d5f3a79ccba74e284fd5b9ee0faddb8993aa';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const ANNOUNCEMENT_UNIX_SECONDS = 1776818640; // April 22, 2026 00:44 UTC / Apr 21, 2026 7:44 PM Central
+const ANNOUNCEMENT_UNIX_SECONDS = 1780527411; // June 3, 2026 22:56 UTC / next raffle reset
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
 
-// Human exception: this Exodus mint happened shortly before the official raffle
-// announcement, and the team decided to honor it as one raffle ticket.
-const HUMAN_EXCEPTION_MINTS = [
-  {
-    wallet: '0x390cc99e7bb9c6fcdf6d482bb55c445b04f73b82',
-    tokenId: '0x00000000000000000000000000000000000000000000000000000000000001fb',
-    hash: '0x86f9d07fe7a233453f2e94bffd093d37ed705de375909aa109b230e09d08b3f8',
-    timestamp: 1776761603, // April 21, 2026 08:53:23 UTC
-    blockNum: 24926419,
-    exception: true,
-  },
-];
+// No manual exception tickets for the current raffle.
+const HUMAN_EXCEPTION_MINTS = [];
 
 function loadDotEnv(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -183,15 +173,28 @@ function writeCsv(csv) {
   fs.writeFileSync(path.join(process.cwd(), 'public', 'raffle-snapshot.csv'), csv);
 }
 
-function updateRaffleSnapshotTime(snapshotTime) {
+function updateRafflePageState(snapshotTime, thirtiethMint, raffleEnd) {
   const filePath = path.join(process.cwd(), 'app', 'raffle', 'page.tsx');
   const src = fs.readFileSync(filePath, 'utf8');
-  const next = src.replace(
+  let next = src.replace(
     /const \[lastSnapshot\] = useState\("[^"]+"\);/,
     `const [lastSnapshot] = useState("${snapshotTime}");`,
   );
+  const thirtiethMintTimestampMs = thirtiethMint ? thirtiethMint.timestamp * 1000 : null;
+  const raffleEndLabel = raffleEnd
+    ? `on ${formatUtc(raffleEnd * 1000)}`
+    : 'TBD — 7 days after the 30th eligible Exodus Key mint';
+
+  next = next.replace(
+    /const RAFFLE_30TH_MINT_TIMESTAMP: number \| null = (?:null|\d+); \/\/ milliseconds/,
+    `const RAFFLE_30TH_MINT_TIMESTAMP: number | null = ${thirtiethMintTimestampMs ?? 'null'}; // milliseconds`,
+  );
+  next = next.replace(
+    /const RAFFLE_END_LABEL = "[^"]+";/,
+    `const RAFFLE_END_LABEL = "${raffleEndLabel}";`,
+  );
   if (next === src) {
-    throw new Error('Could not find raffle lastSnapshot state in app/raffle/page.tsx');
+    throw new Error('Could not update raffle state in app/raffle/page.tsx');
   }
   fs.writeFileSync(filePath, next);
 }
@@ -245,7 +248,7 @@ async function main() {
 
   writeCsv(nextCsv);
   const snapshotTime = formatUtc();
-  updateRaffleSnapshotTime(snapshotTime);
+  updateRafflePageState(snapshotTime, thirtiethMint, raffleEnd);
   console.log(`Raffle snapshot time: ${snapshotTime}`);
 }
 

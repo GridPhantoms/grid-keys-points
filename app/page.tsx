@@ -147,7 +147,8 @@ export default function GridKeysPoints() {
           '/airdrops/2025-11Airdrop.csv',
           '/airdrops/2026-02Airdrop.csv',
           '/airdrops/2026-03Airdrop.csv',
-          '/airdrops/2026-04Airdrop.csv'
+          '/airdrops/2026-04Airdrop.csv',
+          '/airdrops/2026-05Airdrop.csv'
         ];
 
         const lookup: Record<string, number> = {};

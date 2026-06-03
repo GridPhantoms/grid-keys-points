@@ -77,7 +77,7 @@ export default function EngineRoom() {
   const TOTAL_EXODUS_SUPPLY = 3333;
 
   const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
-  const LAST_SNAPSHOT = "June 3, 2026 13:13 UTC";
+  const LAST_SNAPSHOT = "June 3, 2026 22:31 UTC";
 
   useEffect(() => {
     const loadData = async () => {
@@ -104,7 +104,8 @@ export default function EngineRoom() {
           '/airdrops/2025-11Airdrop.csv',
           '/airdrops/2026-02Airdrop.csv',
           '/airdrops/2026-03Airdrop.csv',
-          '/airdrops/2026-04Airdrop.csv'
+          '/airdrops/2026-04Airdrop.csv',
+          '/airdrops/2026-05Airdrop.csv'
         ];
 
         let totalRewards = 0;

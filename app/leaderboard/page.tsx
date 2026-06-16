@@ -12,7 +12,7 @@ export default function Leaderboard() {
   const [loadingBytes, setLoadingBytes] = useState(true);
   const [loadingKeyholders, setLoadingKeyholders] = useState(false);
   const [errorKeyholders, setErrorKeyholders] = useState('');
-  const [lastSnapshot] = useState("June 15, 2026 04:20 UTC");
+  const [lastSnapshot] = useState("June 16, 2026 04:20 UTC");
   const [menuOpen, setMenuOpen] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
 

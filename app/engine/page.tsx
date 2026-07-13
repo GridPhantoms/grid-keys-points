@@ -121,7 +121,8 @@ export default function EngineRoom() {
         '/airdrops/2026-02Airdrop.csv',
         '/airdrops/2026-03Airdrop.csv',
         '/airdrops/2026-04Airdrop.csv',
-        '/airdrops/2026-05Airdrop.csv'
+        '/airdrops/2026-05Airdrop.csv',
+        '/airdrops/2026-06Airdrop.csv'
       ];
 
       try {
@@ -321,7 +322,7 @@ export default function EngineRoom() {
         </div>
 
         {/* Airdrop Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 text-center">
             <p className="text-sm text-zinc-500 mb-3">TOTAL PHANTOM REWARDS AIRDROPPED</p>
             <p className="text-5xl font-bold text-white tracking-tighter">
@@ -337,6 +338,17 @@ export default function EngineRoom() {
             </p>
             <p className="text-lg text-zinc-400 mt-1">USD</p>
           </div>
+        </div>
+
+        <div className="text-center mb-16">
+          <a
+            href="https://snowtrace.io/tx/0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d?chainid=43114"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+          >
+            June Grid Cycle potential Phantom Rewards — verified distribution ↗
+          </a>
         </div>
 
         {/* Rebellion Vitals */}

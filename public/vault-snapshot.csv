@@ -1,8 +1,8 @@
 stat,value
-debank_portfolio_usd,37402
-black_price_usd,0.002645
+debank_portfolio_usd,37470
+black_price_usd,0.00258
 veblack_balance,109607.18
-bytes_price_usd,0.2631
-neo_s1_floor_usd,1186.91
-neo_s2_floor_usd,159.94
-neo_items_cache_floor_usd,282.31
+bytes_price_usd,0.2642
+neo_s1_floor_usd,1213.86
+neo_s2_floor_usd,163.92
+neo_items_cache_floor_usd,289.38

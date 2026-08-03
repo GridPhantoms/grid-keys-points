@@ -48,7 +48,8 @@ export default function Leaderboard() {
           '/airdrops/2026-03Airdrop.csv',
           '/airdrops/2026-04Airdrop.csv',
           '/airdrops/2026-05Airdrop.csv',
-          '/airdrops/2026-06Airdrop.csv'
+          '/airdrops/2026-06Airdrop.csv',
+          '/airdrops/2026-07Airdrop.csv'
         ];
         const lookup: Record<string, number> = {};
 

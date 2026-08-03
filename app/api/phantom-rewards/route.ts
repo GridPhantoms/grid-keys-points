@@ -12,6 +12,7 @@ const AIRDROP_FILES = [
   '2026-04Airdrop.csv',
   '2026-05Airdrop.csv',
   '2026-06Airdrop.csv',
+  '2026-07Airdrop.csv',
 ];
 
 function loadRewardsLookup(): Record<string, number> {

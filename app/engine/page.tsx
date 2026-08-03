@@ -16,6 +16,7 @@ const COMPLETED_REWARD_HISTORY = [
   { cycle: 'April 2026', genesis: 3.6, exodus: 3 },
   { cycle: 'May 2026', genesis: 3.6, exodus: 3 },
   { cycle: 'June 2026', genesis: 2.4, exodus: 2 },
+  { cycle: 'July 2026', genesis: 2.4, exodus: 2 },
 ] as const;
 
 const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
@@ -158,7 +159,8 @@ export default function EngineRoom() {
         '/airdrops/2026-03Airdrop.csv',
         '/airdrops/2026-04Airdrop.csv',
         '/airdrops/2026-05Airdrop.csv',
-        '/airdrops/2026-06Airdrop.csv'
+        '/airdrops/2026-06Airdrop.csv',
+        '/airdrops/2026-07Airdrop.csv'
       ];
 
       try {
@@ -390,12 +392,12 @@ export default function EngineRoom() {
 
         <div className="text-center mb-16">
           <a
-            href="https://snowtrace.io/tx/0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d?chainid=43114"
+            href="https://snowtrace.io/tx/0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
           >
-            June Grid Cycle potential Phantom Rewards — verified distribution ↗
+            July Grid Cycle potential Phantom Rewards — verified distribution ↗
           </a>
         </div>
 

@@ -4,6 +4,39 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+type RewardKeyType = 'genesis' | 'exodus';
+
+const COMPLETED_REWARD_HISTORY = [
+  { cycle: 'October 2025', genesis: 4, exodus: 0 },
+  { cycle: 'November 2025', genesis: 10, exodus: 0 },
+  { cycle: 'December 2025', genesis: 11, exodus: 0 },
+  { cycle: 'January 2026', genesis: 6, exodus: 0 },
+  { cycle: 'February 2026', genesis: 6, exodus: 0 },
+  { cycle: 'March 2026', genesis: 5, exodus: 0 },
+  { cycle: 'April 2026', genesis: 3.6, exodus: 3 },
+  { cycle: 'May 2026', genesis: 3.6, exodus: 3 },
+  { cycle: 'June 2026', genesis: 2.4, exodus: 2 },
+] as const;
+
+const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
+  (totals, reward) => ({
+    genesis: totals.genesis + reward.genesis,
+    exodus: totals.exodus + reward.exodus,
+  }),
+  { genesis: 0, exodus: 0 }
+);
+
+const REWARD_HISTORY_THROUGH = COMPLETED_REWARD_HISTORY.at(-1)?.cycle ?? '';
+
+function formatUsd(value: number) {
+  return value.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: value > 0 && value < 1 ? 6 : 2,
+  });
+}
+
 function AnimatedNumber({ 
   value, 
   duration = 1800, 
@@ -103,6 +136,9 @@ export default function EngineRoom() {
   const [voterParticipationRate, setVoterParticipationRate] = useState(0);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [rewardKeyType, setRewardKeyType] = useState<RewardKeyType>('genesis');
+  const [hypotheticalBytesPrice, setHypotheticalBytesPrice] = useState('');
+  const [rewardKeyCount, setRewardKeyCount] = useState('1');
 
   const TOTAL_GENESIS_KEYS = 555;
   const TOTAL_EXODUS_SUPPLY = 3333;
@@ -254,6 +290,18 @@ export default function EngineRoom() {
 
   const airdropUSD = totalPhantomRewards * (snapshot.bytes_price_usd || 0);
 
+  const parsedHypotheticalPrice = Number(hypotheticalBytesPrice);
+  const hasHypotheticalPrice = hypotheticalBytesPrice.trim() !== '' && Number.isFinite(parsedHypotheticalPrice) && parsedHypotheticalPrice >= 0;
+  const parsedRewardKeyCount = Number(rewardKeyCount);
+  const safeRewardKeyCount = Number.isFinite(parsedRewardKeyCount) && parsedRewardKeyCount >= 1
+    ? Math.floor(parsedRewardKeyCount)
+    : 1;
+  const completedRewardsPerKey = COMPLETED_REWARDS_PER_KEY[rewardKeyType];
+  const hypotheticalValuePerKey = hasHypotheticalPrice
+    ? completedRewardsPerKey * parsedHypotheticalPrice
+    : 0;
+  const hypotheticalTotalValue = hypotheticalValuePerKey * safeRewardKeyCount;
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Nav */}
@@ -350,6 +398,122 @@ export default function EngineRoom() {
             June Grid Cycle potential Phantom Rewards — verified distribution ↗
           </a>
         </div>
+
+        {/* Phantom Reward Value Simulator */}
+        <section className="bg-zinc-950 border border-cyan-500/30 rounded-3xl p-6 md:p-8 mb-12">
+          <div className="text-center mb-8">
+            <p className="text-sm text-cyan-400 tracking-widest mb-3">PHANTOM REWARD VALUE SIMULATOR</p>
+            <h2 className="text-2xl md:text-3xl font-semibold mb-3">See what completed per-Key rewards would be worth at any BYTES price</h2>
+            <p className="text-sm text-zinc-500 max-w-2xl mx-auto">
+              Choose a Key type, enter any hypothetical BYTES price, and see the value of completed rewards for a Key that participated in every eligible Grid Cycle.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-black/40 border border-zinc-800 rounded-2xl p-5 md:p-6">
+              <div className="mb-6">
+                <p className="text-xs text-zinc-500 tracking-widest mb-3">KEY TYPE</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['genesis', 'exodus'] as RewardKeyType[]).map((keyType) => (
+                    <button
+                      key={keyType}
+                      type="button"
+                      aria-pressed={rewardKeyType === keyType}
+                      onClick={() => setRewardKeyType(keyType)}
+                      className={`rounded-xl px-4 py-3 text-sm font-medium transition-colors border ${
+                        rewardKeyType === keyType
+                          ? 'bg-cyan-500 text-black border-cyan-400'
+                          : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-cyan-500/60 hover:text-white'
+                      }`}
+                    >
+                      {keyType === 'genesis' ? 'Genesis Key' : 'Exodus Key'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="hypothetical-bytes-price" className="block text-xs text-zinc-500 tracking-widest mb-2">
+                    HYPOTHETICAL BYTES PRICE
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                    <input
+                      id="hypothetical-bytes-price"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="any"
+                      value={hypotheticalBytesPrice}
+                      onChange={(event) => setHypotheticalBytesPrice(event.target.value)}
+                      placeholder="Enter any price"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-4 py-4 text-base tabular-nums focus:border-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reward-key-count" className="block text-xs text-zinc-500 tracking-widest mb-2">
+                    KEYS HELD
+                  </label>
+                  <input
+                    id="reward-key-count"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={rewardKeyCount}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      if (nextValue === '' || /^\d+$/.test(nextValue)) setRewardKeyCount(nextValue);
+                    }}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-base tabular-nums focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-600 mt-4">
+                Current reference price: {snapshot.bytes_price_usd ? formatUsd(snapshot.bytes_price_usd) : 'Loading…'} per BYTES
+              </p>
+            </div>
+
+            <div className="bg-black/40 border border-zinc-800 rounded-2xl p-5 md:p-6 flex flex-col justify-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
+                <div>
+                  <p className="text-xs text-zinc-500 tracking-widest mb-2">COMPLETED REWARDS PER KEY</p>
+                  <p className="text-4xl font-bold text-white tracking-tighter tabular-nums">
+                    {completedRewardsPerKey.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-cyan-400 mt-1">BYTES</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-zinc-500 tracking-widest mb-2">HYPOTHETICAL VALUE PER KEY</p>
+                  <p className="text-4xl font-bold text-cyan-400 tracking-tighter tabular-nums">
+                    {hasHypotheticalPrice ? formatUsd(hypotheticalValuePerKey) : '—'}
+                  </p>
+                  <p className="text-sm text-zinc-500 mt-1">
+                    {hasHypotheticalPrice ? `at $${hypotheticalBytesPrice} per BYTES` : 'Enter any BYTES price'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-800 mt-6 pt-5 text-center">
+                <p className="text-sm text-zinc-400">
+                  {`Total across ${safeRewardKeyCount.toLocaleString()} ${safeRewardKeyCount === 1 ? 'Key' : 'Keys'}`}
+                </p>
+                <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
+                  {hasHypotheticalPrice ? formatUsd(hypotheticalTotalValue) : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-600 text-center mt-6 max-w-3xl mx-auto">
+            Completed distributions through {REWARD_HISTORY_THROUGH} only. User-entered prices are hypothetical and are not forecasts. Phantom Rewards are discretionary and never guaranteed.
+          </p>
+        </section>
 
         {/* Rebellion Vitals */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 mb-12">

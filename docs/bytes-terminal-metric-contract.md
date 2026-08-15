@@ -65,7 +65,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 **Type:** Observed  
 **Definition:** ERC-20 `totalSupply()` on the verified Avalanche proxy at one block after every identity invariant above succeeds.
 **Cross-chain treatment:** This is a per-chain representation supply. It is not added to Ethereum `totalSupply()` because Chainlink CCIP burns/mints remote representations while Ethereum uses Lock/Release.
-**Refresh:** 15 minutes. Failure degrades only the Avalanche metric.
+**Refresh:** 15 minutes. The server uses a fixed provider fallback, with every provider required to pass the same chain, proxy, token, CCIP pool, role, self-burn, and post-read block-hash gates. Failure of all verified providers degrades only the Avalanche metric.
 
 ### A4. Combined minted supply
 

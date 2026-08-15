@@ -80,7 +80,11 @@ const LIGHTWEIGHT_SNAPSHOT_SECONDS = 900;
 const PENDING_SNAPSHOT_SECONDS = 86_400;
 const RPC_TRANSPORT_TIMEOUT_MS = 9_000;
 const RPC_DEADLINE_MS = 10_000;
-const AVALANCHE_RPC_URL = 'https://api.avax.network/ext/bc/C/rpc';
+const AVALANCHE_READ_DEADLINE_MS = 20_000;
+const AVALANCHE_RPC_URLS = [
+  'https://api.avax.network/ext/bc/C/rpc',
+  'https://avalanche-c-chain-rpc.publicnode.com',
+] as const;
 const EIP1967_IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
 const AVALANCHE_BURN_ZERO_CALL_DATA = `0x42966c68${'0'.repeat(64)}`;
 const SECONDS_PER_DAY = 86_400;
@@ -218,8 +222,8 @@ async function readMarketMetrics(provider: JsonRpcProvider, blockNumber: number,
   });
 }
 
-async function readAvalancheSupplySnapshot() {
-  const request = new FetchRequest(AVALANCHE_RPC_URL);
+async function readAvalancheSupplySnapshotFrom(rpcUrl: string) {
+  const request = new FetchRequest(rpcUrl);
   request.timeout = RPC_TRANSPORT_TIMEOUT_MS;
   const provider = new JsonRpcProvider(request, AVALANCHE_CHAIN_ID, { staticNetwork: true });
   try {
@@ -274,6 +278,18 @@ async function readAvalancheSupplySnapshot() {
   } finally {
     provider.destroy();
   }
+}
+
+async function readAvalancheSupplySnapshot() {
+  let lastError: unknown;
+  for (const rpcUrl of AVALANCHE_RPC_URLS) {
+    try {
+      return await readAvalancheSupplySnapshotFrom(rpcUrl);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Avalanche providers unavailable');
 }
 
 async function readAggregatePendingRewards(provider: JsonRpcProvider, blockNumber: number, asOf: string) {
@@ -459,7 +475,7 @@ async function generateBytesMetricsResponse() {
   };
   let canonicalTotalSupply: bigint | null = null;
   let tokenIdentityVerified = false;
-  const avalancheRead = withTimeout(readAvalancheSupplySnapshot(), RPC_DEADLINE_MS, 'Avalanche BYTES supply reads')
+  const avalancheRead = withTimeout(readAvalancheSupplySnapshot(), AVALANCHE_READ_DEADLINE_MS, 'Avalanche BYTES supply reads')
     .then(
       (value) => ({ status: 'fulfilled' as const, value }),
       () => ({ status: 'rejected' as const }),
@@ -702,7 +718,7 @@ async function generateBytesMetricsPayload() {
 
 const readCachedBytesMetricsPayload = unstable_cache(
   generateBytesMetricsPayload,
-  ['bytes-lightweight-snapshot-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST],
+  ['bytes-lightweight-snapshot-v2', BYTES_PARTICIPANT_SNAPSHOT_DIGEST],
   { revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS, tags: ['bytes-lightweight-snapshot'] },
 );
 

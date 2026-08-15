@@ -12,6 +12,8 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
   const source = await readFile(routeUrl, 'utf8');
   for (const pattern of [
     /provider\.send\('eth_chainId', \[\]\).*Avalanche RPC chain verification/,
+    /AVALANCHE_RPC_URLS = \[[\s\S]*api\.avax\.network[\s\S]*avalanche-c-chain-rpc\.publicnode\.com/,
+    /for \(const rpcUrl of AVALANCHE_RPC_URLS\)/,
     /getStorage\(AVALANCHE_BYTES_TOKEN_CONTRACT, EIP1967_IMPLEMENTATION_SLOT/,
     /pool\.getToken/,
     /pool\.typeAndVersion/,
@@ -27,7 +29,7 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
     /configuredS1S2Daily = configured\.value\.S1 \+ configured\.value\.S2/,
     /projectedIssuanceOverDays\(configuredS1S2Daily/,
     /unstable_cache/,
-    /\['bytes-lightweight-snapshot-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
+    /\['bytes-lightweight-snapshot-v2', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
     /revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS/,
     /\['bytes-pending-rewards-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
     /revalidate: PENDING_SNAPSHOT_SECONDS/,

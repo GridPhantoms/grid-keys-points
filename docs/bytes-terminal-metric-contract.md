@@ -78,6 +78,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 **Public label:** `Pending / Unclaimed Rewards`  
 **Type:** Calculated from indexed observed contract inputs
 **Definition:** Net pending reward snapshot aggregate across indexed stakers at one pinned Ethereum block. It is not an amount claimable by one caller and changes as rewards accrue or claims execute.
+**Companion metric:** The aggregate may be shown as a percentage relative to current Ethereum total supply for scale. This is not a supply share: pending rewards are accrued and unclaimed and do not enter `totalSupply()` until claimed and minted.
 **Implementation:** Deduplicate all `Stake.staker` and conservative `Claim.recipient` addresses from deployment through a pinned participant snapshot, merge event deltas through the response block, and sum `getPendingPoolReward()` reward outputs for economically claimable S1-position, S2-position, and LP pools through Multicall3. S1/S2 position rewards include BYTES-staking bonus points. The DAO-tax return value is summed separately and excluded from the displayed net pending aggregate.
 **Snapshot evidence:** Pin and runtime-validate source block number/hash, contract, deployment block, participant count, canonical address-list SHA-256 digest, Stake/Claim event counts, unique participant counts, collector version, and log-query calls/retries.
 **Operational bounds:** The endpoint deduplicates delta addresses during each block batch and fails this secondary metric closed if the snapshot delta exceeds 250,000 blocks, the delta exceeds 10,000 raw Stake/Claim logs, participants exceed 5,000, or Multicall work exceeds 32 chunks. Chunks contain at most 500 calls and execute in one bounded wave of at most 32 chunks. A new snapshot must be generated before a limit is reached.
@@ -138,7 +139,7 @@ Economically net minted supply
 
 ### B1. Live configured emissions
 
-**Public label:** `Live Configured Emissions`  
+**Public label:** `Configured Daily Emissions`
 **Type:** Observed  
 **Definition:** Sum of the most recent 24-hour output from:
 
@@ -170,7 +171,7 @@ getTotalEmissions(3, now - 86400) // internal asset-type index 3
 
 ### B4. Modeled curve emissions
 
-**Public label:** `Modeled Curve Rate`  
+**Public label:** `Modeled Current Daily Rate`
 **Type:** Projected/calculated  
 **Formula:**
 
@@ -184,7 +185,7 @@ Where `a` is the elapsed weekly decay index from the verified epoch.
 
 ### B5. Curve alignment
 
-**Public label:** `Contract vs. Curve`  
+**Public label:** `Configured vs. Modeled Variance`
 **Type:** Calculated  
 **Definition:**
 
@@ -192,7 +193,8 @@ Where `a` is the elapsed weekly decay index from the verified epoch.
 live configured emissions − modeled curve emissions
 ```
 
-**Status language:** `Aligned`, `Contract window above model`, or `Contract window below model`.  
+**Status language:** `Aligned`, `Contract window above model`, or `Contract window below model`.
+**Sign rule:** Positive means configured daily emissions are above the modeled daily rate; negative means configured daily emissions are below it.
 **No accusation language:** A difference is not automatically an error; configuration cadence and participation-window rules may explain it.
 
 ### B6. Emissions change
@@ -229,6 +231,7 @@ live configured emissions − modeled curve emissions
 
 **Public label:** `Genesis Emissions Milestones`  
 **Reference baseline:** 11,000 BYTES/day maximum launch reservoir.
+**Reservoir definition:** A reservoir is the week-zero daily allocation supplied to the decay model before weekly decay. It is a model baseline, not the current daily issuance rate. The steady-participation baseline combines S1 `5,500/day` and S2 `375/day` for `5,875/day`; the maximum-participation baseline uses `11,000/day`.
 
 | Milestone | Rate |
 |---|---:|

@@ -367,10 +367,10 @@ Responsibilities:
 
 Headline cards:
 
-- Live Configured Emissions with visible S1 and S2 components.
-- Current Modeled Rate.
+- Configured Daily Emissions with visible S1 and S2 components.
+- Modeled Current Daily Rate.
 - Decay-aware Projected Next-365-Day Issuance.
-- Configured Minus Modeled divergence.
+- Configured vs. Modeled Variance, with positive and negative signs explained.
 
 The implemented Ethereum supply, direct staking-contract balance, and pending/unclaimed categories remain visibly unavailable until their respective source and definition gates pass. No circulating, burned, maximum-supply, or terminal-supply value is inferred.
 

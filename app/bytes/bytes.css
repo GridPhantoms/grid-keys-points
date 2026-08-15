@@ -55,6 +55,7 @@
 .bytes-contract-alert { margin: .75rem 0 0; padding: .55rem .65rem; border: 1px solid rgb(242 184 75 / 35%); border-radius: .55rem; color: #d7b870; font-size: .65rem; line-height: 1.45; }
 
 .bytes-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+.bytes-primary { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 1.1rem; min-width: 0; }
 .bytes-panel { padding: 1rem; border-radius: 1.15rem; }
 .bytes-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; min-width: 0; }
 .bytes-panel-head { display: block; margin-bottom: 1.25rem; }
@@ -111,6 +112,7 @@
 .bytes-details code { white-space: normal; color: #c3b6f7; font-size: .65rem; }
 
 .bytes-human-section, .bytes-footnotes { margin-top: 1.1rem; padding: clamp(1.15rem, 4vw, 2rem); border: 1px solid var(--bytes-line); border-radius: 1.2rem; background: linear-gradient(155deg, rgb(40 215 242 / 4%), var(--bytes-panel) 45%, rgb(169 140 255 / 3%)); }
+.bytes-primary .bytes-human-section { margin-top: 0; }
 .bytes-human-section h2, .bytes-footnotes h2 { margin: 0 0 1rem; font-size: clamp(1.45rem, 4vw, 2rem); letter-spacing: -.04em; }
 .bytes-human-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .85rem 1.4rem; }
 .bytes-human-grid p { margin: 0; color: #aab3bc; font-size: .86rem; line-height: 1.75; }

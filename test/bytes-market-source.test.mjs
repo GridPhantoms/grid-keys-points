@@ -105,3 +105,11 @@ test('dashboard and metric contract use corrected valuation labels', async () =>
   assert.match(dashboard, /Additional configured legacy asset-type emissions/);
   assert.match(contract, /Market Cap\*/i);
 });
+
+test('desktop dashboard keeps the human read in the independent primary stack', async () => {
+  const dashboard = await readFile(dashboardUrl, 'utf8');
+  assert.match(
+    dashboard,
+    /className="bytes-layout"[\s\S]*className="bytes-primary"[\s\S]*className="[^"]*bytes-chart-panel[^"]*"[\s\S]*className="bytes-human-section"[\s\S]*className="bytes-side"/,
+  );
+});

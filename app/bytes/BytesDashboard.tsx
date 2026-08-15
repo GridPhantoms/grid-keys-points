@@ -264,7 +264,8 @@ export default function BytesDashboard() {
       </section>
 
       <div className="bytes-layout">
-        <section className="bytes-panel bytes-chart-panel" aria-labelledby="emissions-heading">
+        <div className="bytes-primary">
+          <section className="bytes-panel bytes-chart-panel" aria-labelledby="emissions-heading">
           <div className="bytes-panel-head">
             <div><p className="bytes-eyebrow">Reconstructed configured history + explicit model</p><h2 id="emissions-heading">Emissions Decay</h2><p>Calculated daily reward windows reconstructed from observed inputs, compared with the theoretical weekly curve.</p></div>
             {history && <span className="bytes-sample-count">{history.rows.length.toLocaleString('en-US')} daily samples</span>}
@@ -277,8 +278,20 @@ export default function BytesDashboard() {
             <ScenarioCard title="Maximum participation" description="The 11,000 BYTES/day reservoir is the theoretical maximum week-zero allocation. It is decayed to the same model week for an upper-bound comparison, not presented as today's issuance." metric={maximum} sourceBlock={metrics?.sourceBlock} />
           </div>
 
-          <div className="bytes-context"><strong>Supply-side context:</strong> Lower new issuance can require less demand to absorb potential emissions-driven sell pressure, but it does not guarantee price appreciation. Emissions only become sell pressure when recipients sell; demand, liquidity, holder behavior, and wider market conditions still matter.</div>
-        </section>
+            <div className="bytes-context"><strong>Supply-side context:</strong> Lower new issuance can require less demand to absorb potential emissions-driven sell pressure, but it does not guarantee price appreciation. Emissions only become sell pressure when recipients sell; demand, liquidity, holder behavior, and wider market conditions still matter.</div>
+          </section>
+
+          <section className="bytes-human-section" aria-labelledby="plain-english-heading">
+            <p className="bytes-eyebrow">The human read</p>
+            <h2 id="plain-english-heading">In plain English</h2>
+            <div className="bytes-human-grid">
+              <p>Neo Tokyo&apos;s economy began with loud staking incentives. The curve is now doing what it was designed to do: making new issuance quieter over time. The staking contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>, while the Neo Tokyo staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of Ethereum total supply, including the BYTES that Citizens have staked alongside their S1s and S2s.</p>
+              <p>Assuming participation stays near today&apos;s level and the verified weekly decay continues, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. The next Genesis half-level is projected for <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when modeled S1 emissions reach {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day.</p>
+              <p>The early curve sent much more reward inventory to stakers than today&apos;s curve does. Whether those rewards were held or sold is not measured here. If attention and demand return in a true bull market, they would meet a lighter modeled emissions stream than in the early years. That relationship is mechanical; it does not establish demand, predict price, or quantify actual selling.</p>
+              <p>The tokenomics strength is the predictable decay: fewer new units enter the system as time passes. This terminal does not measure liquidity depth, holder concentration, or realized volatility, and its price input is one verified spot reference rather than a promise of executable size. For the citizens still watching the city&apos;s economy, the goal is to keep the mechanics honest without sanding off the uncertainty.</p>
+            </div>
+          </section>
+        </div>
 
         <aside className="bytes-side">
           <section className="bytes-panel" aria-labelledby="valuation-heading">
@@ -325,17 +338,6 @@ export default function BytesDashboard() {
           </section>
         </aside>
       </div>
-
-      <section className="bytes-human-section" aria-labelledby="plain-english-heading">
-        <p className="bytes-eyebrow">The human read</p>
-        <h2 id="plain-english-heading">In plain English</h2>
-        <div className="bytes-human-grid">
-          <p>Neo Tokyo&apos;s economy began with loud staking incentives. The curve is now doing what it was designed to do: making new issuance quieter over time. The staking contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>, while the Neo Tokyo staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of Ethereum total supply, including the BYTES that Citizens have staked alongside their S1s and S2s.</p>
-          <p>Assuming participation stays near today&apos;s level and the verified weekly decay continues, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. The next Genesis half-level is projected for <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when modeled S1 emissions reach {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day.</p>
-          <p>The early curve sent much more reward inventory to stakers than today&apos;s curve does. Whether those rewards were held or sold is not measured here. If attention and demand return in a true bull market, they would meet a lighter modeled emissions stream than in the early years. That relationship is mechanical; it does not establish demand, predict price, or quantify actual selling.</p>
-          <p>The tokenomics strength is the predictable decay: fewer new units enter the system as time passes. This terminal does not measure liquidity depth, holder concentration, or realized volatility, and its price input is one verified spot reference rather than a promise of executable size. For the citizens still watching the city&apos;s economy, the goal is to keep the mechanics honest without sanding off the uncertainty.</p>
-        </div>
-      </section>
 
       <section className="bytes-footnotes" aria-labelledby="footnotes-heading">
         <p className="bytes-eyebrow">Context &amp; caveats</p>

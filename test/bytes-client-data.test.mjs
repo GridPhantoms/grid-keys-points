@@ -52,7 +52,7 @@ function validMetricsPayload() {
     metrics: {
       currentConfiguredEmissions: poolMetric(),
       currentModeledRate: poolMetric({ classification: classifications.modeled }),
-      annualizedConfiguredIssuance: scalarMetric(2_144_375),
+      projectedNext365DayIssuance: scalarMetric(1_550_000, { classification: 'projected' }),
       configuredVsTheoretical: scalarMetric(-1, { unit: 'BYTES/day' }),
       theoreticalWeek: scalarMetric(165, { unit: 'week' }),
       ethBytes2Supply: scalarMetric(null, {
@@ -359,8 +359,8 @@ test('metrics validator rejects missing or malformed pending/unclaimed source ga
 
 test('metrics validator rejects available null and malformed numbers', () => {
   const availableNull = validMetricsPayload();
-  availableNull.metrics.annualizedConfiguredIssuance.value = null;
-  assert.throws(() => validateBytesMetricsResponse(availableNull), /annualizedConfiguredIssuance/);
+  availableNull.metrics.projectedNext365DayIssuance.value = null;
+  assert.throws(() => validateBytesMetricsResponse(availableNull), /projectedNext365DayIssuance/);
 
   const infinite = validMetricsPayload();
   infinite.projections.maximumParticipationRemainingIssuance.value = Number.POSITIVE_INFINITY;

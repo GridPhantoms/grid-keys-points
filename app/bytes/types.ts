@@ -42,7 +42,7 @@ export type BytesMetricsResponse = {
   metrics: {
     currentConfiguredEmissions: MetricRecord<EmissionPools>;
     currentModeledRate: MetricRecord<EmissionPools>;
-    annualizedConfiguredIssuance: MetricRecord;
+    projectedNext365DayIssuance: MetricRecord;
     configuredVsTheoretical: MetricRecord;
     theoreticalWeek: MetricRecord;
     ethBytes2Supply: MetricRecord;

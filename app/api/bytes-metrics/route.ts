@@ -64,9 +64,9 @@ import {
   verifyAvalancheTokenIdentity,
 } from '@/lib/bytes-market.mjs';
 import {
-  annualizedIssuance,
   emissionAtWeek,
   fractionThroughWeek,
+  projectedIssuanceOverDays,
   remainingGeometricIssuance,
   theoreticalWeek,
 } from '@/lib/bytes-model.mjs';
@@ -526,13 +526,15 @@ export async function GET() {
   };
 
   if (configured.value.total !== null) {
-    metrics.annualizedConfiguredIssuance = availableMetric(
-      annualizedIssuance(configured.value.total),
-      'BYTES/year',
-      'calculated',
-      'current-configured-emissions',
+    const configuredS1S2Daily = configured.value.S1 + configured.value.S2;
+    metrics.projectedNext365DayIssuance = availableMetric(
+      projectedIssuanceOverDays(configuredS1S2Daily, fractionOfCurrentWeekElapsed, 365),
+      'BYTES / next 365 days',
+      'projected',
+      'current-configured-emissions-plus-weekly-decay-model',
       asOf,
-      'configured BYTES/day * 365',
+      'sum the current configured daily rate through the remainder of this decay week, then apply 2^(-1/52) each week across the next 365 days',
+      ['Current S1 and S2 participation remains steady', 'Weekly decay continues from the verified emissions epoch', 'This is a projection, not a fixed issuance commitment'],
     );
     metrics.configuredVsTheoretical = signedMetric(
       configured.value.total - modeled.value.total,
@@ -543,7 +545,7 @@ export async function GET() {
       'live configured emissions - modeled curve emissions',
     );
   } else {
-    metrics.annualizedConfiguredIssuance = unavailableMetric('BYTES/year', 'calculated', 'current-configured-emissions', asOf, 'All configured pools are required.');
+    metrics.projectedNext365DayIssuance = unavailableMetric('BYTES / next 365 days', 'projected', 'current-configured-emissions-plus-weekly-decay-model', asOf, 'All configured asset-type reads are required.');
     metrics.configuredVsTheoretical = unavailableMetric('BYTES/day', 'calculated', 'configured-minus-modeled', asOf, 'All configured pools are required.');
   }
 

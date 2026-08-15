@@ -44,8 +44,8 @@
   </section>
   <section class="stats">
     <div class="card"><div class="label"><span>BYTES Spot Price</span><span class="badge calculated">Calculated</span></div><div class="value cyan">$0.2425</div><div class="sub">USD / BYTES · SINGLE-POOL SPOT</div></div>
-    <div class="card"><div class="label"><span>Ethereum Canonical Total-Supply Valuation</span><span class="badge calculated">Calculated</span></div><div class="value cyan">$1.265M</div><div class="sub">NOT MARKET CAP</div></div>
-    <div class="card"><div class="label"><span>Avalanche Supply</span><span class="badge observed">Observed</span></div><div class="value cyan">255,598.91</div><div class="sub">CHAIN-LOCAL BYTES REPRESENTATION</div></div>
+    <div class="card"><div class="label"><span>Ethereum Chain-Local Total Supply</span><span class="badge observed">Observed</span></div><div class="value cyan">5.215M</div><div class="sub">CANONICAL ETHEREUM TOTALSUPPLY()</div></div>
+    <div class="card"><div class="label"><span>Market Cap*</span><span class="badge calculated">Calculated</span></div><div class="value cyan">$1.265M</div><div class="sub">ETHEREUM SUPPLY × SPOT · SEE FOOTNOTE</div></div>
 
   </section>
   <section class="grid">
@@ -76,8 +76,8 @@
       <div class="row"><span>Contract window</span><b>Week 155 factor</b></div><div class="row"><span>Decay function</span><b>1 / 2^(a / 52)</b></div><div class="row"><span>Contract status</span><b class="violet">Above current model</b></div><div class="row"><span>Historical samples</span><b>1,172 days</b></div>
       <div class="divider"></div>
       <div class="panelhead"><div><h2>Methodology Ledger</h2><p>Every number names what it is</p></div></div>
-      <div class="method"><div class="row"><span>Configured emissions</span><b class="observed">OBSERVED</b></div><div class="row"><span>Avalanche supply</span><b class="observed">OBSERVED</b></div><div class="row"><span>Spot price + valuation</span><b>CALCULATED</b></div><div class="row"><span>Burn ledger</span><b>DEFERRED</b></div><div class="row"><span>Market cap</span><b>UNAVAILABLE</b></div><div class="row"><span>Terminal supply</span><b class="violet">PROJECTED</b></div></div>
-      <div class="footer-note"><strong>No black box.</strong> Tap any metric in the live build to inspect its contract, formula, timestamp and assumptions.</div>
+      <div class="method"><div class="row"><span>Configured emissions</span><b class="observed">OBSERVED</b></div><div class="row"><span>Chain-local supplies</span><b class="observed">OBSERVED</b></div><div class="row"><span>Spot price + Market Cap*</span><b>CALCULATED</b></div><div class="row"><span>Burn ledger</span><b>DEFERRED</b></div><div class="row"><span>Next-365-day issuance</span><b class="violet">PROJECTED</b></div><div class="row"><span>Terminal supply</span><b class="violet">PROJECTED</b></div></div>
+      <div class="footer-note"><strong>Transparent by design.</strong> Tap any metric in the live build to inspect its contract, formula, timestamp and assumptions.</div>
     </aside>
   </section>
   <div class="credit">DESIGN PROTOTYPE · VALUES ARE RESEARCH CHECKPOINTS, NOT LIVE PRODUCTION DATA<br>INSPIRED BY CITIZEN-LED BYTES METRICS WORK · REBUILT WITH VISIBLE PROVENANCE</div>

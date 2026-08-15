@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  annualizedIssuance,
   emissionAtWeek,
   fractionThroughWeek,
   metricEnvelope,
+  nextGenesisHalfLevel,
   progressTowardLowerMilestone,
+  projectedIssuanceOverDays,
   remainingGeometricIssuance,
   theoreticalWeek,
 } from '../lib/bytes-model.mjs';
@@ -33,8 +34,19 @@ test('theoreticalWeek floors complete seven-day periods since epoch', () => {
   assert.equal(theoreticalWeek(1_000, 1_000 + 7 * 86_400), 1);
 });
 
-test('annualized issuance uses 365 days', () => {
-  closeTo(annualizedIssuance(744.229571294358), 744.229571294358 * 365);
+test('next-365-day issuance applies weekly decay instead of multiplying the current rate by 365', () => {
+  const projected = projectedIssuanceOverDays(744.229571294358, 0.3938872354497355, 365);
+  closeTo(projected, 196064.1398722161, 1e-6);
+  assert.ok(projected < 744.229571294358 * 365);
+});
+
+test('next Genesis half-level advances to the next 52-week boundary', () => {
+  assert.deepEqual(nextGenesisHalfLevel(1_686_787_200, 165), {
+    week: 208,
+    asOf: '2027-06-10T00:00:00.000Z',
+    s1DailyRate: 343.75,
+    combinedDailyRate: 367.1875,
+  });
 });
 
 test('remaining issuance sums the weekly geometric series', () => {
@@ -89,10 +101,12 @@ test('metricEnvelope preserves provenance and optional methodology', () => {
 test('invalid model inputs throw clear errors', () => {
   for (const value of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
     assert.throws(() => emissionAtWeek(value, 1), /reservoir must be a finite non-negative number/);
-    assert.throws(() => annualizedIssuance(value), /daily must be a finite non-negative number/);
+    assert.throws(() => projectedIssuanceOverDays(value, 0, 365), /daily must be a finite non-negative number/);
   }
   assert.throws(() => emissionAtWeek(1, -1), /week must be a finite non-negative number/);
   assert.throws(() => theoreticalWeek(2, 1), /atSeconds must be on or after epochSeconds/);
+  assert.throws(() => projectedIssuanceOverDays(1, 1, 365), /fraction.*between 0 and 1/);
+  assert.throws(() => projectedIssuanceOverDays(1, 0, 0), /days must be a finite positive number/);
   assert.throws(() => progressTowardLowerMilestone(3, 2, 1), /currentDaily must be between/);
   assert.throws(() => progressTowardLowerMilestone(1, 1, 2), /priorMilestone must be greater than nextMilestone/);
   assert.throws(() => metricEnvelope(1, 'guessed', 'source', '2026-08-15T00:00:00.000Z'), /classification must be one of/);

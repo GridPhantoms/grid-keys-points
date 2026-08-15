@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { validateBytesMetricsResponse, validateEmissionsHistory } from '../../lib/bytes-client-data.mjs';
+import { nextGenesisHalfLevel } from '../../lib/bytes-model.mjs';
 import EmissionsChart from './EmissionsChart';
 import type { BytesMetricsResponse, EmissionsHistory, EmissionPools, MetricRecord } from './types';
 
@@ -16,6 +17,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
   timeZoneName: 'short',
 });
+const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const VERIFIED_EMISSIONS_EPOCH_SECONDS = 1_686_787_200;
 
 function formatNumber(value: unknown, digits = 2) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 'Unavailable';
@@ -31,6 +34,11 @@ function formatSigned(value: unknown) {
 function formatTimestamp(value?: string) {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Unavailable';
   return dateTimeFormatter.format(new Date(value));
+}
+
+function formatPercentage(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Unavailable';
+  return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
 function isPoolValue(value: unknown): value is EmissionPools {
@@ -75,6 +83,9 @@ function StatCard({ label, metric, signed = false, pools = false, digits = 0, pr
   prefix?: string;
 }) {
   const poolValue = metric && isPoolValue(metric.value) ? metric.value : null;
+  const legacyEmissionTotal = poolValue && typeof poolValue.BYTES === 'number' && typeof poolValue.LP === 'number'
+    ? poolValue.BYTES + poolValue.LP
+    : null;
   const formatted = poolValue ? formatNumber(poolValue.total) : signed ? formatSigned(metric?.value) : formatNumber(metric?.value, digits);
   const display = formatted === 'Unavailable' ? formatted : `${prefix}${formatted}`;
   return (
@@ -86,12 +97,13 @@ function StatCard({ label, metric, signed = false, pools = false, digits = 0, pr
       <div className={metric?.availability === 'available' && metric.classification !== 'projected' ? 'bytes-value bytes-cyan' : 'bytes-value'}>{display}</div>
       <div className="bytes-unit">{metric?.availability === 'available' ? metric.unit : metric?.reason ?? 'Waiting for live metrics'}</div>
       {pools && poolValue ? (
-        <div className="bytes-split">
-          <div><b>{formatNumber(poolValue.S1)}</b><small>S1 pool</small></div>
-          <div><b>{formatNumber(poolValue.S2)}</b><small>S2 pool</small></div>
-          <div><b>{formatNumber(poolValue.BYTES)}</b><small>BYTES pool</small></div>
-          <div><b>{formatNumber(poolValue.LP)}</b><small>LP pool</small></div>
-        </div>
+        <>
+          <div className="bytes-split">
+            <div><b>{formatNumber(poolValue.S1)}</b><small>S1 pool</small></div>
+            <div><b>{formatNumber(poolValue.S2)}</b><small>S2 pool</small></div>
+          </div>
+          {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional configured legacy asset-type emissions: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect methodology.</p> : null}
+        </>
       ) : null}
       {poolValue && !pools ? (
         <div className="bytes-split">
@@ -120,17 +132,18 @@ function ScenarioCard({ title, description, metric, sourceBlock }: {
   );
 }
 
-function AvailabilityRow({ label, metric, sourceBlock }: {
+function AvailabilityRow({ label, metric, sourceBlock, valueNote }: {
   label: string;
   metric?: MetricRecord<unknown>;
   sourceBlock?: number | null;
+  valueNote?: string;
 }) {
   const isAvailable = metric?.availability === 'available' && typeof metric.value === 'number';
   return (
     <div className="bytes-availability-row">
       <div>
         <span>{label}</span>
-        <strong>{isAvailable ? `${formatNumber(metric.value)} ${metric.unit}` : 'Awaiting verified source'}</strong>
+        <strong>{isAvailable ? `${formatNumber(metric.value)} ${metric.unit}${valueNote ? ` (${valueNote})` : ''}` : 'Awaiting verified source'}</strong>
       </div>
       <p>{isAvailable ? `${metric.classification === 'calculated' ? 'Calculated from' : 'Verified by'} ${metric.source}.` : metric?.reason ?? 'Canonical definitions and contract provenance have not yet been verified.'}</p>
       <MetricDetails metric={metric} label={`Inspect ${label.toLowerCase()} methodology`} sourceBlock={sourceBlock} />
@@ -179,18 +192,29 @@ export default function BytesDashboard() {
 
   const configured = metrics?.metrics.currentConfiguredEmissions;
   const modeled = metrics?.metrics.currentModeledRate;
-  const annualized = metrics?.metrics.annualizedConfiguredIssuance;
+  const next365DayIssuance = metrics?.metrics.projectedNext365DayIssuance;
   const divergence = metrics?.metrics.configuredVsTheoretical;
   const theoryWeek = metrics?.metrics.theoreticalWeek;
+  const ethereumSupply = metrics?.metrics.ethBytes2Supply;
   const avalancheSupply = metrics?.metrics.avalancheBytesSupply;
+  const stakingBalance = metrics?.metrics.bytesHeldByStakingContract;
   const bytesPrice = metrics?.metrics.bytesPriceUsd;
   const totalSupplyValuation = metrics?.metrics.totalSupplyValuationUsd;
-  const circulatingMarketCap = metrics?.metrics.circulatingMarketCapUsd;
   const steady = metrics?.projections.steadyParticipationRemainingIssuance;
   const maximum = metrics?.projections.maximumParticipationRemainingIssuance;
   const sourceAsOf = configured?.asOf ?? metrics?.generatedAt;
   const avalancheSourceBlock = metrics?.provenance.avalanche.sourceBlock;
   const allLoading = !metricsDone && !historyDone;
+  const stakingPercentage = ethereumSupply?.availability === 'available'
+    && stakingBalance?.availability === 'available'
+    && typeof ethereumSupply.value === 'number'
+    && typeof stakingBalance.value === 'number'
+    && ethereumSupply.value > 0
+    ? (stakingBalance.value / ethereumSupply.value) * 100
+    : null;
+  const nextMilestone = theoryWeek?.availability === 'available' && typeof theoryWeek.value === 'number'
+    ? nextGenesisHalfLevel(VERIFIED_EMISSIONS_EPOCH_SECONDS, theoryWeek.value)
+    : null;
 
   return (
     <main className="bytes-main">
@@ -208,6 +232,7 @@ export default function BytesDashboard() {
         </div>
       </section>
 
+      <div className="bytes-notice bytes-community-credit"><strong>Community groundwork.</strong> <a href="https://x.com/0xSanSSerif" target="_blank" rel="noreferrer">@0xSanSSerif</a> spent years doing exhaustive manual work on BytesMetrics.io, helping make BYTES tokenomics legible and paving the way for this terminal. The original database was compromised, but the contribution deserves to be remembered.</div>
       <div className="bytes-notice"><strong>Observed first.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}
@@ -218,14 +243,14 @@ export default function BytesDashboard() {
       <section className="bytes-stats" aria-label="Current BYTES metrics">
         <StatCard label="Configured emissions" metric={configured} pools />
         <StatCard label="Modeled current rate" metric={modeled} />
-        <StatCard label="Annualized configured issuance" metric={annualized} />
+        <StatCard label="Projected next-365-day issuance" metric={next365DayIssuance} />
         <StatCard label="Configured minus theoretical" metric={divergence} signed />
       </section>
 
       <section className="bytes-stats bytes-market-stats" aria-label="BYTES supply and valuation metrics">
         <StatCard label="BYTES spot price" metric={bytesPrice} digits={4} prefix="$" />
-        <StatCard label="Ethereum canonical total-supply valuation" metric={totalSupplyValuation} prefix="$" />
-        <StatCard label="Avalanche chain-local supply" metric={avalancheSupply} digits={2} />
+        <StatCard label="Ethereum chain-local total supply" metric={ethereumSupply} digits={2} />
+        <StatCard label="Market cap*" metric={totalSupplyValuation} prefix="$" />
       </section>
 
       <div className="bytes-layout">
@@ -248,24 +273,22 @@ export default function BytesDashboard() {
         <aside className="bytes-side">
           <section className="bytes-panel" aria-labelledby="valuation-heading">
             <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Cross-chain accounting</p><h2 id="valuation-heading">Supply &amp; valuation</h2></div></div>
-            <p className="bytes-panel-copy">Avalanche chain-local supply is observed independently at its own source block. Ethereum Canonical Total-Supply Valuation uses Ethereum supply once because the verified Avalanche CCIP BurnMint balance represents bridged tokens. It is not market cap. Price references the <a href="https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34" target="_blank" rel="noreferrer">Ethereum BYTES/WETH pair on DEXTools</a>.</p>
+            <p className="bytes-panel-copy">Ethereum and Avalanche supplies are shown side by side but never added: verified Avalanche CCIP BurnMint units represent bridged BYTES while Ethereum uses lock/release accounting. Market Cap* uses Ethereum supply once. Price references the <a href="https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34" target="_blank" rel="noreferrer">Ethereum BYTES/WETH pair on DEXTools</a>.</p>
+            <AvailabilityRow label="Ethereum chain-local total supply" metric={ethereumSupply} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="Avalanche chain-local BYTES supply" metric={avalancheSupply} sourceBlock={avalancheSourceBlock} />
+            <AvailabilityRow label="Market Cap*" metric={totalSupplyValuation} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="BYTES spot price" metric={bytesPrice} sourceBlock={metrics?.sourceBlock} />
-            <AvailabilityRow label="Ethereum canonical total-supply valuation — not market cap" metric={totalSupplyValuation} sourceBlock={metrics?.sourceBlock} />
-            <AvailabilityRow label="Market cap" metric={circulatingMarketCap} sourceBlock={metrics?.sourceBlock} />
           </section>
 
-
           <section className="bytes-panel" aria-labelledby="supply-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Supply &amp; staking status</h2></div></div>
-            <p className="bytes-panel-copy">Ethereum BYTES total supply, the staking contract’s token balance, and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. Circulating and maximum-supply figures remain unavailable until separately verified.</p>
-            <AvailabilityRow label="Ethereum BYTES 2.0 total supply" metric={metrics?.metrics.ethBytes2Supply} sourceBlock={metrics?.sourceBlock} />
-            <AvailabilityRow label="BYTES held by staking contract" metric={metrics?.metrics.bytesHeldByStakingContract} sourceBlock={metrics?.sourceBlock} />
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Staking status</h2></div></div>
+            <p className="bytes-panel-copy">The staking contract’s BYTES balance and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain.</p>
+            <AvailabilityRow label="BYTES held by staking contract" metric={stakingBalance} sourceBlock={metrics?.sourceBlock} valueNote={stakingPercentage === null ? undefined : `${formatPercentage(stakingPercentage)} of Ethereum supply`} />
             <AvailabilityRow label="Pending / Unclaimed Rewards" metric={metrics?.metrics.pendingUnclaimedRewards} sourceBlock={metrics?.sourceBlock} />
           </section>
 
           <section className="bytes-panel" aria-labelledby="ledger-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">No black box</p><h2 id="ledger-heading">Methodology ledger</h2><p>Every published number names what it is.</p></div></div>
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Transparent by design</p><h2 id="ledger-heading">Methodology ledger</h2><p>Every published number names what it is.</p></div></div>
             <div className="bytes-class-key" aria-label="Metric classifications">
               <Badge classification="observed" /><span>direct contract source data</span>
               <Badge classification="calculated" /><span>derived or reconstructed from observed inputs</span>
@@ -273,7 +296,7 @@ export default function BytesDashboard() {
             </div>
             <MetricDetails metric={configured} label="Configured emissions" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={modeled} label="Modeled current rate" sourceBlock={metrics?.sourceBlock} />
-            <MetricDetails metric={annualized} label="Annualized configured issuance" sourceBlock={metrics?.sourceBlock} />
+            <MetricDetails metric={next365DayIssuance} label="Projected next-365-day issuance" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={divergence} label="Configured-minus-theoretical divergence" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={theoryWeek} label="Theoretical model week" sourceBlock={metrics?.sourceBlock} />
             {history && (
@@ -292,6 +315,28 @@ export default function BytesDashboard() {
           </section>
         </aside>
       </div>
+
+      <section className="bytes-human-section" aria-labelledby="plain-english-heading">
+        <p className="bytes-eyebrow">The human read</p>
+        <h2 id="plain-english-heading">In plain English</h2>
+        <div className="bytes-human-grid">
+          <p>Neo Tokyo&apos;s economy began with loud staking incentives. The curve is now doing what it was designed to do: making new issuance quieter over time. The staking contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>, while <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of Ethereum canonical supply is held by the staking contract.</p>
+          <p>Assuming participation stays near today&apos;s level and the verified weekly decay continues, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. The next Genesis half-level is projected for <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when modeled S1 emissions reach {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day.</p>
+          <p>The early curve sent much more reward inventory to stakers than today&apos;s curve does. Whether those rewards were held or sold is not measured here. If attention and demand return in a true bull market, they would meet a lighter modeled emissions stream than in the early years. That relationship is mechanical; it does not establish demand, predict price, or quantify actual selling.</p>
+          <p>The tokenomics strength is the predictable decay: fewer new units enter the system as time passes. This terminal does not measure liquidity depth, holder concentration, or realized volatility, and its price input is one verified spot reference rather than a promise of executable size. For the citizens still watching the city&apos;s economy, the goal is to keep the mechanics honest without sanding off the uncertainty.</p>
+        </div>
+      </section>
+
+      <section className="bytes-footnotes" aria-labelledby="footnotes-heading">
+        <p className="bytes-eyebrow">Context &amp; caveats</p>
+        <h2 id="footnotes-heading">Footnotes</h2>
+        <ol>
+          <li><strong>Market Cap*</strong> is the community&apos;s practical shorthand for Ethereum canonical <code>totalSupply() × BYTES/USD spot price</code>. It is not a conventional circulating market capitalization because a defensible circulating-supply figure is not currently available. The spot reference can be affected by liquidity and pool manipulation.</li>
+          <li><a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s Neo Tokyo listing</a> reflects an older reporting snapshot. On September 17, 2025, Neo Tokyo PM Firestorm and community contributors submitted a deliberately conservative maximum-supply scenario that assumed maximum participation beginning the next day. Actual participation and subsequent issuance did not follow that extreme path, so CMC&apos;s maximum, total, and self-reported circulating figures can now be stale or structurally mismatched. This terminal uses current contract reads instead.</li>
+          <li>The projected next-365-day issuance assumes today&apos;s configured S1 and S2 participation remains steady while the weekly decay continues. It replaces the misleading flat-rate calculation of <code>current daily emissions × 365</code>.</li>
+          <li>Staking-contract holdings are shown as a percentage of Ethereum canonical supply. Contract balance is not itself a circulating-supply definition.</li>
+        </ol>
+      </section>
     </main>
   );
 }

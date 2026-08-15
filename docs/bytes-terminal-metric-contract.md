@@ -26,7 +26,7 @@ Every displayed value must carry a source class and timestamp:
 
 | Source | Role | Authority |
 |---|---|---|
-| Neo Tokyo staking contract `0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16` | Configured S1/S2/BYTES/LP emissions | Primary and verified |
+| Neo Tokyo staking contract `0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16` | Configured asset-type indices 0–3; S1 and S2 are the recognized public emission components | Primary and verified |
 | Ethereum BYTES 2.0 `0xa19f5264F7D7Be11c451C093D8f92592820Bea86` | Ethereum ERC-20 total supply and direct balances | Primary and verified bidirectionally through `staker.BYTES()` and `token.STAKER()` |
 | Legacy Ethereum BYTES token source | Remaining legacy supply | Unresolved; unavailable in v1 until token identity, interface, and economic treatment are independently verified |
 | Avalanche BYTES `0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b` | Avalanche ERC-20 representation supply | Primary; source-gated by chain 43114, EIP-1967 implementation `0x5430…7874`, BYTES metadata, and verified CCIP BurnMint pool `0xAb2e…0A9A` |
@@ -44,7 +44,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 
 ### A1. Ethereum BYTES 2.0 minted supply
 
-**Public label:** `ETH BYTES 2.0 Supply`  
+**Public label:** `Ethereum Chain-Local Total Supply`
 **Type:** Observed  
 **Definition:** ERC-20 `totalSupply()` on the verified Ethereum BYTES 2.0 contract after same-block bidirectional identity and decimals checks.
 **Refresh:** 15 minutes.  
@@ -61,7 +61,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 
 ### A3. Avalanche BYTES supply
 
-**Public label:** `AVAX BYTES Supply`  
+**Public label:** `Avalanche Chain-Local BYTES Supply`
 **Type:** Observed  
 **Definition:** ERC-20 `totalSupply()` on the verified Avalanche proxy at one block after every identity invariant above succeeds.
 **Cross-chain treatment:** This is a per-chain representation supply. It is not added to Ethereum `totalSupply()` because Chainlink CCIP burns/mints remote representations while Ethereum uses Lock/Release.
@@ -124,13 +124,13 @@ Economically net minted supply
 **Identity gate:** The DEXTools-linked pool must have canonical Ethereum BYTES as token0, WETH as token1, positive liquidity, the approved Uniswap V3 factory, and factory registry confirmation at the Ethereum source block. The Chainlink answer must be positive, complete, and no more than 7,200 seconds old.
 **Caveat:** Single-pool `slot0` spot price; not a TWAP, volume-weighted price, or slippage-adjusted execution quote.
 
-### A10. Ethereum canonical total-supply valuation and market cap
+### A10. Market Cap*
 
-**Public label:** `Ethereum Canonical Total-Supply Valuation — Not Market Cap`
+**Public label:** `Market Cap*`
 **Type:** Calculated
 **Formula:** `canonical Ethereum totalSupply × BYTES/USD spot price`.
 **Supply definition:** Canonical Ethereum issued supply once. Remote BurnMint supplies are not added.
-**Market-cap rule:** `Market Cap` remains unavailable until circulating supply is independently established. This metric is also not conventional FDV because no verified maximum supply is applied.
+**Asterisk rule:** The community widely uses this Ethereum canonical total-supply valuation as the effective BYTES market cap. The public label may use `Market Cap*` only when the page footnote states that it is not a conventional circulating market capitalization, because a defensible circulating-supply figure is unavailable. It is also not conventional FDV because no verified maximum supply is applied.
 
 ---
 
@@ -145,11 +145,11 @@ Economically net minted supply
 ```solidity
 getTotalEmissions(0, now - 86400) // S1
 getTotalEmissions(1, now - 86400) // S2
-getTotalEmissions(2, now - 86400) // BYTES pool
-getTotalEmissions(3, now - 86400) // LP pool
+getTotalEmissions(2, now - 86400) // internal asset-type index 2
+getTotalEmissions(3, now - 86400) // internal asset-type index 3
 ```
 
-**Display:** BYTES/day, plus S1, S2, BYTES-pool, and LP-pool components. Zero-value pools remain visible so a future nonzero configuration cannot be silently omitted.  
+**Display:** BYTES/day plus the community-recognized S1 and S2 components. The verified contract enum names indices 2 and 3 `BYTES` and `LP`, but BYTES staking contributes bonus points to S1/S2 positions rather than exposing a separately claimable BYTES reward category, while LP is a legacy LP-token staking path. Both emission reads are currently zero, so they are not presented publicly as active ecosystem pools. They remain mandatory internal reads; if either becomes nonzero, the headline card must show a conditional legacy-asset emission alert so its total cannot silently exceed the visible S1/S2 split.
 **Current research checkpoint:** approximately `744.2296 BYTES/day`, subject to a fresh block read when implemented.  
 **Authority:** This is the headline current-emissions metric.
 
@@ -201,6 +201,14 @@ live configured emissions − modeled curve emissions
 **Type:** Calculated from observed historical windows.  
 **Rule:** Do not calculate change from two theoretical points when the card is presented as actual emissions.
 
+### B7. Projected next-365-day issuance
+
+**Public label:** `Projected Next-365-Day Issuance`
+**Type:** Projected
+**Definition:** Sum the current configured S1/S2 daily rate through the remainder of the current decay week, then apply the weekly factor `2^(-1/52)` across the next 365 days.
+**Assumptions:** Current participation remains steady and the verified weekly decay continues.
+**Rule:** Never substitute `current daily emissions × 365`; that flat run-rate ignores the decay curve and materially overstates modeled issuance.
+
 ---
 
 ## C. Decay Curve and Genesis Milestones
@@ -235,9 +243,9 @@ live configured emissions − modeled curve emissions
 ### C4. Next milestone
 
 **Type:** Calculated  
-**Definition:** The next lower Genesis milestone relative to live configured emissions.  
-**Current research checkpoint:** 687.5/day is below the approximately 744.23/day configured rate.  
-**Display:** Distance in BYTES/day and percentage; date is model-dependent and must be labeled `modeled`.
+**Definition:** The next 52-week Genesis half-level after the current theoretical model week.
+**Current research checkpoint:** Week 208, modeled for June 10, 2027, when S1 reaches `343.75 BYTES/day` and combined S1+S2 reaches `367.1875 BYTES/day`.
+**Display:** Date and rate must be labeled projected; realized configured emissions can differ with participation and explicit reward windows.
 
 ---
 
@@ -394,7 +402,7 @@ Each metric record should contain:
 
 Ship first:
 
-1. Live configured emissions with S1, S2, BYTES-pool, and LP-pool components plus source block/time.
+1. Live configured emissions with public S1 and S2 components plus source block/time; internal indices 2 and 3 remain completeness-gated but hidden while zero.
 2. Historical configured emissions chart.
 3. Modeled curve overlay and Genesis milestone lines.
 4. Stable source-gated supply fields that remain unavailable/null until canonical token identity and interface are independently verified.
@@ -402,6 +410,7 @@ Ship first:
 6. Stable source-gated pending-reward fields that remain unavailable/null until aggregate claimable methodology is independently reproduced.
 7. Steady and maximum-participation remaining-issuance projections; no fixed terminal-supply or hard-cap claim.
 8. Methodology panel with formulas, sources, and observed/calculated/projected badges.
+9. Balanced Ethereum/Avalanche chain-local supply rows, Market Cap* with a visible caveat, staking-contract balance percentage, SanSerif community credit, CMC context, and a grounded plain-English summary.
 
 Hold until verified:
 
@@ -416,5 +425,11 @@ Hold until verified:
 1. Public route/name: `$BYTES Terminal` at `/bytes`.
 2. Navigation placement: top-level link immediately before Engine Room.
 3. Default story emphasis: observed configured emissions first, with modeled and projected values visibly separate.
-4. Community research remains reference-only; public source credit/linking is deferred until the source catalog is normalized and independently verified.
+4. SanSerif's manual BytesMetrics.io work receives public credit at the top of the terminal; the link uses the canonical X profile `https://x.com/0xSanSSerif`.
 5. V1 includes restrained conditional supply-side context, with no price targets, guarantees, or fixed-hard-cap claims.
+
+## Deferred v1 follow-up
+
+- Receipt-complete burned totals, keeping direct burns, remints, and CCIP bridge burns distinct.
+- Staked S1 and S2 token counts and each count as a percentage of its collection supply.
+- Independently verified remaining non-migrated BYTES 1.0 and its economic treatment.

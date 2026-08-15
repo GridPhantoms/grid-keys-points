@@ -22,6 +22,8 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
     /Secondary Ethereum post-read source-block confirmation/,
     /postReadSecondaryBlock\.hash !== block\.hash/,
     /Avalanche source block changed/,
+    /configuredS1S2Daily = configured\.value\.S1 \+ configured\.value\.S2/,
+    /projectedIssuanceOverDays\(configuredS1S2Daily/,
   ]) assert.match(source, pattern);
   assert.ok(
     source.lastIndexOf('secondaryProvider.getBlock(block.number)') > source.indexOf('readMarketMetrics(secondaryProvider'),
@@ -34,12 +36,20 @@ test('dashboard and metric contract use corrected valuation labels', async () =>
     readFile(dashboardUrl, 'utf8'),
     readFile(contractUrl, 'utf8'),
   ]);
-  for (const label of [
-    'Ethereum canonical total-supply valuation — not market cap',
-    'Market cap',
-  ]) assert.match(dashboard, new RegExp(label, 'i'));
+  for (const label of ['Market cap\\*', 'Ethereum chain-local total supply', 'Avalanche chain-local BYTES supply']) {
+    assert.match(dashboard, new RegExp(label, 'i'));
+  }
   assert.match(dashboard, /dextools\.io\/app\/en\/ether\/pair-explorer\/0xfeb09c7e130a4b87b27ebd648ec485657b688b34/i);
-  assert.match(dashboard, /Avalanche chain-local supply/i);
   assert.match(dashboard, /sourceBlock=\{avalancheSourceBlock\}/);
-  assert.match(contract, /Market Cap.*remains unavailable/is);
+  assert.match(dashboard, /@0xSanSSerif/);
+  assert.match(dashboard, /https:\/\/x\.com\/0xSanSSerif/);
+  assert.match(dashboard, /database was compromised/i);
+  assert.match(dashboard, /Transparent by design/i);
+  assert.match(dashboard, /In plain English/i);
+  assert.match(dashboard, /https:\/\/coinmarketcap\.com\/currencies\/neo-tokyo\//);
+  assert.match(dashboard, /35\.53%|stakingPercentage/);
+  assert.doesNotMatch(dashboard, /<small>BYTES pool<\/small>|<small>LP pool<\/small>/i);
+  assert.match(dashboard, /legacyEmissionTotal !== null && legacyEmissionTotal > 0/);
+  assert.match(dashboard, /Additional configured legacy asset-type emissions/);
+  assert.match(contract, /Market Cap\*/i);
 });

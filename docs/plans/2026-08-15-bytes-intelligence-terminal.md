@@ -17,7 +17,7 @@
 ### V1 includes
 
 - `/bytes` route and shared navigation entry.
-- Contract-derived configured emissions for all four verified staking pools: S1, S2, BYTES, and LP.
+- Contract-derived configured emissions with public S1/S2 components; verified BYTES/LP enum reads remain internal completeness checks while zero.
 - Stable unavailable/null supply, staking, and pending/unclaimed fields with explicit source-verification gates; no unverified token or aggregate claimable values.
 - Historical reconstructed configured-emissions dataset and chart, classified as calculated from observed on-chain windows.
 - Formula curve overlay and Genesis milestone lines.
@@ -51,7 +51,8 @@ Cover:
 
 - `emissionAtWeek(5875, 155)` is approximately `744.229571294358`, with S1/S2 checkpoints and exact 52-week half-levels.
 - `theoreticalWeek` floors complete seven-day periods and `fractionThroughWeek` reports exact boundary/midweek progress.
-- `annualizedIssuance` uses 365 days.
+- `projectedIssuanceOverDays` applies weekly decay across the next 365 days instead of multiplying the current rate by 365.
+- `nextGenesisHalfLevel` returns the next 52-week boundary with its projected UTC date and rates.
 - `remainingGeometricIssuance` is finite, prorates the current week, and declines as the rate or remaining fraction declines.
 - `progressTowardLowerMilestone` measures bounded progress between explicit levels.
 - `metricEnvelope` preserves provenance and rejects invalid values, classifications, sources, timestamps, formulas, and assumptions.
@@ -77,7 +78,8 @@ export const GENESIS_MAX_DAILY_EMISSIONS = 11_000
 export function emissionAtWeek(reservoir, week) {}
 export function theoreticalWeek(epochSeconds, atSeconds) {}
 export function fractionThroughWeek(epochSeconds, atSeconds) {}
-export function annualizedIssuance(daily) {}
+export function projectedIssuanceOverDays(daily, fractionOfCurrentWeekElapsed, days) {}
+export function nextGenesisHalfLevel(epochSeconds, currentWeek) {}
 export function remainingGeometricIssuance(dailyAtStartOfCurrentWeek, fractionOfCurrentWeekElapsed) {}
 export function progressTowardLowerMilestone(currentDaily, priorMilestone, nextMilestone) {}
 export function metricEnvelope(value, classification, source, asOf, formula, assumptions) {}
@@ -139,7 +141,7 @@ Define and validate this minimum public shape:
   "metrics": {
     "currentConfiguredEmissions": { "value": { "S1": 0, "S2": 0, "BYTES": 0, "LP": 0, "total": 0 } },
     "currentModeledRate": {},
-    "annualizedConfiguredIssuance": {},
+    "projectedNext365DayIssuance": {},
     "configuredVsTheoretical": {},
     "theoreticalWeek": {},
     "ethBytes2Supply": { "value": null, "availability": "unavailable" },
@@ -172,7 +174,7 @@ Requirements:
 - Read only private server configuration: `ETHEREUM_RPC_URL` or `ALCHEMY_API_KEY`. Never use a `NEXT_PUBLIC_*` credential in the metrics route.
 - Never return the RPC URL, credential, stack trace, or raw upstream response.
 - Read one latest block and use its timestamp/block number for all calls.
-- Call `getTotalEmissions(assetType, blockTimestamp - 86400)` for all four verified staking pools: S1, S2, BYTES, and LP.
+- Call `getTotalEmissions(assetType, blockTimestamp - 86400)` for all four verified enum values. Publish S1/S2 splits only; keep zero BYTES/LP reads as internal completeness gates.
 - Verify the official Ethereum BYTES 2.0 token bidirectionally at the pinned block: `staker.BYTES()` equals the canonical token, `token.STAKER()` equals the staker, and `token.decimals()` equals 18; only then publish `totalSupply()` and `balanceOf(staker)` as observed metrics.
 - Load the validated participant snapshot, merge post-snapshot `Stake`/`Claim` event deltas, and sum `getPendingPoolReward()` user rewards for claimable S1-position, S2-position, and LP pools through bounded Multicall3 batches. Classify the aggregate as calculated, keep DAO tax separate, and source-gate only this secondary metric on failure.
 - Validate finite, non-negative outputs.
@@ -365,9 +367,9 @@ Responsibilities:
 
 Headline cards:
 
-- Live Configured Emissions with visible S1, S2, BYTES, and LP components.
+- Live Configured Emissions with visible S1 and S2 components.
 - Current Modeled Rate.
-- Annualized Configured Issuance.
+- Decay-aware Projected Next-365-Day Issuance.
 - Configured Minus Modeled divergence.
 
 The implemented Ethereum supply, direct staking-contract balance, and pending/unclaimed categories remain visibly unavailable until their respective source and definition gates pass. No circulating, burned, maximum-supply, or terminal-supply value is inferred.
@@ -638,13 +640,13 @@ This addendum supersedes only the original V1 statements that Avalanche supply a
 
 - **Avalanche observed on-chain supply:** canonical Avalanche C-Chain BYTES proxy `0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b`, chain ID `43114`, gated by token metadata, EIP-1967 implementation `0x5430B6C1cbF4f05737A5E6F5623efA0759017874`, and CCIP BurnMint pool `0xAb2e4F219E1A24bA061E0Ecf07c0e3Dc7d410A9A`.
 - **BYTES/USD spot reference:** Ethereum Uniswap V3 BYTES/WETH pool `0xfeb09c7e130a4b87b27ebd648ec485657b688b34`, verified against the canonical factory, 1% fee tier, deployed code, token order/decimals, positive liquidity, and initialized `slot0`; converted with a fresh, complete Chainlink ETH/USD round.
-- **Ethereum canonical total-supply valuation:** canonical Ethereum `totalSupply()` multiplied by the spot reference. This is not market cap, circulating market cap, conventional FDV, or a claim that the full supply is realizable at spot.
+- **Market Cap\*:** canonical Ethereum `totalSupply()` multiplied by the spot reference, using community shorthand with a visible caveat that this is not conventional circulating market capitalization or a claim that the full supply is realizable at spot.
 
 
 ### Prohibited aggregations and labels
 
 - Never add Ethereum and satellite-chain `totalSupply()` values. Ethereum Lock/Release and satellite Burn/Mint representations would double count bridged units.
-- Never publish market cap until independently established circulating supply exists.
+- Never publish an unqualified conventional circulating market cap. `Market Cap*` requires the Ethereum-total-supply caveat.
 - Never present CCIP bridge burns as permanent global destruction.
 - Never subtract historical burns again from current `totalSupply()`; ERC-20 `totalSupply()` already reflects burn/remint effects.
 
@@ -656,9 +658,11 @@ Avalanche supply, price, valuation, and pending-reward aggregation can degrade i
 
 - Avalanche labels appear only after chain, proxy, implementation, and pool identity checks pass at one chain-specific block with a post-read block-hash recheck.
 - Price appears only after canonical Uniswap V3 factory/fee/registry, pool, token-order, decimals, liquidity, initialization, and Chainlink round/freshness gates pass.
-- Market cap remains explicitly unavailable.
+- Conventional circulating market cap remains unavailable. The community shorthand `Market Cap*` may display canonical Ethereum `totalSupply() × BYTES/USD spot reference` only with its visible caveat.
 - Browser bundles contain no private credential, public Alchemy variable, or direct RPC hostname.
 
 ### Deferred follow-up
 
 The burn ledger is intentionally excluded from this release. A receipt-complete regeneration attempt failed closed because 133 Avalanche indexed rows did not reconcile to canonical receipts, breaking exact mint-minus-burn conservation. The direct Avalanche transaction `0x72aef0091c85d578d8c77e0c4aa6465af1c87d12e5fdbed2d05b358a0628ad50` is a verified regression fixture: successful chain-43114 call to canonical BYTES, selector `0x42966c68` (`burn(uint256)`), decoded amount `208 BYTES`, and one matching transfer-to-zero event for `208 BYTES`. Resolve the historical index/receipt source in an isolated review before reintroducing burn artifacts, API fields, or UI claims.
+
+Additional deferred transparency work: staked S1/S2 token counts with collection-supply percentages, and independently verified remaining non-migrated BYTES 1.0.

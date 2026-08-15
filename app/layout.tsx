@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -16,13 +16,11 @@ export const metadata: Metadata = {
     icon: "/favicons/favicon.ico",
     apple: "/favicons/apple-touch-icon.png",
   },
-  // Stronger viewport to prevent iOS zoom on input focus
-  viewport: {
-    width: "device-width",
-    initialScale: 1.0,
-    maximumScale: 1.0,
-    userScalable: false,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

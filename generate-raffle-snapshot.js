@@ -28,9 +28,9 @@ function loadDotEnv(filePath) {
 loadDotEnv(path.join(process.cwd(), '.env.local'));
 loadDotEnv(path.join(process.cwd(), '.env'));
 
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 if (!ALCHEMY_API_KEY) {
-  console.error('Missing ALCHEMY_API_KEY or NEXT_PUBLIC_ALCHEMY_API_KEY.');
+  console.error('Missing ALCHEMY_API_KEY.');
   process.exit(1);
 }
 

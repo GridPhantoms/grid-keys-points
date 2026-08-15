@@ -1,11 +1,9 @@
 'use client';
 
+import SiteNav from '../components/SiteNav';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function Leaderboard() {
-  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<'bytes' | 'points'>('bytes');
   const [bytesLeaderboard, setBytesLeaderboard] = useState<any[]>([]);
   const [keyholderLeaderboard, setKeyholderLeaderboard] = useState<any[]>([]);
@@ -13,7 +11,6 @@ export default function Leaderboard() {
   const [loadingKeyholders, setLoadingKeyholders] = useState(false);
   const [errorKeyholders, setErrorKeyholders] = useState('');
   const [lastSnapshot] = useState("August 14, 2026 04:20 UTC");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string) => {
@@ -120,66 +117,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* UPDATED NAV - consistent across all pages */}
-<nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-    <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-      <span className="text-white">GRID</span>
-      <span className="text-cyan-400">PHANTOMS</span>
-    </Link>
-
-    <div className="hidden md:flex gap-8 text-sm">
-      <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-      <Link 
-        href="/leaderboard" 
-        className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
-      >
-        Leaderboards
-      </Link>
-      <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-      <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-      <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-      <Link 
-        href="/engine" 
-        className="hover:text-cyan-400 transition-colors"
-      >
-        Engine Room
-      </Link>
-    </div>
-
-    <button 
-      onClick={() => setMenuOpen(!menuOpen)} 
-      className="md:hidden text-3xl text-white focus:outline-none"
-    >
-      ☰
-    </button>
-  </div>
-
-  {menuOpen && (
-    <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-      <div className="flex flex-col gap-6 px-6 text-lg">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Home</Link>
-        <Link 
-          href="/leaderboard" 
-          onClick={() => setMenuOpen(false)} 
-          className={`${pathname === '/leaderboard' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}
-        >
-          Leaderboards
-        </Link>
-        <Link href="/trait-charts" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-        <Link href="/raffle" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-        <Link href="/mint-progress" onClick={() => setMenuOpen(false)} className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-        <Link 
-          href="/engine" 
-          onClick={() => setMenuOpen(false)} 
-          className="hover:text-cyan-400 transition-colors"
-        >
-          Engine Room
-        </Link>
-      </div>
-    </div>
-  )}
-</nav>
+      <SiteNav active="leaderboard" />
 
       <div className="max-w-7xl mx-auto px-6 py-12 flex-1">
         <h1 className="text-5xl font-bold tracking-[-2px] mb-2">LEADERBOARDS</h1>

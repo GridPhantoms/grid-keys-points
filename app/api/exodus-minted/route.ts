@@ -1,47 +1,36 @@
 import { NextResponse } from 'next/server';
+import { alchemyRpc } from '../_lib/alchemy-server';
 
 const EXODUS_CONTRACT = '0xddf1d5f3a79ccba74e284fd5b9ee0faddb8993aa';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const MAX_PAGES = 20;
+
+type AssetTransfer = {
+  rawContract?: { address?: string; tokenId?: string };
+  from?: string;
+  to?: string;
+  erc721TokenId?: string;
+  tokenId?: string;
+  hash?: string;
+};
+
+type AssetTransfersResult = {
+  transfers?: AssetTransfer[];
+  pageKey?: string;
+};
 
 export const dynamic = 'force-dynamic';
 
-async function alchemyRpc(apiKey: string, method: string, params: unknown[]) {
-  const response = await fetch(`https://eth-mainnet.g.alchemy.com/v2/${apiKey}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method,
-      params,
-    }),
-    cache: 'no-store',
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || data.error) {
-    throw new Error(data.error?.message || `Alchemy request failed with HTTP ${response.status}`);
-  }
-
-  return data.result;
-}
-
 export async function GET() {
-  const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Alchemy API key missing' },
-      { status: 500, headers: { 'cache-control': 'no-store' } },
-    );
-  }
-
   try {
     const minted = new Set<string>();
     let pageKey: string | undefined;
+    let pageCount = 0;
 
     do {
+      pageCount += 1;
+      if (pageCount > MAX_PAGES) throw new Error('Page limit exceeded');
+
       const request: Record<string, unknown> = {
         fromBlock: '0x0',
         toBlock: 'latest',
@@ -55,9 +44,12 @@ export async function GET() {
 
       if (pageKey) request.pageKey = pageKey;
 
-      const result = await alchemyRpc(apiKey, 'alchemy_getAssetTransfers', [request]);
+      const result = await alchemyRpc<AssetTransfersResult>(
+        'alchemy_getAssetTransfers',
+        [request],
+      );
 
-      for (const transfer of result.transfers || []) {
+      for (const transfer of Array.isArray(result.transfers) ? result.transfers : []) {
         const contract = (transfer.rawContract?.address || '').toLowerCase();
         const from = (transfer.from || '').toLowerCase();
         const to = (transfer.to || '').toLowerCase();
@@ -70,7 +62,7 @@ export async function GET() {
         minted.add(`${transfer.hash || ''}:${tokenId}:${to}`);
       }
 
-      pageKey = result.pageKey;
+      pageKey = typeof result.pageKey === 'string' ? result.pageKey : undefined;
     } while (pageKey);
 
     return NextResponse.json(
@@ -81,11 +73,10 @@ export async function GET() {
       },
       { headers: { 'cache-control': 'no-store' } },
     );
-  } catch (error) {
-    console.error('Failed to fetch Exodus minted count:', error);
-
+  } catch {
+    console.error('Exodus minted count lookup failed');
     return NextResponse.json(
-      { error: 'Failed to fetch Exodus minted count' },
+      { error: 'Unable to load Exodus minted count right now.' },
       { status: 502, headers: { 'cache-control': 'no-store' } },
     );
   }

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BYTES Intelligence Terminal — Design Mockup</title>
+  <style>
+    :root{--bg:#050607;--panel:#0b0e11;--panel2:#0f1317;--line:#20262d;--muted:#77818d;--text:#f4f7fa;--cyan:#28d7f2;--cyan2:#0d8fa6;--violet:#a98cff;--amber:#f2b84b;--green:#57d991}
+    *{box-sizing:border-box} html,body{max-width:100%;overflow-x:hidden} body{margin:0;background:radial-gradient(circle at 65% -10%,rgba(40,215,242,.10),transparent 28%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.02em}
+    .topline{height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+    nav{position:sticky;top:0;z-index:5;background:rgba(5,6,7,.93);backdrop-filter:blur(14px);border-bottom:1px solid #151a1f}
+    .navin{max-width:1240px;margin:auto;height:72px;padding:0 28px;display:flex;align-items:center;justify-content:space-between}.logo{font-weight:800;font-size:22px}.logo b{color:var(--cyan)}
+    .links{display:flex;gap:26px;font-size:13px;color:#aab2ba}.links span.active{color:var(--cyan)}
+    main{max-width:1180px;margin:auto;padding:64px 28px 90px}.eyebrow{font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
+    .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:28px;align-items:end;margin-bottom:34px}.hero h1{font-size:clamp(42px,7vw,76px);line-height:.94;margin:12px 0 18px;letter-spacing:-.065em}.hero h1 span{color:var(--cyan)}.hero p{margin:0;max-width:720px;color:#98a2ad;font-size:17px;line-height:1.6;letter-spacing:-.015em}
+    .stamp{text-align:right;color:#68727d;font:11px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace}.status{display:inline-flex;gap:8px;align-items:center;color:#b8c0c8}.dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px var(--green)}
+    .notice{border:1px solid rgba(40,215,242,.23);background:linear-gradient(90deg,rgba(40,215,242,.08),rgba(40,215,242,.015));padding:13px 16px;border-radius:14px;color:#aeb9c4;font-size:13px;margin-bottom:20px}.notice strong{color:var(--cyan)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:20px;padding:21px;min-width:0}.label{display:flex;justify-content:space-between;gap:8px;align-items:start;color:#818b96;font-size:11px;line-height:1.35;text-transform:uppercase;letter-spacing:.11em}.badge{font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid currentColor;border-radius:99px;padding:4px 6px;letter-spacing:.11em}.observed{color:var(--cyan)}.calculated{color:#a7b0b8}.projected{color:var(--violet)}.reference{color:var(--amber)}
+    .value{font-size:32px;font-weight:780;margin:17px 0 4px;letter-spacing:-.055em;white-space:nowrap}.value.cyan{color:var(--cyan)}.sub{font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#626d78}.split{display:flex;gap:14px;margin-top:13px}.split div{flex:1;padding-top:10px;border-top:1px solid #1b2127}.split b{display:block;color:#dfe5ea;font-size:13px}.split small{color:#68727d;font-size:10px}
+    .grid{display:grid;grid-template-columns:1.55fr .75fr;gap:18px;margin-top:18px}.panel{background:linear-gradient(180deg,#0c1014,#090c0f);border:1px solid var(--line);border-radius:24px;padding:24px}.panelhead{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:24px}.panel h2{font-size:21px;margin:0 0 6px}.panelhead p{margin:0;color:#6e7883;font-size:12px}.ranges{display:flex;gap:6px}.ranges span{padding:6px 9px;border-radius:8px;color:#77818b;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.ranges .on{background:#142128;color:var(--cyan);border:1px solid #23404a}
+    .chart{width:100%;height:auto;display:block}.axis{font:10px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#66717c}.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:13px;color:#7b8590;font-size:11px}.legend i{display:inline-block;width:18px;height:2px;vertical-align:middle;margin-right:7px}.legend .a{background:var(--cyan)}.legend .m{background:repeating-linear-gradient(90deg,var(--violet) 0 4px,transparent 4px 7px)}
+    .milestone{display:flex;align-items:center;gap:15px;margin:18px 0}.ring{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--cyan) 0 91.8%,#1d242b 91.8%);position:relative}.ring:after{content:"";position:absolute;inset:7px;border-radius:50%;background:#0b0f13}.ring b{z-index:1;font-size:15px}.milestone h3{margin:0 0 4px;font-size:16px}.milestone p{margin:0;color:#6c7681;font-size:12px;line-height:1.45}
+    .divider{height:1px;background:#1b2127;margin:18px 0}.row{display:flex;justify-content:space-between;gap:18px;padding:10px 0;font-size:12px}.row span{color:#727c86}.row b{color:#dfe5e9;text-align:right}.row b.violet{color:var(--violet)}
+    .scenarios{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.scenario{border:1px solid #232a31;border-radius:17px;padding:18px;background:#0b0f12}.scenario.selected{border-color:rgba(40,215,242,.45);background:linear-gradient(160deg,rgba(40,215,242,.08),#0b0f12 55%)}.scenario .top{display:flex;justify-content:space-between;gap:12px}.scenario h3{font-size:15px;margin:0}.scenario p{font-size:11px;line-height:1.55;color:#727d87;margin:7px 0 16px}.scenario strong{font-size:24px;letter-spacing:-.05em}.method{margin-top:18px}.method .row{border-top:1px solid #191f24}.footer-note{margin-top:22px;padding:16px 18px;border-left:2px solid var(--violet);background:rgba(169,140,255,.04);font-size:12px;color:#89939e;line-height:1.6}.footer-note strong{color:#c8baff}
+    .credit{margin-top:42px;text-align:center;color:#505a64;font:10px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
+    @media(max-width:900px){.links{display:none}.hero{grid-template-columns:minmax(0,1fr)}.stamp{text-align:left}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:minmax(0,1fr)}.grid>*{min-width:0}.hero h1{font-size:58px}}
+    @media(max-width:560px){.navin{height:62px;padding:0 18px}.navin>.eyebrow{display:none}.logo{font-size:18px}main{width:100%;min-width:0;padding:40px 16px 64px}.hero{margin-bottom:25px}.hero h1{font-size:44px}.hero p{font-size:15px}.stats{grid-template-columns:minmax(0,1fr)}.card{min-width:0;padding:19px}.value{font-size:30px}.panel{width:100%;min-width:0;padding:18px;border-radius:20px}.panelhead{display:block}.ranges{margin-top:15px}.scenarios{grid-template-columns:minmax(0,1fr)}.chart{width:100%;min-width:0;max-width:100%;min-height:245px}.stamp{font-size:10px}}
+  </style>
+</head>
+<body>
+<div class="topline"></div>
+<nav><div class="navin"><div class="logo">GRID<b>PHANTOMS</b></div><div class="links"><span>Home</span><span>Leaderboards</span><span>Trait Charts</span><span>Raffle</span><span>Mint Progress</span><span class="active">$BYTES Terminal</span><span>Engine Room</span></div><div class="eyebrow">DESIGN MOCKUP</div></div></nav>
+<main>
+  <section class="hero">
+    <div><div class="eyebrow">Neo Tokyo Market Intelligence</div><h1>$BYTES<br><span>TERMINAL</span></h1><p>Supply, staking, emissions and the decay curve—separated into what the contracts show, what the mathematics implies, and what remains projected.</p></div>
+    <div class="stamp"><div class="status"><span class="dot"></span> PRIMARY CONTRACT DATA ONLINE</div><br>RESEARCH SNAPSHOT · AUG 14, 2026<br>ETHEREUM BLOCK 25,756,833</div>
+  </section>
+  <div class="notice"><strong>Observed first.</strong> The headline emissions rate comes from the staking contract. Modeled curve values remain visibly separate.</div>
+  <section class="stats">
+    <div class="card"><div class="label"><span>Live Configured Emissions</span><span class="badge observed">Observed</span></div><div class="value cyan">744.23</div><div class="sub">BYTES / DAY</div><div class="split"><div><b>696.73</b><small>S1 POOL</small></div><div><b>47.50</b><small>S2 POOL</small></div></div></div>
+    <div class="card"><div class="label"><span>Supply &amp; Staking</span><span class="badge reference">Source Gate</span></div><div class="value">—</div><div class="sub">AWAITING VERIFIED SOURCE</div><div class="split"><div><b>Unresolved</b><small>TOKEN IDENTITY</small></div><div><b>Unresolved</b><small>POSITION ACCOUNTING</small></div></div></div>
+    <div class="card"><div class="label"><span>Pending Rewards</span><span class="badge reference">Source Gate</span></div><div class="value">—</div><div class="sub">AWAITING VALIDATED INDEXER</div><div class="split"><div><b>Required</b><small>CLAIMABLE AGGREGATION</small></div><div><b>No estimate</b><small>PUBLISHED IN V1</small></div></div></div>
+    <div class="card"><div class="label"><span>Next Genesis Milestone</span><span class="badge calculated">Calculated</span></div><div class="value">687.5</div><div class="sub">4TH HALF-LEVEL · BYTES / DAY</div><div class="split"><div><b>56.73</b><small>RATE ABOVE</small></div><div><b>92%</b><small>PROGRESS</small></div></div></div>
+  </section>
+  <section class="grid">
+    <div class="panel">
+      <div class="panelhead"><div><h2>Emissions Decay</h2><p>Actual configured reward windows vs. the modeled weekly curve</p></div><div class="ranges"><span>6M</span><span>1Y</span><span>2Y</span><span class="on">ALL</span></div></div>
+      <svg class="chart" viewBox="0 0 760 340" role="img" aria-label="BYTES emissions history mockup">
+        <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#28d7f2" stop-opacity=".18"/><stop offset="1" stop-color="#28d7f2" stop-opacity="0"/></linearGradient></defs>
+        <g stroke="#20262d" stroke-width="1"><path d="M55 40H730M55 105H730M55 170H730M55 235H730M55 300H730"/></g>
+        <g class="axis"><text x="8" y="44">11K</text><text x="14" y="109">5.5K</text><text x="14" y="174">2.75K</text><text x="14" y="239">1.375K</text><text x="18" y="304">687.5</text><text x="55" y="328">JUN 2023</text><text x="292" y="328">JUN 2024</text><text x="517" y="328">JUN 2025</text><text x="676" y="328">NOW</text></g>
+        <g stroke="#5d546f" stroke-dasharray="4 6"><path d="M55 105H730M55 170H730M55 235H730M55 300H730"/></g>
+        <path d="M55 40 L73 131 L77 144 L90 133 L112 121 L138 126 L172 121 L210 145 L248 155 L284 164 L320 178 L355 190 L390 203 L425 220 L463 230 L500 245 L538 260 L577 268 L614 276 L649 280 L675 291 L705 295 L730 296 L730 310 L55 310Z" fill="url(#fill)"/>
+        <path d="M55 40 L73 131 L77 144 L90 133 L112 121 L138 126 L172 121 L210 145 L248 155 L284 164 L320 178 L355 190 L390 203 L425 220 L463 230 L500 245 L538 260 L577 268 L614 276 L649 280 L675 291 L705 295 L730 296" fill="none" stroke="#28d7f2" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M55 40 C160 88 240 140 330 180 S520 248 730 303" fill="none" stroke="#a98cff" stroke-width="2" stroke-dasharray="7 8"/>
+        <circle cx="730" cy="296" r="5" fill="#28d7f2"/><circle cx="730" cy="296" r="11" fill="none" stroke="#28d7f2" opacity=".28"/>
+        <g transform="translate(584 253)"><rect width="132" height="33" rx="8" fill="#101820" stroke="#28424b"/><text x="12" y="21" font-size="12" fill="#d9f9ff" font-family="ui-monospace,monospace">744.23 / DAY</text></g>
+      </svg>
+      <div class="legend"><span><i class="a"></i>Actual configured emissions</span><span><i class="m"></i>Modeled exponential curve</span><span>— Genesis milestone</span></div>
+      <div class="scenarios">
+        <div class="scenario selected"><div class="top"><h3>Steady Scenario</h3><span class="badge projected">Projected</span></div><p>Current verified participation reservoir continues along the weekly decay curve.</p><strong>~343K</strong><div class="sub">MODELED REMAINING ISSUANCE*</div></div>
+        <div class="scenario"><div class="top"><h3>Maximum Participation</h3><span class="badge projected">Projected</span></div><p>Upper-bound comparison using the full 11,000 BYTES/day launch reservoir.</p><strong>~642K</strong><div class="sub">MODELED REMAINING ISSUANCE*</div></div>
+      </div>
+      <div class="footer-note"><strong>Supply-side thesis:</strong> Structurally lower new issuance may require less demand to absorb newly created BYTES than in earlier cycles. Price still depends on demand, liquidity, holder behavior and wider market conditions.</div>
+    </div>
+    <aside class="panel">
+      <div class="panelhead"><div><h2>Milestone Monitor</h2><p>Genesis maximum baseline: 11,000/day</p></div></div>
+      <div class="milestone"><div class="ring"><b>92%</b></div><div><h3>Approaching 687.5/day</h3><p>Current configured rate sits 56.73 BYTES/day above the fourth Genesis half-level.</p></div></div>
+      <div class="divider"></div>
+      <div class="row"><span>Contract window</span><b>Week 155 factor</b></div><div class="row"><span>Decay function</span><b>1 / 2^(a / 52)</b></div><div class="row"><span>Contract status</span><b class="violet">Above current model</b></div><div class="row"><span>Historical samples</span><b>1,172 days</b></div>
+      <div class="divider"></div>
+      <div class="panelhead"><div><h2>Methodology Ledger</h2><p>Every number names what it is</p></div></div>
+      <div class="method"><div class="row"><span>Configured emissions</span><b class="observed">OBSERVED</b></div><div class="row"><span>Milestone progress</span><b>CALCULATED</b></div><div class="row"><span>Terminal supply</span><b class="violet">PROJECTED</b></div><div class="row"><span>Per-point yield</span><b style="color:#f2b84b">REFERENCE</b></div></div>
+      <div class="footer-note"><strong>No black box.</strong> Tap any metric in the live build to inspect its contract, formula, timestamp and assumptions.</div>
+    </aside>
+  </section>
+  <div class="credit">DESIGN PROTOTYPE · VALUES ARE RESEARCH CHECKPOINTS, NOT LIVE PRODUCTION DATA<br>INSPIRED BY CITIZEN-LED BYTES METRICS WORK · REBUILT WITH VISIBLE PROVENANCE</div>
+</main>
+</body>
+</html>

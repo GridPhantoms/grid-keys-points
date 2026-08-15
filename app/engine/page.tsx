@@ -1,8 +1,7 @@
 'use client';
 
+import SiteNav from '../components/SiteNav';
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 type RewardKeyType = 'genesis' | 'exodus';
 
@@ -125,7 +124,6 @@ function AnimatedNumber({
 }
 
 export default function EngineRoom() {
-  const pathname = usePathname();
   const [snapshot, setSnapshot] = useState<Record<string, number>>({});
   const [neoS1Count, setNeoS1Count] = useState(0);
   const [neoS2Count, setNeoS2Count] = useState(0);
@@ -136,7 +134,6 @@ export default function EngineRoom() {
   const [exodusMinted, setExodusMinted] = useState(0);
   const [voterParticipationRate, setVoterParticipationRate] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [rewardKeyType, setRewardKeyType] = useState<RewardKeyType>('genesis');
   const [hypotheticalBytesPrice, setHypotheticalBytesPrice] = useState('');
   const [rewardKeyCount, setRewardKeyCount] = useState('1');
@@ -174,34 +171,25 @@ export default function EngineRoom() {
           return data.minted;
         });
 
-        const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-        const neoCountsPromise = apiKey
-          ? (async () => {
-              try {
-                const wallet = "0x6a1bc919e847c12725904965e05971b818b47ad0";
-                const [s1Res, s2Res, itemsRes] = await Promise.all([
-                  fetch(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${wallet}&contractAddresses[]=0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f&limit=100`),
-                  fetch(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${wallet}&contractAddresses[]=0x4481507cc228fa19d203bd42110d679571f7912e&limit=100`),
-                  fetch(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${wallet}&contractAddresses[]=0xe7489ea1847395d7eead33e9c85fe327d513d249&limit=100`)
-                ]);
+        const neoCountsPromise = (async () => {
+          try {
+            const response = await fetch('/api/neo-vault-counts', { cache: 'no-store' });
+            const data = await response.json();
+            const counts = [data.s1, data.s2, data.items];
 
-                const [s1Data, s2Data, itemsData] = await Promise.all([
-                  s1Res.json(),
-                  s2Res.json(),
-                  itemsRes.json()
-                ]);
+            if (
+              !response.ok
+              || counts.some((count) => !Number.isFinite(count) || count < 0)
+            ) {
+              throw new Error('Invalid vault holdings response');
+            }
 
-                return {
-                  s1: s1Data.ownedNfts?.length || 0,
-                  s2: s2Data.ownedNfts?.length || 0,
-                  items: itemsData.ownedNfts?.length || 0
-                };
-              } catch (err) {
-                console.error("Neo Tokyo vault holdings load error:", err);
-                return { s1: 0, s2: 0, items: 0 };
-              }
-            })()
-          : Promise.resolve({ s1: 0, s2: 0, items: 0 });
+            return { s1: data.s1, s2: data.s2, items: data.items };
+          } catch {
+            console.error("Neo Tokyo vault holdings load failed");
+            return { s1: 0, s2: 0, items: 0 };
+          }
+        })();
 
         const [snapshotText, holdersText, airdropTexts, minted, neoCounts] = await Promise.all([
           fetch('/vault-snapshot.csv').then((res) => res.text()),
@@ -306,39 +294,7 @@ export default function EngineRoom() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Nav */}
-      <nav className="border-b border-zinc-900 bg-zinc-950 py-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="font-bold text-2xl tracking-[-1px]">
-            <span className="text-white">GRID</span>
-            <span className="text-cyan-400">PHANTOMS</span>
-          </Link>
-
-          <div className="hidden md:flex gap-8 text-sm">
-            <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
-            <Link href="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboards</Link>
-            <Link href="/trait-charts" className="hover:text-cyan-400 transition-colors">Trait Charts</Link>
-            <Link href="/raffle" className="hover:text-cyan-400 transition-colors">Raffle Tracker</Link>
-            <Link href="/mint-progress" className="hover:text-cyan-400 transition-colors">Mint Progress</Link>
-            <Link href="/engine" className={`${pathname === '/engine' ? 'text-cyan-400 font-medium' : 'hover:text-cyan-400 transition-colors'}`}>Engine Room</Link>
-          </div>
-
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-3xl text-white focus:outline-none">☰</button>
-        </div>
-
-        {menuOpen && (
-          <div className="md:hidden bg-zinc-950 border-t border-zinc-900 py-6">
-            <div className="flex flex-col gap-6 px-6 text-lg">
-              <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
-              <Link href="/leaderboard" onClick={() => setMenuOpen(false)}>Leaderboards</Link>
-              <Link href="/trait-charts" onClick={() => setMenuOpen(false)}>Trait Charts</Link>
-              <Link href="/raffle" onClick={() => setMenuOpen(false)}>Raffle Tracker</Link>
-              <Link href="/mint-progress" onClick={() => setMenuOpen(false)}>Mint Progress</Link>
-              <Link href="/engine" onClick={() => setMenuOpen(false)} className="text-cyan-400 font-medium">Engine Room</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <SiteNav active="engine" />
 
       <div className="max-w-5xl mx-auto px-6 py-12 flex-1">
         <div className="text-center mb-12">

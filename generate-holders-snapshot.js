@@ -25,10 +25,10 @@ function loadEnvFile(filePath) {
 }
 
 const envFile = loadEnvFile(ENV_PATH);
-const ALCHEMY_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || envFile.ALCHEMY_API_KEY || envFile.NEXT_PUBLIC_ALCHEMY_API_KEY;
+const ALCHEMY_KEY = process.env.ALCHEMY_API_KEY || envFile.ALCHEMY_API_KEY;
 
 if (!ALCHEMY_KEY) {
-  console.error('Missing Alchemy key. Set ALCHEMY_API_KEY or NEXT_PUBLIC_ALCHEMY_API_KEY in your environment or .env.local.');
+  console.error('Missing Alchemy key. Set ALCHEMY_API_KEY in your environment or .env.local.');
   process.exit(1);
 }
 

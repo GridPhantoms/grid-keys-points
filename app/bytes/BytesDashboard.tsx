@@ -56,6 +56,8 @@ function MetricDetails({ metric, label, sourceBlock }: {
         <div><dt>Source</dt><dd>{metric.source}</dd></div>
         {sourceBlock != null && <div><dt>Source block</dt><dd>{integerFormatter.format(sourceBlock)}</dd></div>}
         <div><dt>As of</dt><dd>{formatTimestamp(metric.asOf)}</dd></div>
+        {metric.rawValue && <div><dt>{metric.classification === 'calculated' ? 'Exact calculated aggregate' : 'Exact contract value'}</dt><dd><code>{metric.rawValue} {metric.unit}</code></dd></div>}
+        {metric.daoTaxExcludedRawValue && <div><dt>Exact pending DAO-tax aggregate</dt><dd><code>{metric.daoTaxExcludedRawValue} BYTES</code> · excluded from the displayed net pending snapshot aggregate</dd></div>}
         {metric.formula && <div><dt>Formula</dt><dd><code>{metric.formula}</code></dd></div>}
         {metric.assumptions?.length ? <div><dt>Assumptions</dt><dd><ul>{metric.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></dd></div> : null}
         {metric.reason && <div><dt>Reason</dt><dd>{metric.reason}</dd></div>}
@@ -127,7 +129,7 @@ function AvailabilityRow({ label, metric, sourceBlock }: {
         <span>{label}</span>
         <strong>{isAvailable ? `${formatNumber(metric.value)} ${metric.unit}` : 'Awaiting verified source'}</strong>
       </div>
-      <p>{isAvailable ? `Verified by ${metric.source}.` : metric?.reason ?? 'Canonical definitions and contract provenance have not yet been verified.'}</p>
+      <p>{isAvailable ? `${metric.classification === 'calculated' ? 'Calculated from' : 'Verified by'} ${metric.source}.` : metric?.reason ?? 'Canonical definitions and contract provenance have not yet been verified.'}</p>
       <MetricDetails metric={metric} label={`Inspect ${label.toLowerCase()} methodology`} sourceBlock={sourceBlock} />
     </div>
   );
@@ -144,7 +146,7 @@ export default function BytesDashboard() {
     const controller = new AbortController();
     const loadMetrics = async () => {
       try {
-        const response = await fetch('/api/bytes-metrics', { cache: 'no-store', signal: controller.signal });
+        const response = await fetch('/api/bytes-metrics', { signal: controller.signal });
         if (!response.ok) return;
         const payload: unknown = await response.json();
         setMetrics(validateBytesMetricsResponse(payload));
@@ -232,8 +234,8 @@ export default function BytesDashboard() {
         <aside className="bytes-side">
           <section className="bytes-panel" aria-labelledby="supply-heading">
             <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Supply &amp; staking status</h2></div></div>
-            <p className="bytes-panel-copy">No circulating, staked, pending, burned, or maximum-supply figure is inferred. Categories unlock only after their definitions and aggregate source methods are independently verified.</p>
-            <AvailabilityRow label="Ethereum BYTES supply" metric={metrics?.metrics.ethBytes2Supply} sourceBlock={metrics?.sourceBlock} />
+            <p className="bytes-panel-copy">Ethereum BYTES total supply, the staking contract’s token balance, and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. Circulating, burned, cross-chain, and maximum-supply figures remain unavailable until separately verified.</p>
+            <AvailabilityRow label="Ethereum BYTES 2.0 total supply" metric={metrics?.metrics.ethBytes2Supply} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="BYTES held by staking contract" metric={metrics?.metrics.bytesHeldByStakingContract} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="Pending / Unclaimed Rewards" metric={metrics?.metrics.pendingUnclaimedRewards} sourceBlock={metrics?.sourceBlock} />
           </section>

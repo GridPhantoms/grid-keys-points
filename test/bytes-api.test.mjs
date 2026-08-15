@@ -8,13 +8,12 @@ import {
   ethereumRpcUrl,
   FRESHNESS_POLICY,
   hasSuccessfulPoolEmissionRead,
-  pendingUnclaimedRewardsMetric,
+
   PUBLIC_CACHE_CONTROL,
   publicFailurePayload,
   signedMetric,
   unavailableMetric,
-  unverifiedEthereumTokenMetrics,
-  UNVERIFIED_ETHEREUM_TOKEN_REASON,
+
   withTimeout,
 } from '../lib/bytes-api.mjs';
 
@@ -75,31 +74,6 @@ test('freshness policy and cache control expose the CDN contract', () => {
   assert.equal(PUBLIC_CACHE_CONTROL, 'public, s-maxage=900, stale-while-revalidate=3600, stale-if-error=3600');
 });
 
-test('unresolved Ethereum supply metrics remain unavailable until a canonical source is established', () => {
-  const metrics = unverifiedEthereumTokenMetrics(AS_OF);
-
-  for (const metric of Object.values(metrics)) {
-    assert.equal(metric.value, null);
-    assert.equal(metric.availability, 'unavailable');
-    assert.equal(metric.classification, 'observed');
-    assert.equal(metric.source, 'canonical-source-not-established');
-    assert.equal(metric.reason, UNVERIFIED_ETHEREUM_TOKEN_REASON);
-  }
-});
-
-test('pending and unclaimed rewards remain source-gated until aggregate claimable rewards are verified', () => {
-  const metric = pendingUnclaimedRewardsMetric(AS_OF);
-
-  assert.deepEqual(metric, {
-    value: null,
-    unit: 'BYTES',
-    classification: 'observed',
-    source: 'aggregate-indexer-not-established',
-    asOf: AS_OF,
-    availability: 'unavailable',
-    reason: 'Aggregate claimable rewards methodology and indexer have not been independently verified.',
-  });
-});
 
 test('RPC config accepts only private environment variables', () => {
   assert.equal(ethereumRpcUrl({ ETHEREUM_RPC_URL: 'https://private.example/rpc' }), 'https://private.example/rpc');

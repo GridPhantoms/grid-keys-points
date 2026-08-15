@@ -1,13 +1,23 @@
 import 'server-only';
 
-import { Contract, FetchRequest, JsonRpcProvider, formatUnits } from 'ethers';
+import { Contract, FetchRequest, Interface, JsonRpcProvider, formatUnits, getAddress } from 'ethers';
+import participantSnapshotValue from '@/data/bytes-staking-participants.json';
 import {
+  BYTES_PARTICIPANT_SNAPSHOT_BLOCK,
+  BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH,
+  BYTES_PARTICIPANT_SNAPSHOT_COUNT,
+  BYTES_PARTICIPANT_SNAPSHOT_DIGEST,
+  BYTES_STAKING_DEPLOYMENT_BLOCK,
   BYTES_POOL_LABELS,
   BYTES_STAKING_ABI,
   BYTES_STAKING_CONTRACT,
+  BYTES_TOKEN_ABI,
+  BYTES_TOKEN_CONTRACT,
   BytesPool,
   ETHEREUM_CHAIN_ID,
   ETHEREUM_CHAIN_NAME,
+  MULTICALL3_ABI,
+  MULTICALL3_CONTRACT,
 } from '@/lib/bytes-contracts';
 import {
   availableMetric,
@@ -16,15 +26,22 @@ import {
   ethereumRpcUrl,
   FRESHNESS_POLICY,
   hasSuccessfulPoolEmissionRead,
-  pendingUnclaimedRewardsMetric,
   publicFailurePayload,
   PUBLIC_CACHE_CONTROL,
   signedMetric,
   unavailableMetric,
-  unverifiedEthereumTokenMetrics,
-  UNVERIFIED_ETHEREUM_TOKEN_REASON,
   withTimeout,
 } from '@/lib/bytes-api.mjs';
+import {
+  canonicalIdentityUnavailableMetrics,
+  mergeParticipantAddresses,
+  pendingRewardsMetric,
+  pendingRewardsUnavailableMetric,
+  tokenMetrics,
+  validateParticipantSnapshot,
+  validatePendingWorkBounds,
+  verifyCanonicalTokenLinks,
+} from '@/lib/bytes-onchain.mjs';
 import {
   annualizedIssuance,
   emissionAtWeek,
@@ -44,6 +61,35 @@ const VERIFIED_EMISSIONS_EPOCH_SECONDS = 1_686_787_200; // 2023-06-15T00:00:00Z
 const STEADY_RESERVOIRS = { S1: 5_500, S2: 375, BYTES: 0, LP: 0 } as const;
 const MAXIMUM_PARTICIPATION_RESERVOIR = 11_000;
 const POOLS = [BytesPool.S1, BytesPool.S2, BytesPool.BYTES, BytesPool.LP] as const;
+const CLAIMABLE_REWARD_POOLS = [BytesPool.S1, BytesPool.S2, BytesPool.LP] as const;
+const stakingInterface = new Interface(BYTES_STAKING_ABI);
+function eventTopic(name: 'Stake' | 'Claim') {
+  const event = stakingInterface.getEvent(name);
+  if (!event) throw new Error(`Missing ${name} event ABI`);
+  return event.topicHash;
+}
+const EVENT_TOPICS = [
+  eventTopic('Stake'),
+  eventTopic('Claim'),
+] as const;
+const DELTA_LOG_BLOCK_CHUNK = 50_000;
+const MAX_DELTA_LOG_EVENTS = 10_000;
+const MULTICALL_CHUNK_SIZE = 500;
+const MULTICALL_CONCURRENCY = 4;
+const PENDING_WORK_LIMITS = Object.freeze({
+  maxDeltaBlocks: 250_000,
+  maxDeltaLogEvents: MAX_DELTA_LOG_EVENTS,
+  maxParticipants: 5_000,
+  maxChunks: 32,
+});
+const participantSnapshot = validateParticipantSnapshot(participantSnapshotValue, {
+  contract: BYTES_STAKING_CONTRACT,
+  deploymentBlock: BYTES_STAKING_DEPLOYMENT_BLOCK,
+  sourceBlock: BYTES_PARTICIPANT_SNAPSHOT_BLOCK,
+  sourceBlockHash: BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH,
+  count: BYTES_PARTICIPANT_SNAPSHOT_COUNT,
+  addressesSha256: BYTES_PARTICIPANT_SNAPSHOT_DIGEST,
+});
 
 function rpcUrl() {
   return ethereumRpcUrl(process.env);
@@ -53,6 +99,104 @@ function bytesValue(value: bigint) {
   const parsed = Number(formatUnits(value, 18));
   if (!Number.isFinite(parsed) || parsed < 0) throw new Error('Invalid contract numeric result');
   return parsed;
+}
+
+function participantAddressFromLog(log: { topics: readonly string[] }) {
+  const topic = log.topics[1];
+  if (typeof topic !== 'string' || topic.length !== 66) throw new Error('Malformed participant event');
+  return getAddress(`0x${topic.slice(26)}`);
+}
+
+async function readDeltaParticipants(provider: JsonRpcProvider, fromBlock: number, toBlock: number) {
+  if (fromBlock > toBlock) return [];
+  const addressesByLower = new Map<string, string>();
+  let rawEventCount = 0;
+  for (let start = fromBlock; start <= toBlock; start += DELTA_LOG_BLOCK_CHUNK) {
+    const end = Math.min(toBlock, start + DELTA_LOG_BLOCK_CHUNK - 1);
+    const logs = await provider.getLogs({
+      address: BYTES_STAKING_CONTRACT,
+      topics: [[...EVENT_TOPICS]],
+      fromBlock: start,
+      toBlock: end,
+    });
+    rawEventCount += logs.length;
+    if (rawEventCount > MAX_DELTA_LOG_EVENTS) {
+      throw new RangeError(`participant delta event count exceeds ${MAX_DELTA_LOG_EVENTS}`);
+    }
+    for (const log of logs) {
+      const address = participantAddressFromLog(log);
+      addressesByLower.set(address.toLowerCase(), address);
+      if (addressesByLower.size > PENDING_WORK_LIMITS.maxParticipants) {
+        throw new RangeError(`participant delta unique-address count exceeds ${PENDING_WORK_LIMITS.maxParticipants}`);
+      }
+    }
+  }
+  return [...addressesByLower.values()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
+async function readCanonicalTokenMetrics(provider: JsonRpcProvider, staking: Contract, blockNumber: number, asOf: string) {
+  const token = new Contract(BYTES_TOKEN_CONTRACT, BYTES_TOKEN_ABI, provider);
+  const [stakingBytes, tokenStaker, decimals, totalSupply, stakingBalance] = await Promise.all([
+    staking.BYTES({ blockTag: blockNumber }) as Promise<string>,
+    token.STAKER({ blockTag: blockNumber }) as Promise<string>,
+    token.decimals({ blockTag: blockNumber }) as Promise<bigint>,
+    token.totalSupply({ blockTag: blockNumber }) as Promise<bigint>,
+    token.balanceOf(BYTES_STAKING_CONTRACT, { blockTag: blockNumber }) as Promise<bigint>,
+  ]);
+  if (!verifyCanonicalTokenLinks(stakingBytes, tokenStaker, decimals, {
+    tokenContract: BYTES_TOKEN_CONTRACT,
+    stakingContract: BYTES_STAKING_CONTRACT,
+  })) throw new Error('Canonical token identity mismatch');
+  return tokenMetrics({ totalSupply, stakingBalance, asOf });
+}
+
+async function readAggregatePendingRewards(provider: JsonRpcProvider, blockNumber: number, asOf: string) {
+  validatePendingWorkBounds({
+    snapshotBlock: participantSnapshot.sourceBlock,
+    currentBlock: blockNumber,
+    participantCount: participantSnapshot.count,
+    chunkCount: 1,
+  }, PENDING_WORK_LIMITS);
+  const deltaAddresses = await readDeltaParticipants(provider, participantSnapshot.sourceBlock + 1, blockNumber);
+  const participants = mergeParticipantAddresses(participantSnapshot, deltaAddresses);
+  const calls = participants.flatMap((participant) => CLAIMABLE_REWARD_POOLS.map((pool) => ({
+    target: BYTES_STAKING_CONTRACT,
+    allowFailure: true,
+    callData: stakingInterface.encodeFunctionData('getPendingPoolReward', [pool, participant]),
+  })));
+  const multicall = new Contract(MULTICALL3_CONTRACT, MULTICALL3_ABI, provider);
+  const chunks = [];
+  for (let index = 0; index < calls.length; index += MULTICALL_CHUNK_SIZE) {
+    chunks.push(calls.slice(index, index + MULTICALL_CHUNK_SIZE));
+  }
+  validatePendingWorkBounds({
+    snapshotBlock: participantSnapshot.sourceBlock,
+    currentBlock: blockNumber,
+    participantCount: participants.length,
+    chunkCount: chunks.length,
+  }, PENDING_WORK_LIMITS);
+  const chunkResults: Array<Array<{ success: boolean; returnData: string }>> = [];
+  for (let index = 0; index < chunks.length; index += MULTICALL_CONCURRENCY) {
+    const batch = chunks.slice(index, index + MULTICALL_CONCURRENCY);
+    chunkResults.push(...await Promise.all(batch.map((chunk) => (
+      multicall.aggregate3.staticCall(chunk, { blockTag: blockNumber }) as Promise<Array<{ success: boolean; returnData: string }>>
+    ))));
+  }
+  let reward = BigInt(0);
+  let tax = BigInt(0);
+  for (const result of chunkResults.flat()) {
+    if (!result.success) throw new Error('Pending reward component unavailable');
+    const [componentReward, componentTax] = stakingInterface.decodeFunctionResult('getPendingPoolReward', result.returnData);
+    reward += componentReward;
+    tax += componentTax;
+  }
+  return pendingRewardsMetric({
+    reward,
+    tax,
+    asOf,
+    participantCount: participants.length,
+    snapshotBlock: participantSnapshot.sourceBlock,
+  });
 }
 
 function modeledRateMetric(week: number, asOf: string) {
@@ -94,7 +238,7 @@ export async function GET() {
     const network = await withTimeout(provider.getNetwork(), RPC_DEADLINE_MS, 'Ethereum network verification');
     assertExpectedChainId(network.chainId, ETHEREUM_CHAIN_ID);
     block = await withTimeout(provider.getBlock('latest'), RPC_DEADLINE_MS, 'Ethereum latest-block read');
-    if (!block) throw new Error('Latest block unavailable');
+    if (!block?.hash) throw new Error('Latest block unavailable');
   } catch {
     console.error('BYTES metrics chain verification or latest-block read failed.');
     return Response.json(publicFailurePayload(generatedAt), {
@@ -123,7 +267,7 @@ export async function GET() {
     });
   }
 
-  const warnings: string[] = [UNVERIFIED_ETHEREUM_TOKEN_REASON];
+  const warnings: string[] = [];
   const poolValues: Partial<Record<'S1' | 'S2' | 'BYTES' | 'LP', number>> = {};
   POOLS.forEach((pool, index) => {
     const result = poolReads[index];
@@ -135,7 +279,43 @@ export async function GET() {
     }
   });
 
-  const { ethBytes2Supply, bytesHeldByStakingContract } = unverifiedEthereumTokenMetrics(asOf);
+  let tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
+  let pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
+  let tokenIdentityVerified = false;
+  const secondaryRequest = new FetchRequest(url);
+  secondaryRequest.timeout = RPC_TRANSPORT_TIMEOUT_MS;
+  const secondaryProvider = new JsonRpcProvider(secondaryRequest, ETHEREUM_CHAIN_ID, { staticNetwork: true });
+  const secondaryStaking = new Contract(BYTES_STAKING_CONTRACT, BYTES_STAKING_ABI, secondaryProvider);
+  try {
+    try {
+      tokenMetricRecords = await withTimeout(
+        readCanonicalTokenMetrics(secondaryProvider, secondaryStaking, block.number, asOf),
+        RPC_DEADLINE_MS,
+        'Canonical BYTES token reads',
+      );
+      tokenIdentityVerified = true;
+    } catch {
+      warnings.push('Ethereum BYTES supply and staking-contract balance are temporarily unavailable.');
+    }
+
+    if (tokenIdentityVerified) {
+      try {
+        pendingUnclaimedRewards = await withTimeout(
+          readAggregatePendingRewards(secondaryProvider, block.number, asOf),
+          RPC_DEADLINE_MS,
+          'Aggregate pending rewards',
+        );
+      } catch {
+        warnings.push('Pending and unclaimed rewards are temporarily unavailable.');
+      }
+    } else {
+      warnings.push('Pending and unclaimed rewards require canonical token verification.');
+    }
+  } finally {
+    secondaryProvider.destroy();
+  }
+
+  const { ethBytes2Supply, bytesHeldByStakingContract } = tokenMetricRecords;
 
   const configured = configuredEmissionsMetric(poolValues, asOf);
   const week = theoreticalWeek(VERIFIED_EMISSIONS_EPOCH_SECONDS, block.timestamp);
@@ -145,7 +325,7 @@ export async function GET() {
     currentConfiguredEmissions: configured,
     ethBytes2Supply,
     bytesHeldByStakingContract,
-    pendingUnclaimedRewards: pendingUnclaimedRewardsMetric(asOf),
+    pendingUnclaimedRewards,
     theoreticalWeek: availableMetric(
       week,
       'week',
@@ -201,6 +381,17 @@ export async function GET() {
     ),
   };
 
+  try {
+    const canonicalBlock = await withTimeout(provider.getBlock(block.number), RPC_DEADLINE_MS, 'Ethereum source-block confirmation');
+    if (!canonicalBlock?.hash || canonicalBlock.hash !== block.hash) throw new Error('Ethereum source block changed');
+  } catch {
+    console.error('BYTES metrics source-block confirmation failed.');
+    return Response.json(publicFailurePayload(generatedAt), {
+      status: 503,
+      headers: { 'cache-control': PRIVATE_FAILURE_CACHE_CONTROL },
+    });
+  }
+
   return Response.json(
     {
       schemaVersion: 1,
@@ -213,7 +404,21 @@ export async function GET() {
       provenance: {
         chain: ETHEREUM_CHAIN_NAME,
         chainId: ETHEREUM_CHAIN_ID,
+        sourceBlockHash: block.hash,
         stakingContract: BYTES_STAKING_CONTRACT,
+        bytesTokenContract: BYTES_TOKEN_CONTRACT,
+        tokenIdentityVerified,
+        tokenIdentityVerification: tokenIdentityVerified
+          ? 'Verified at source block: staking.BYTES() and token.STAKER() bidirectional match; token.decimals() == 18'
+          : 'Unavailable at source block; token-dependent metrics are source-gated',
+        participantSnapshotBlock: participantSnapshot.sourceBlock,
+        participantSnapshotBlockHash: participantSnapshot.sourceBlockHash,
+        participantSnapshotCount: participantSnapshot.count,
+        participantSnapshotDigest: participantSnapshot.addressesSha256,
+        participantSnapshotEvidence: participantSnapshot.evidence,
+        pendingRewardPools: ['S1-position', 'S2-position', 'LP'],
+        pendingDaoTaxTreatment: 'excluded from the net pending reward snapshot aggregate',
+        pendingWorkLimits: PENDING_WORK_LIMITS,
         observationWindowSeconds: SECONDS_PER_DAY,
       },
       warnings,

@@ -18,6 +18,9 @@ type MetricRecordMetadata = {
   assumptions?: string[];
   reason?: string;
   unavailablePools?: string[];
+  rawValue?: string;
+  daoTaxExcluded?: number;
+  daoTaxExcludedRawValue?: string;
 };
 
 export type MetricRecord<T = number> = MetricRecordMetadata & (

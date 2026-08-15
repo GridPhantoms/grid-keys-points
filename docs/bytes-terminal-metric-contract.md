@@ -27,14 +27,14 @@ Every displayed value must carry a source class and timestamp:
 | Source | Role | Authority |
 |---|---|---|
 | Neo Tokyo staking contract `0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16` | Configured S1/S2/BYTES/LP emissions | Primary and verified |
-| Canonical Ethereum BYTES token source | Ethereum supply and direct balances | Unresolved; unavailable in v1 until token identity and interface are independently verified |
+| Ethereum BYTES 2.0 `0xa19f5264F7D7Be11c451C093D8f92592820Bea86` | Ethereum ERC-20 total supply and direct balances | Primary and verified bidirectionally through `staker.BYTES()` and `token.STAKER()` |
 | Legacy Ethereum BYTES token source | Remaining legacy supply | Unresolved; unavailable in v1 until token identity, interface, and economic treatment are independently verified |
 | Canonical Avalanche BYTES token source | Avalanche supply, balances, and burn accounting | Unresolved; unavailable until token and bridge/migration semantics are independently verified |
 | BYTES 2.0 launch tokenomics document | Reservoir tiers, 3% DAO tax, decay formula | Canonical reference |
 | Citizen staking spreadsheet | Independent per-point and participation cross-check | Reference only |
 | Ktrap and 0xSanSSerif historical reports | Historical checkpoints and explanatory context | Reference only |
 
-Only the staking-contract address above is established for v1. Candidate token addresses discovered during research are intentionally omitted: no address becomes canonical merely because it appears in an article, social post, explorer page, or callable contract. A future supply source must be checksum-validated and independently reconciled against authoritative identity and interface evidence before it enters code, documentation, provenance, or public output.
+The Ethereum BYTES 2.0 identity is established by a same-block bidirectional contract relationship: the verified staker's immutable `BYTES()` getter returns the token above, the token's `STAKER()` getter returns the verified staker, and `decimals()` returns 18. Legacy Ethereum, Avalanche, circulating, burn, and cross-chain aggregation semantics remain separately gated.
 
 ---
 
@@ -44,10 +44,10 @@ Only the staking-contract address above is established for v1. Candidate token a
 
 **Public label:** `ETH BYTES 2.0 Supply`  
 **Type:** Observed  
-**Definition:** ERC-20 `totalSupply()` on a future independently verified canonical Ethereum BYTES contract.  
+**Definition:** ERC-20 `totalSupply()` on the verified Ethereum BYTES 2.0 contract after same-block bidirectional identity and decimals checks.
 **Refresh:** 15 minutes.  
-**V1 gate:** Unavailable. Canonical Ethereum BYTES token identity and ERC-20 interface have not been conclusively established.  
-**Future failure behavior:** Keep the last verified snapshot, mark it stale, and show the last successful block/time.
+**V1 status:** Available as a direct observed Ethereum contract read. This is not circulating, cumulative minted, maximum, terminal, legacy, Avalanche, or combined cross-chain supply.
+**Failure behavior:** Return this metric as unavailable in a sanitized HTTP 200 partial response while preserving primary configured-emission data. Successful complete and partial responses use the declared 15-minute CDN policy; no persistent last-known-good metric store is claimed.
 
 ### A2. Remaining BYTES 1.0 supply
 
@@ -79,18 +79,20 @@ ETH BYTES 2.0 + legacy BYTES 1.0 + economically net AVAX supply
 ### A5. Pending staking rewards
 
 **Public label:** `Pending / Unclaimed Rewards`  
-**Type:** Observed/indexed  
-**Definition:** Sum of claimable rewards earned by staking positions but not yet minted/claimed into wallet balances.  
-**Implementation note:** This requires indexed positions or a validated aggregate source; it is not equivalent to ERC-20 total supply.  
-**V1 gate:** Unavailable (`null`). Aggregate claimable rewards methodology and indexer have not been independently verified. The neutral API source is `aggregate-indexer-not-established`; this gate is independent of candidate token identity.  
+**Type:** Calculated from indexed observed contract inputs
+**Definition:** Net pending reward snapshot aggregate across indexed stakers at one pinned Ethereum block. It is not an amount claimable by one caller and changes as rewards accrue or claims execute.
+**Implementation:** Deduplicate all `Stake.staker` and conservative `Claim.recipient` addresses from deployment through a pinned participant snapshot, merge event deltas through the response block, and sum `getPendingPoolReward()` reward outputs for economically claimable S1-position, S2-position, and LP pools through Multicall3. S1/S2 position rewards include BYTES-staking bonus points. The DAO-tax return value is summed separately and excluded from the displayed net pending aggregate.
+**Snapshot evidence:** Pin and runtime-validate source block number/hash, contract, deployment block, participant count, canonical address-list SHA-256 digest, Stake/Claim event counts, unique participant counts, collector version, and log-query calls/retries.
+**Operational bounds:** The endpoint deduplicates delta addresses during each block batch and fails this secondary metric closed if the snapshot delta exceeds 250,000 blocks, the delta exceeds 10,000 raw Stake/Claim logs, participants exceed 5,000, or Multicall work exceeds 32 chunks. Chunks contain at most 500 calls and execute with concurrency 4. A new snapshot must be generated before a limit is reached.
+**V1 status:** Available when the complete index, canonical identity checks, and every bounded pending component succeed at one pinned block; otherwise `null` with partial status.
 **Failure behavior:** Never infer it as `projected max − minted supply`.
 
-### A6. Staked BYTES
+### A6. BYTES held by staking contract
 
-**Public label:** `BYTES Staked`  
+**Public label:** `BYTES Held by NeoTokyoStaker`
 **Type:** Observed  
-**Definition:** BYTES held in active staking positions or the staking contract, reconciled against the contract’s position model.  
-**Companion metric:** `Staked %`, with the denominator named explicitly.
+**Definition:** Direct BYTES `balanceOf(NeoTokyoStaker)` at the response block. Label it only as the contract-held balance; direct transfers mean it is not automatically equivalent to active-position principal.
+**Companion metric:** A percentage of current Ethereum BYTES 2.0 total supply may be calculated only with that denominator named explicitly.
 
 ### A7. Self-reported circulating supply
 

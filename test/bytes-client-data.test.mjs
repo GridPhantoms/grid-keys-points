@@ -66,8 +66,8 @@ function validMetricsPayload() {
         reason: 'Canonical source unavailable.',
       }),
       pendingUnclaimedRewards: scalarMetric(null, {
-        classification: 'observed',
-        source: 'aggregate-indexer-not-established',
+        classification: 'calculated',
+        source: 'staking-contract:getPendingPoolReward-indexed-aggregate',
         availability: 'unavailable',
         reason: 'Aggregate claimable methodology unavailable.',
       }),
@@ -76,7 +76,27 @@ function validMetricsPayload() {
       steadyParticipationRemainingIssuance: scalarMetric(1_000_000, { classification: 'projected' }),
       maximumParticipationRemainingIssuance: scalarMetric(2_000_000, { classification: 'projected' }),
     },
-    provenance: { chain: 'ethereum-mainnet' },
+    provenance: {
+      chain: 'ethereum-mainnet',
+      chainId: 1,
+      sourceBlockHash: `0x${'ab'.repeat(32)}`,
+      tokenIdentityVerified: false,
+      tokenIdentityVerification: 'Unavailable at source block; token-dependent metrics are source-gated',
+      participantSnapshotBlock: 25_758_127,
+      participantSnapshotCount: 3_318,
+      participantSnapshotBlockHash: `0x${'cd'.repeat(32)}`,
+      participantSnapshotDigest: 'ef'.repeat(32),
+      participantSnapshotEvidence: {
+        collectorVersion: '1.0.0',
+        stakeEventCount: 13_433,
+        claimEventCount: 32_888,
+        uniqueStakeParticipants: 3_310,
+        uniqueClaimRecipients: 3_318,
+        logQueryCalls: 166,
+        logQueryRetries: 0,
+      },
+      pendingWorkLimits: { maxDeltaBlocks: 250_000, maxDeltaLogEvents: 10_000, maxParticipants: 5_000, maxChunks: 32 },
+    },
     warnings: ['Supply source is not verified.'],
   };
 }
@@ -202,15 +222,60 @@ test('metrics validator rejects failure-shaped success metadata', () => {
   const unavailableStatus = validMetricsPayload();
   unavailableStatus.status = 'unavailable';
   assert.throws(() => validateBytesMetricsResponse(unavailableStatus), /status/);
+
+  const contradictoryIdentity = validMetricsPayload();
+  contradictoryIdentity.provenance.tokenIdentityVerified = true;
+  assert.throws(() => validateBytesMetricsResponse(contradictoryIdentity), /tokenIdentityVerified/);
+
+  const missingWorkLimit = validMetricsPayload();
+  delete missingWorkLimit.provenance.pendingWorkLimits.maxDeltaLogEvents;
+  assert.throws(() => validateBytesMetricsResponse(missingWorkLimit), /maxDeltaLogEvents/);
 });
 
-test('metrics validator accepts the pending/unclaimed unavailable source gate', () => {
+test('metrics validator accepts the pending/unclaimed secondary-failure source gate', () => {
   const metrics = validMetricsPayload();
   const validated = validateBytesMetricsResponse(metrics);
 
   assert.equal(validated.metrics.pendingUnclaimedRewards.value, null);
   assert.equal(validated.metrics.pendingUnclaimedRewards.availability, 'unavailable');
-  assert.equal(validated.metrics.pendingUnclaimedRewards.classification, 'observed');
+  assert.equal(validated.metrics.pendingUnclaimedRewards.classification, 'calculated');
+});
+
+test('metrics validator enforces exact-value coherence, pairing, and metric placement', () => {
+  const metrics = validMetricsPayload();
+  metrics.metrics.ethBytes2Supply = scalarMetric(Number('5215262.04112142936541243'), {
+    classification: 'observed',
+    rawValue: '5215262.04112142936541243',
+  });
+  metrics.metrics.bytesHeldByStakingContract = scalarMetric(1_853_137, {
+    classification: 'observed',
+    rawValue: '1853137.0',
+  });
+  metrics.metrics.pendingUnclaimedRewards = scalarMetric(Number('870970.189837981616925528'), {
+    rawValue: '870970.189837981616925528',
+    daoTaxExcluded: Number('26937.222366123142790828'),
+    daoTaxExcludedRawValue: '26937.222366123142790828',
+  });
+  metrics.provenance.tokenIdentityVerified = true;
+  metrics.provenance.tokenIdentityVerification = 'Verified at source block';
+  assert.equal(validateBytesMetricsResponse(metrics), metrics);
+
+  const malformed = structuredClone(metrics);
+  malformed.metrics.pendingUnclaimedRewards.rawValue = 'not-a-decimal';
+  assert.throws(() => validateBytesMetricsResponse(malformed), /rawValue/);
+
+  const contradictory = structuredClone(metrics);
+  contradictory.metrics.ethBytes2Supply.value = 1;
+  assert.throws(() => validateBytesMetricsResponse(contradictory), /numerically match/);
+
+  const unpaired = structuredClone(metrics);
+  delete unpaired.metrics.pendingUnclaimedRewards.daoTaxExcludedRawValue;
+  assert.throws(() => validateBytesMetricsResponse(unpaired), /pair/);
+
+  const misplaced = structuredClone(metrics);
+  misplaced.metrics.ethBytes2Supply.daoTaxExcluded = 1;
+  misplaced.metrics.ethBytes2Supply.daoTaxExcludedRawValue = '1.0';
+  assert.throws(() => validateBytesMetricsResponse(misplaced), /allowed only/);
 });
 
 test('metrics validator rejects missing or malformed pending/unclaimed source gates', () => {

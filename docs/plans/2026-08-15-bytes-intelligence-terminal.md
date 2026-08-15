@@ -173,8 +173,8 @@ Requirements:
 - Never return the RPC URL, credential, stack trace, or raw upstream response.
 - Read one latest block and use its timestamp/block number for all calls.
 - Call `getTotalEmissions(assetType, blockTimestamp - 86400)` for all four verified staking pools: S1, S2, BYTES, and LP.
-- Keep Ethereum supply and direct staking-balance fields unavailable with a neutral source-gate reason until canonical token identity and ERC-20 interface are independently verified. Do not call or document candidate token contracts.
-- Keep pending/unclaimed rewards unavailable with source `aggregate-indexer-not-established` until aggregate claimable methodology and an indexer are independently verified; do not tie this gate to token identity.
+- Verify the official Ethereum BYTES 2.0 token bidirectionally at the pinned block: `staker.BYTES()` equals the canonical token, `token.STAKER()` equals the staker, and `token.decimals()` equals 18; only then publish `totalSupply()` and `balanceOf(staker)` as observed metrics.
+- Load the validated participant snapshot, merge post-snapshot `Stake`/`Claim` event deltas, and sum `getPendingPoolReward()` user rewards for claimable S1-position, S2-position, and LP pools through bounded Multicall3 batches. Classify the aggregate as calculated, keep DAO tax separate, and source-gate only this secondary metric on failure.
 - Validate finite, non-negative outputs.
 - Return `partial` with per-metric warnings if a noncritical metric fails; fail the route only if no primary metric can be produced.
 

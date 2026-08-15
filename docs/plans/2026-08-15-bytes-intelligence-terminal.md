@@ -627,3 +627,38 @@ Do not push/deploy the public route until Ktrap approves the final screenshots a
 - Mobile, tablet, and desktop layouts pass visual inspection.
 - Lint, build, model tests, history tests, and direct data reconciliation all pass.
 - Public copy communicates scarcity mechanics conditionally, without guarantees or price targets.
+
+---
+
+## Avalanche and valuation addendum
+
+This addendum supersedes only the original V1 statements that Avalanche supply and price were unresolved. It does not change the Ethereum staking or emissions definitions above.
+
+### Published additions
+
+- **Avalanche observed on-chain supply:** canonical Avalanche C-Chain BYTES proxy `0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b`, chain ID `43114`, gated by token metadata, EIP-1967 implementation `0x5430B6C1cbF4f05737A5E6F5623efA0759017874`, and CCIP BurnMint pool `0xAb2e4F219E1A24bA061E0Ecf07c0e3Dc7d410A9A`.
+- **BYTES/USD spot reference:** Ethereum Uniswap V3 BYTES/WETH pool `0xfeb09c7e130a4b87b27ebd648ec485657b688b34`, verified against the canonical factory, 1% fee tier, deployed code, token order/decimals, positive liquidity, and initialized `slot0`; converted with a fresh, complete Chainlink ETH/USD round.
+- **Ethereum canonical total-supply valuation:** canonical Ethereum `totalSupply()` multiplied by the spot reference. This is not market cap, circulating market cap, conventional FDV, or a claim that the full supply is realizable at spot.
+
+
+### Prohibited aggregations and labels
+
+- Never add Ethereum and satellite-chain `totalSupply()` values. Ethereum Lock/Release and satellite Burn/Mint representations would double count bridged units.
+- Never publish market cap until independently established circulating supply exists.
+- Never present CCIP bridge burns as permanent global destruction.
+- Never subtract historical burns again from current `totalSupply()`; ERC-20 `totalSupply()` already reflects burn/remint effects.
+
+### Secondary-failure behavior
+
+Avalanche supply, price, valuation, and pending-reward aggregation can degrade independently. Their failure must not suppress canonical Ethereum supply, staking balance, or configured emissions. Public responses remain sanitized and use the existing CDN policy: `public, s-maxage=900, stale-while-revalidate=3600, stale-if-error=3600`.
+
+### Additional acceptance criteria
+
+- Avalanche labels appear only after chain, proxy, implementation, and pool identity checks pass at one chain-specific block with a post-read block-hash recheck.
+- Price appears only after canonical Uniswap V3 factory/fee/registry, pool, token-order, decimals, liquidity, initialization, and Chainlink round/freshness gates pass.
+- Market cap remains explicitly unavailable.
+- Browser bundles contain no private credential, public Alchemy variable, or direct RPC hostname.
+
+### Deferred follow-up
+
+The burn ledger is intentionally excluded from this release. A receipt-complete regeneration attempt failed closed because 133 Avalanche indexed rows did not reconcile to canonical receipts, breaking exact mint-minus-burn conservation. The direct Avalanche transaction `0x72aef0091c85d578d8c77e0c4aa6465af1c87d12e5fdbed2d05b358a0628ad50` is a verified regression fixture: successful chain-43114 call to canonical BYTES, selector `0x42966c68` (`burn(uint256)`), decoded amount `208 BYTES`, and one matching transfer-to-zero event for `208 BYTES`. Resolve the historical index/receipt source in an isolated review before reintroducing burn artifacts, API fields, or UI claims.

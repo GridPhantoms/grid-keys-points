@@ -3,6 +3,12 @@ import 'server-only';
 import { Contract, FetchRequest, Interface, JsonRpcProvider, formatUnits, getAddress } from 'ethers';
 import participantSnapshotValue from '@/data/bytes-staking-participants.json';
 import {
+  AVALANCHE_BYTES_CCIP_POOL,
+  AVALANCHE_BYTES_IMPLEMENTATION,
+  AVALANCHE_BYTES_TOKEN_ABI,
+  AVALANCHE_BYTES_TOKEN_CONTRACT,
+  AVALANCHE_CHAIN_ID,
+  AVALANCHE_CHAIN_NAME,
   BYTES_PARTICIPANT_SNAPSHOT_BLOCK,
   BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH,
   BYTES_PARTICIPANT_SNAPSHOT_COUNT,
@@ -13,11 +19,19 @@ import {
   BYTES_STAKING_CONTRACT,
   BYTES_TOKEN_ABI,
   BYTES_TOKEN_CONTRACT,
+  BYTES_WETH_UNISWAP_V3_POOL,
+  BYTES_WETH_UNISWAP_V3_POOL_ABI,
   BytesPool,
   ETHEREUM_CHAIN_ID,
   ETHEREUM_CHAIN_NAME,
+  CCIP_BURN_MINT_POOL_ABI,
+  CHAINLINK_AGGREGATOR_ABI,
+  CHAINLINK_ETH_USD_FEED,
   MULTICALL3_ABI,
   MULTICALL3_CONTRACT,
+  UNISWAP_V3_FACTORY,
+  UNISWAP_V3_FACTORY_ABI,
+  WETH_CONTRACT,
 } from '@/lib/bytes-contracts';
 import {
   availableMetric,
@@ -43,6 +57,13 @@ import {
   verifyCanonicalTokenLinks,
 } from '@/lib/bytes-onchain.mjs';
 import {
+  avalancheSupplyMetric,
+  avalancheSupplyUnavailableMetric,
+  marketMetrics,
+  marketMetricsUnavailable,
+  verifyAvalancheTokenIdentity,
+} from '@/lib/bytes-market.mjs';
+import {
   annualizedIssuance,
   emissionAtWeek,
   fractionThroughWeek,
@@ -56,6 +77,9 @@ export const runtime = 'nodejs';
 const PRIVATE_FAILURE_CACHE_CONTROL = 'private, no-store';
 const RPC_TRANSPORT_TIMEOUT_MS = 9_000;
 const RPC_DEADLINE_MS = 10_000;
+const AVALANCHE_RPC_URL = 'https://api.avax.network/ext/bc/C/rpc';
+const EIP1967_IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+const AVALANCHE_BURN_ZERO_CALL_DATA = `0x42966c68${'0'.repeat(64)}`;
 const SECONDS_PER_DAY = 86_400;
 const VERIFIED_EMISSIONS_EPOCH_SECONDS = 1_686_787_200; // 2023-06-15T00:00:00Z
 const STEADY_RESERVOIRS = { S1: 5_500, S2: 375, BYTES: 0, LP: 0 } as const;
@@ -90,7 +114,6 @@ const participantSnapshot = validateParticipantSnapshot(participantSnapshotValue
   count: BYTES_PARTICIPANT_SNAPSHOT_COUNT,
   addressesSha256: BYTES_PARTICIPANT_SNAPSHOT_DIGEST,
 });
-
 function rpcUrl() {
   return ethereumRpcUrl(process.env);
 }
@@ -147,7 +170,107 @@ async function readCanonicalTokenMetrics(provider: JsonRpcProvider, staking: Con
     tokenContract: BYTES_TOKEN_CONTRACT,
     stakingContract: BYTES_STAKING_CONTRACT,
   })) throw new Error('Canonical token identity mismatch');
-  return tokenMetrics({ totalSupply, stakingBalance, asOf });
+  return { metrics: tokenMetrics({ totalSupply, stakingBalance, asOf }), totalSupply };
+}
+
+async function readMarketMetrics(provider: JsonRpcProvider, blockNumber: number, blockTimestamp: number, asOf: string, ethereumTotalSupply: bigint) {
+  const pair = new Contract(BYTES_WETH_UNISWAP_V3_POOL, BYTES_WETH_UNISWAP_V3_POOL_ABI, provider);
+  const factory = new Contract(UNISWAP_V3_FACTORY, UNISWAP_V3_FACTORY_ABI, provider);
+  const weth = new Contract(WETH_CONTRACT, ['function decimals() view returns (uint8)'], provider);
+  const feed = new Contract(CHAINLINK_ETH_USD_FEED, CHAINLINK_AGGREGATOR_ABI, provider);
+  const [code, token0, token1, factoryAddress, fee, registeredPool, liquidity, slot0, wethDecimals, feedDecimals, round] = await Promise.all([
+    provider.getCode(BYTES_WETH_UNISWAP_V3_POOL, blockNumber),
+    pair.token0({ blockTag: blockNumber }),
+    pair.token1({ blockTag: blockNumber }),
+    pair.factory({ blockTag: blockNumber }),
+    pair.fee({ blockTag: blockNumber }),
+    factory.getPool(BYTES_TOKEN_CONTRACT, WETH_CONTRACT, 10_000, { blockTag: blockNumber }),
+    pair.liquidity({ blockTag: blockNumber }),
+    pair.slot0({ blockTag: blockNumber }),
+    weth.decimals({ blockTag: blockNumber }),
+    feed.decimals({ blockTag: blockNumber }),
+    feed.latestRoundData({ blockTag: blockNumber }),
+  ]);
+  if (code === '0x'
+    || getAddress(token0) !== BYTES_TOKEN_CONTRACT
+    || getAddress(token1) !== WETH_CONTRACT
+    || getAddress(factoryAddress) !== UNISWAP_V3_FACTORY
+    || Number(fee) !== 10_000
+    || getAddress(registeredPool) !== BYTES_WETH_UNISWAP_V3_POOL
+    || BigInt(wethDecimals) !== BigInt(18)
+    || Number(feedDecimals) !== 8
+    || liquidity <= BigInt(0)
+    || slot0.sqrtPriceX96 <= BigInt(0)) {
+    throw new Error('Canonical BYTES/WETH pool identity, registry, decimals, or liquidity mismatch');
+  }
+  if (round.answeredInRound < round.roundId) throw new Error('ETH/USD oracle round is incomplete');
+  return marketMetrics({
+    ethereumTotalSupply,
+    sqrtPriceX96: slot0.sqrtPriceX96,
+    ethUsdAnswer: round.answer,
+    ethUsdDecimals: Number(feedDecimals),
+    feedUpdatedAt: Number(round.updatedAt),
+    sourceTimestamp: blockTimestamp,
+    asOf,
+  });
+}
+
+async function readAvalancheSupplySnapshot() {
+  const request = new FetchRequest(AVALANCHE_RPC_URL);
+  request.timeout = RPC_TRANSPORT_TIMEOUT_MS;
+  const provider = new JsonRpcProvider(request, AVALANCHE_CHAIN_ID, { staticNetwork: true });
+  try {
+    const rpcChainId = BigInt(await withTimeout(provider.send('eth_chainId', []), RPC_DEADLINE_MS, 'Avalanche RPC chain verification'));
+    assertExpectedChainId(rpcChainId, AVALANCHE_CHAIN_ID);
+    const block = await withTimeout(provider.getBlock('latest'), RPC_DEADLINE_MS, 'Avalanche latest-block read');
+    if (!block?.hash) throw new Error('Avalanche latest block unavailable');
+    const token = new Contract(AVALANCHE_BYTES_TOKEN_CONTRACT, AVALANCHE_BYTES_TOKEN_ABI, provider);
+    const pool = new Contract(AVALANCHE_BYTES_CCIP_POOL, CCIP_BURN_MINT_POOL_ABI, provider);
+    const [code, implementationStorage, name, symbol, decimals, totalSupply, minterRole, poolToken, poolTypeAndVersion, poolBurnResult] = await Promise.all([
+      provider.getCode(AVALANCHE_BYTES_TOKEN_CONTRACT, block.number),
+      provider.getStorage(AVALANCHE_BYTES_TOKEN_CONTRACT, EIP1967_IMPLEMENTATION_SLOT, block.number),
+      token.name({ blockTag: block.number }),
+      token.symbol({ blockTag: block.number }),
+      token.decimals({ blockTag: block.number }),
+      token.totalSupply({ blockTag: block.number }),
+      token.MINTER_ROLE({ blockTag: block.number }),
+      pool.getToken({ blockTag: block.number }),
+      pool.typeAndVersion({ blockTag: block.number }),
+      provider.send('eth_call', [{
+        to: AVALANCHE_BYTES_TOKEN_CONTRACT,
+        from: AVALANCHE_BYTES_CCIP_POOL,
+        data: AVALANCHE_BURN_ZERO_CALL_DATA,
+      }, `0x${block.number.toString(16)}`]),
+    ]);
+    if (code === '0x' || !/^0x[0-9a-fA-F]{64}$/.test(implementationStorage)) throw new Error('Avalanche proxy code or implementation slot unavailable');
+    const implementation = getAddress(`0x${implementationStorage.slice(-40)}`);
+    const poolHasMinterRole = await token.hasRole(minterRole, AVALANCHE_BYTES_CCIP_POOL, { blockTag: block.number });
+    if (!verifyAvalancheTokenIdentity({
+      chainId: rpcChainId,
+      name,
+      symbol,
+      decimals,
+      implementation,
+      poolToken,
+      poolTypeAndVersion,
+      poolHasMinterRole,
+      poolCanSelfBurn: poolBurnResult === '0x',
+    }, {
+      token: AVALANCHE_BYTES_TOKEN_CONTRACT,
+      implementation: AVALANCHE_BYTES_IMPLEMENTATION,
+    })) throw new Error('Canonical Avalanche BYTES identity mismatch');
+    const confirmed = await withTimeout(provider.getBlock(block.number), RPC_DEADLINE_MS, 'Avalanche source-block confirmation');
+    if (!confirmed?.hash || confirmed.hash !== block.hash) throw new Error('Avalanche source block changed');
+    const avalancheAsOf = new Date(block.timestamp * 1_000).toISOString();
+    return {
+      metric: avalancheSupplyMetric({ totalSupply, asOf: avalancheAsOf }),
+      sourceBlock: block.number,
+      sourceBlockHash: block.hash,
+      asOf: avalancheAsOf,
+    };
+  } finally {
+    provider.destroy();
+  }
 }
 
 async function readAggregatePendingRewards(provider: JsonRpcProvider, blockNumber: number, asOf: string) {
@@ -281,41 +404,95 @@ export async function GET() {
 
   let tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
   let pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
+  let marketMetricRecords = marketMetricsUnavailable(asOf);
+  let avalancheBytesSupply = avalancheSupplyUnavailableMetric(asOf);
+  let avalancheSource: { sourceBlock: number | null; sourceBlockHash: string | null; asOf: string | null; identityVerified: boolean } = {
+    sourceBlock: null,
+    sourceBlockHash: null,
+    asOf: null,
+    identityVerified: false,
+  };
+  let canonicalTotalSupply: bigint | null = null;
   let tokenIdentityVerified = false;
+  const avalancheRead = withTimeout(readAvalancheSupplySnapshot(), RPC_DEADLINE_MS, 'Avalanche BYTES supply reads')
+    .then(
+      (value) => ({ status: 'fulfilled' as const, value }),
+      () => ({ status: 'rejected' as const }),
+    );
   const secondaryRequest = new FetchRequest(url);
   secondaryRequest.timeout = RPC_TRANSPORT_TIMEOUT_MS;
   const secondaryProvider = new JsonRpcProvider(secondaryRequest, ETHEREUM_CHAIN_ID, { staticNetwork: true });
   const secondaryStaking = new Contract(BYTES_STAKING_CONTRACT, BYTES_STAKING_ABI, secondaryProvider);
   try {
     try {
-      tokenMetricRecords = await withTimeout(
+      const [secondaryChainId, secondaryBlock] = await Promise.all([
+        withTimeout(secondaryProvider.send('eth_chainId', []), RPC_DEADLINE_MS, 'Secondary Ethereum RPC chain verification'),
+        withTimeout(secondaryProvider.getBlock(block.number), RPC_DEADLINE_MS, 'Secondary Ethereum source-block verification'),
+      ]);
+      assertExpectedChainId(BigInt(secondaryChainId), ETHEREUM_CHAIN_ID);
+      if (!secondaryBlock?.hash || secondaryBlock.hash !== block.hash) throw new Error('Secondary Ethereum provider source block does not match published provenance');
+      const canonical = await withTimeout(
         readCanonicalTokenMetrics(secondaryProvider, secondaryStaking, block.number, asOf),
         RPC_DEADLINE_MS,
         'Canonical BYTES token reads',
       );
+      tokenMetricRecords = canonical.metrics;
+      canonicalTotalSupply = canonical.totalSupply;
       tokenIdentityVerified = true;
     } catch {
       warnings.push('Ethereum BYTES supply and staking-contract balance are temporarily unavailable.');
     }
 
-    if (tokenIdentityVerified) {
-      try {
-        pendingUnclaimedRewards = await withTimeout(
-          readAggregatePendingRewards(secondaryProvider, block.number, asOf),
-          RPC_DEADLINE_MS,
-          'Aggregate pending rewards',
-        );
-      } catch {
-        warnings.push('Pending and unclaimed rewards are temporarily unavailable.');
-      }
+    if (tokenIdentityVerified && canonicalTotalSupply !== null) {
+      const [pendingResult, marketResult] = await Promise.allSettled([
+        withTimeout(readAggregatePendingRewards(secondaryProvider, block.number, asOf), RPC_DEADLINE_MS, 'Aggregate pending rewards'),
+        withTimeout(readMarketMetrics(secondaryProvider, block.number, block.timestamp, asOf, canonicalTotalSupply), RPC_DEADLINE_MS, 'BYTES price and valuation reads'),
+      ]);
+      if (pendingResult.status === 'fulfilled') pendingUnclaimedRewards = pendingResult.value;
+      else warnings.push('Pending and unclaimed rewards are temporarily unavailable.');
+      if (marketResult.status === 'fulfilled') marketMetricRecords = marketResult.value;
+      else warnings.push('BYTES pair price and total-supply valuation are temporarily unavailable.');
     } else {
-      warnings.push('Pending and unclaimed rewards require canonical token verification.');
+      warnings.push('Pending, price, and valuation metrics require canonical Ethereum token verification.');
+    }
+
+    try {
+      const postReadSecondaryBlock = await withTimeout(
+        secondaryProvider.getBlock(block.number),
+        RPC_DEADLINE_MS,
+        'Secondary Ethereum post-read source-block confirmation',
+      );
+      if (!postReadSecondaryBlock?.hash || postReadSecondaryBlock.hash !== block.hash) {
+        throw new Error('Secondary Ethereum source block changed during reads');
+      }
+    } catch {
+      tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
+      pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
+      marketMetricRecords = marketMetricsUnavailable(asOf);
+      canonicalTotalSupply = null;
+      tokenIdentityVerified = false;
+      warnings.push('Ethereum token, pending, price, and valuation metrics failed post-read source-block confirmation.');
     }
   } finally {
     secondaryProvider.destroy();
   }
 
+  const avalancheResult = await avalancheRead;
+  if (avalancheResult.status === 'fulfilled') {
+    const avalanche = avalancheResult.value;
+    avalancheBytesSupply = avalanche.metric;
+    avalancheSource = {
+      sourceBlock: avalanche.sourceBlock,
+      sourceBlockHash: avalanche.sourceBlockHash,
+      asOf: avalanche.asOf,
+      identityVerified: true,
+    };
+  } else {
+    warnings.push('Avalanche BYTES supply is temporarily unavailable.');
+  }
+
   const { ethBytes2Supply, bytesHeldByStakingContract } = tokenMetricRecords;
+  const { bytesPriceUsd, totalSupplyValuationUsd } = marketMetricRecords;
 
   const configured = configuredEmissionsMetric(poolValues, asOf);
   const week = theoreticalWeek(VERIFIED_EMISSIONS_EPOCH_SECONDS, block.timestamp);
@@ -324,8 +501,18 @@ export async function GET() {
   const metrics: Record<string, unknown> = {
     currentConfiguredEmissions: configured,
     ethBytes2Supply,
+    avalancheBytesSupply,
     bytesHeldByStakingContract,
     pendingUnclaimedRewards,
+    bytesPriceUsd,
+    totalSupplyValuationUsd,
+    circulatingMarketCapUsd: unavailableMetric(
+      'USD',
+      'calculated',
+      'circulating-supply-times-price',
+      asOf,
+      'Circulating supply has not been independently established; total-supply valuation is reported separately.',
+    ),
     theoreticalWeek: availableMetric(
       week,
       'week',
@@ -411,6 +598,36 @@ export async function GET() {
         tokenIdentityVerification: tokenIdentityVerified
           ? 'Verified at source block: staking.BYTES() and token.STAKER() bidirectional match; token.decimals() == 18'
           : 'Unavailable at source block; token-dependent metrics are source-gated',
+        avalanche: {
+          chain: AVALANCHE_CHAIN_NAME,
+          chainId: AVALANCHE_CHAIN_ID,
+          sourceBlock: avalancheSource.sourceBlock,
+          sourceBlockHash: avalancheSource.sourceBlockHash,
+          asOf: avalancheSource.asOf,
+          bytesTokenContract: AVALANCHE_BYTES_TOKEN_CONTRACT,
+          proxyImplementation: AVALANCHE_BYTES_IMPLEMENTATION,
+          ccipBurnMintPool: AVALANCHE_BYTES_CCIP_POOL,
+          tokenIdentityVerified: avalancheSource.identityVerified,
+          tokenIdentityVerification: avalancheSource.identityVerified
+            ? 'Verified at one Avalanche block: RPC chain ID, proxy implementation, name, symbol, decimals, pool token, BurnMintTokenPool version, MINTER_ROLE linkage, and pool self-burn capability'
+            : 'Unavailable; Avalanche token-dependent metrics are source-gated',
+        },
+        crossChainSupplyTreatment: 'Ethereum is the canonical Lock/Release issuance chain. The verified Avalanche BurnMint supply is a bridge representation and is not added to Ethereum totalSupply.',
+        priceSource: {
+          verified: bytesPriceUsd.availability === 'available',
+          verification: bytesPriceUsd.availability === 'available'
+            ? 'Verified at the Ethereum source block: deployed canonical Uniswap V3 factory pool, 1% fee tier, token order and decimals, positive liquidity, initialized slot0, and a fresh complete Chainlink ETH/USD round'
+            : 'Unavailable at the Ethereum source block; price and valuation metrics are source-gated',
+          dextoolsPairUrl: 'https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34',
+          uniswapV3Pool: BYTES_WETH_UNISWAP_V3_POOL,
+          uniswapV3Factory: UNISWAP_V3_FACTORY,
+          feeTier: 10_000,
+          quoteToken: WETH_CONTRACT,
+          ethUsdFeed: CHAINLINK_ETH_USD_FEED,
+          quoteCurrency: 'USD',
+          method: 'Same-Ethereum-block Uniswap V3 BYTES/WETH spot ratio multiplied by Chainlink ETH/USD; total-supply valuation uses canonical Ethereum totalSupply once.',
+        },
+
         participantSnapshotBlock: participantSnapshot.sourceBlock,
         participantSnapshotBlockHash: participantSnapshot.sourceBlockHash,
         participantSnapshotCount: participantSnapshot.count,

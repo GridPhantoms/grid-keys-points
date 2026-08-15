@@ -56,7 +56,7 @@ function MetricDetails({ metric, label, sourceBlock }: {
         <div><dt>Source</dt><dd>{metric.source}</dd></div>
         {sourceBlock != null && <div><dt>Source block</dt><dd>{integerFormatter.format(sourceBlock)}</dd></div>}
         <div><dt>As of</dt><dd>{formatTimestamp(metric.asOf)}</dd></div>
-        {metric.rawValue && <div><dt>{metric.classification === 'calculated' ? 'Exact calculated aggregate' : 'Exact contract value'}</dt><dd><code>{metric.rawValue} {metric.unit}</code></dd></div>}
+        {metric.rawValue && <div><dt>{metric.daoTaxExcludedRawValue ? 'Exact calculated aggregate' : metric.classification === 'calculated' ? 'Exact calculated value' : 'Exact contract value'}</dt><dd><code>{metric.rawValue} {metric.unit}</code></dd></div>}
         {metric.daoTaxExcludedRawValue && <div><dt>Exact pending DAO-tax aggregate</dt><dd><code>{metric.daoTaxExcludedRawValue} BYTES</code> · excluded from the displayed net pending snapshot aggregate</dd></div>}
         {metric.formula && <div><dt>Formula</dt><dd><code>{metric.formula}</code></dd></div>}
         {metric.assumptions?.length ? <div><dt>Assumptions</dt><dd><ul>{metric.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></dd></div> : null}
@@ -66,21 +66,24 @@ function MetricDetails({ metric, label, sourceBlock }: {
   );
 }
 
-function StatCard({ label, metric, signed = false, pools = false }: {
+function StatCard({ label, metric, signed = false, pools = false, digits = 0, prefix = '' }: {
   label: string;
   metric?: MetricRecord<unknown>;
   signed?: boolean;
   pools?: boolean;
+  digits?: number;
+  prefix?: string;
 }) {
   const poolValue = metric && isPoolValue(metric.value) ? metric.value : null;
-  const display = poolValue ? formatNumber(poolValue.total) : signed ? formatSigned(metric?.value) : formatNumber(metric?.value, 0);
+  const formatted = poolValue ? formatNumber(poolValue.total) : signed ? formatSigned(metric?.value) : formatNumber(metric?.value, digits);
+  const display = formatted === 'Unavailable' ? formatted : `${prefix}${formatted}`;
   return (
     <article className="bytes-card">
       <div className="bytes-card-label">
         <span>{label}</span>
         {metric ? <Badge classification={metric.classification} /> : <span className="bytes-badge">waiting</span>}
       </div>
-      <div className={metric?.classification === 'observed' ? 'bytes-value bytes-cyan' : 'bytes-value'}>{display}</div>
+      <div className={metric?.availability === 'available' && metric.classification !== 'projected' ? 'bytes-value bytes-cyan' : 'bytes-value'}>{display}</div>
       <div className="bytes-unit">{metric?.availability === 'available' ? metric.unit : metric?.reason ?? 'Waiting for live metrics'}</div>
       {pools && poolValue ? (
         <div className="bytes-split">
@@ -179,9 +182,14 @@ export default function BytesDashboard() {
   const annualized = metrics?.metrics.annualizedConfiguredIssuance;
   const divergence = metrics?.metrics.configuredVsTheoretical;
   const theoryWeek = metrics?.metrics.theoreticalWeek;
+  const avalancheSupply = metrics?.metrics.avalancheBytesSupply;
+  const bytesPrice = metrics?.metrics.bytesPriceUsd;
+  const totalSupplyValuation = metrics?.metrics.totalSupplyValuationUsd;
+  const circulatingMarketCap = metrics?.metrics.circulatingMarketCapUsd;
   const steady = metrics?.projections.steadyParticipationRemainingIssuance;
   const maximum = metrics?.projections.maximumParticipationRemainingIssuance;
   const sourceAsOf = configured?.asOf ?? metrics?.generatedAt;
+  const avalancheSourceBlock = metrics?.provenance.avalanche.sourceBlock;
   const allLoading = !metricsDone && !historyDone;
 
   return (
@@ -214,6 +222,12 @@ export default function BytesDashboard() {
         <StatCard label="Configured minus theoretical" metric={divergence} signed />
       </section>
 
+      <section className="bytes-stats bytes-market-stats" aria-label="BYTES supply and valuation metrics">
+        <StatCard label="BYTES spot price" metric={bytesPrice} digits={4} prefix="$" />
+        <StatCard label="Ethereum canonical total-supply valuation" metric={totalSupplyValuation} prefix="$" />
+        <StatCard label="Avalanche chain-local supply" metric={avalancheSupply} digits={2} />
+      </section>
+
       <div className="bytes-layout">
         <section className="bytes-panel bytes-chart-panel" aria-labelledby="emissions-heading">
           <div className="bytes-panel-head">
@@ -232,9 +246,19 @@ export default function BytesDashboard() {
         </section>
 
         <aside className="bytes-side">
+          <section className="bytes-panel" aria-labelledby="valuation-heading">
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Cross-chain accounting</p><h2 id="valuation-heading">Supply &amp; valuation</h2></div></div>
+            <p className="bytes-panel-copy">Avalanche chain-local supply is observed independently at its own source block. Ethereum Canonical Total-Supply Valuation uses Ethereum supply once because the verified Avalanche CCIP BurnMint balance represents bridged tokens. It is not market cap. Price references the <a href="https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34" target="_blank" rel="noreferrer">Ethereum BYTES/WETH pair on DEXTools</a>.</p>
+            <AvailabilityRow label="Avalanche chain-local BYTES supply" metric={avalancheSupply} sourceBlock={avalancheSourceBlock} />
+            <AvailabilityRow label="BYTES spot price" metric={bytesPrice} sourceBlock={metrics?.sourceBlock} />
+            <AvailabilityRow label="Ethereum canonical total-supply valuation — not market cap" metric={totalSupplyValuation} sourceBlock={metrics?.sourceBlock} />
+            <AvailabilityRow label="Market cap" metric={circulatingMarketCap} sourceBlock={metrics?.sourceBlock} />
+          </section>
+
+
           <section className="bytes-panel" aria-labelledby="supply-heading">
             <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Supply &amp; staking status</h2></div></div>
-            <p className="bytes-panel-copy">Ethereum BYTES total supply, the staking contract’s token balance, and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. Circulating, burned, cross-chain, and maximum-supply figures remain unavailable until separately verified.</p>
+            <p className="bytes-panel-copy">Ethereum BYTES total supply, the staking contract’s token balance, and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. Circulating and maximum-supply figures remain unavailable until separately verified.</p>
             <AvailabilityRow label="Ethereum BYTES 2.0 total supply" metric={metrics?.metrics.ethBytes2Supply} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="BYTES held by staking contract" metric={metrics?.metrics.bytesHeldByStakingContract} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="Pending / Unclaimed Rewards" metric={metrics?.metrics.pendingUnclaimedRewards} sourceBlock={metrics?.sourceBlock} />

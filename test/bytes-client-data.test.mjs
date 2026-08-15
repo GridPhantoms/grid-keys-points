@@ -60,6 +60,11 @@ function validMetricsPayload() {
         availability: 'unavailable',
         reason: 'Canonical source unavailable.',
       }),
+      avalancheBytesSupply: scalarMetric(null, {
+        classification: 'observed',
+        availability: 'unavailable',
+        reason: 'Canonical Avalanche source unavailable.',
+      }),
       bytesHeldByStakingContract: scalarMetric(null, {
         classification: 'observed',
         availability: 'unavailable',
@@ -71,6 +76,9 @@ function validMetricsPayload() {
         availability: 'unavailable',
         reason: 'Aggregate claimable methodology unavailable.',
       }),
+      bytesPriceUsd: scalarMetric(null, { unit: 'USD/BYTES', availability: 'unavailable', reason: 'Pair price unavailable.' }),
+      totalSupplyValuationUsd: scalarMetric(null, { unit: 'USD', availability: 'unavailable', reason: 'Pair price unavailable.' }),
+      circulatingMarketCapUsd: scalarMetric(null, { unit: 'USD', availability: 'unavailable', reason: 'Circulating supply unavailable.' }),
     },
     projections: {
       steadyParticipationRemainingIssuance: scalarMetric(1_000_000, { classification: 'projected' }),
@@ -82,6 +90,32 @@ function validMetricsPayload() {
       sourceBlockHash: `0x${'ab'.repeat(32)}`,
       tokenIdentityVerified: false,
       tokenIdentityVerification: 'Unavailable at source block; token-dependent metrics are source-gated',
+      avalanche: {
+        chain: 'avalanche-c-chain',
+        chainId: 43_114,
+        sourceBlock: null,
+        sourceBlockHash: null,
+        asOf: null,
+        bytesTokenContract: '0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b',
+        proxyImplementation: '0x5430B6C1cbF4f05737A5E6F5623efA0759017874',
+        ccipBurnMintPool: '0xAb2e4F219E1A24bA061E0Ecf07c0e3Dc7d410A9A',
+        tokenIdentityVerified: false,
+        tokenIdentityVerification: 'Unavailable; Avalanche token-dependent metrics are source-gated',
+      },
+      crossChainSupplyTreatment: 'Ethereum canonical supply is counted once; remote BurnMint supplies are not added.',
+      priceSource: {
+        verified: false,
+        verification: 'Unavailable at the Ethereum source block; price and valuation metrics are source-gated',
+        dextoolsPairUrl: 'https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34',
+        uniswapV3Pool: '0xFEb09c7e130a4B87B27EBD648EC485657B688b34',
+        uniswapV3Factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+        feeTier: 10_000,
+        quoteToken: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        ethUsdFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419',
+        quoteCurrency: 'USD',
+        method: 'Same-block pool ratio times ETH/USD.',
+      },
+
       participantSnapshotBlock: 25_758_127,
       participantSnapshotCount: 3_318,
       participantSnapshotBlockHash: `0x${'cd'.repeat(32)}`,
@@ -241,6 +275,25 @@ test('metrics validator accepts the pending/unclaimed secondary-failure source g
   assert.equal(validated.metrics.pendingUnclaimedRewards.classification, 'calculated');
 });
 
+test('metrics validator enforces Avalanche identity, valuation dependency, and unavailable circulating market cap', () => {
+  const contradictoryAvalanche = validMetricsPayload();
+  contradictoryAvalanche.provenance.avalanche.tokenIdentityVerified = true;
+  assert.throws(() => validateBytesMetricsResponse(contradictoryAvalanche), /avalanche.*tokenIdentityVerified/i);
+
+  const orphanValuation = validMetricsPayload();
+  orphanValuation.metrics.totalSupplyValuationUsd = scalarMetric(1_200_000, { unit: 'USD', rawValue: '1200000' });
+  assert.throws(() => validateBytesMetricsResponse(orphanValuation), /totalSupplyValuationUsd/);
+
+  const fakeMarketCap = validMetricsPayload();
+  fakeMarketCap.metrics.circulatingMarketCapUsd = scalarMetric(1_000_000, { unit: 'USD' });
+  assert.throws(() => validateBytesMetricsResponse(fakeMarketCap), /circulatingMarketCapUsd/);
+
+  const falseSuccessfulPriceProvenance = validMetricsPayload();
+  falseSuccessfulPriceProvenance.provenance.priceSource.verified = true;
+  assert.throws(() => validateBytesMetricsResponse(falseSuccessfulPriceProvenance), /priceSource\.verified/);
+
+});
+
 test('metrics validator enforces exact-value coherence, pairing, and metric placement', () => {
   const metrics = validMetricsPayload();
   metrics.metrics.ethBytes2Supply = scalarMetric(Number('5215262.04112142936541243'), {
@@ -258,6 +311,10 @@ test('metrics validator enforces exact-value coherence, pairing, and metric plac
   });
   metrics.provenance.tokenIdentityVerified = true;
   metrics.provenance.tokenIdentityVerification = 'Verified at source block';
+  metrics.metrics.bytesPriceUsd = scalarMetric(0.2425, { unit: 'USD/BYTES', rawValue: '0.2425' });
+  metrics.metrics.totalSupplyValuationUsd = scalarMetric(1_264_678, { unit: 'USD', rawValue: '1264678' });
+  metrics.provenance.priceSource.verified = true;
+  metrics.provenance.priceSource.verification = 'Verified at the Ethereum source block';
   assert.equal(validateBytesMetricsResponse(metrics), metrics);
 
   const malformed = structuredClone(metrics);

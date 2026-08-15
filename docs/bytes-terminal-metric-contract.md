@@ -29,12 +29,14 @@ Every displayed value must carry a source class and timestamp:
 | Neo Tokyo staking contract `0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16` | Configured S1/S2/BYTES/LP emissions | Primary and verified |
 | Ethereum BYTES 2.0 `0xa19f5264F7D7Be11c451C093D8f92592820Bea86` | Ethereum ERC-20 total supply and direct balances | Primary and verified bidirectionally through `staker.BYTES()` and `token.STAKER()` |
 | Legacy Ethereum BYTES token source | Remaining legacy supply | Unresolved; unavailable in v1 until token identity, interface, and economic treatment are independently verified |
-| Canonical Avalanche BYTES token source | Avalanche supply, balances, and burn accounting | Unresolved; unavailable until token and bridge/migration semantics are independently verified |
+| Avalanche BYTES `0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b` | Avalanche ERC-20 representation supply | Primary; source-gated by chain 43114, EIP-1967 implementation `0x5430…7874`, BYTES metadata, and verified CCIP BurnMint pool `0xAb2e…0A9A` |
+| Chainlink CCIP BYTES directory | Ethereum–Avalanche Lock/Release versus Burn/Mint topology | Canonical bridge reference for the verified release scope; Ethereum is Lock/Release and Avalanche is a Burn/Mint representation |
+| Ethereum BYTES/WETH Uniswap V3 pool `0xfeb09c7e130a4b87b27ebd648ec485657b688b34` | BYTES/WETH spot ratio linked from DEXTools | Primary on-chain price venue, paired with Chainlink ETH/USD for USD conversion |
 | BYTES 2.0 launch tokenomics document | Reservoir tiers, 3% DAO tax, decay formula | Canonical reference |
 | Citizen staking spreadsheet | Independent per-point and participation cross-check | Reference only |
 | Ktrap and 0xSanSSerif historical reports | Historical checkpoints and explanatory context | Reference only |
 
-The Ethereum BYTES 2.0 identity is established by a same-block bidirectional contract relationship: the verified staker's immutable `BYTES()` getter returns the token above, the token's `STAKER()` getter returns the verified staker, and `decimals()` returns 18. Legacy Ethereum, Avalanche, circulating, burn, and cross-chain aggregation semantics remain separately gated.
+The Ethereum BYTES 2.0 identity is established by a same-block bidirectional contract relationship: the verified staker's immutable `BYTES()` getter returns the token above, the token's `STAKER()` getter returns the verified staker, and `decimals()` returns 18. Avalanche identity is independently established at one Avalanche block through an actual RPC `eth_chainId` response, proxy implementation, name, symbol, decimals, `BurnMintTokenPool.getToken()`, pool version, pool `MINTER_ROLE` linkage, and a block-tagged simulation proving the pool can call the token's public self-burn `burn(uint256)` path. The verified BYTES implementation has no `BURNER_ROLE`; burn capability comes from the pool burning tokens held by its own address. Legacy Ethereum, circulating supply, maximum supply, terminal supply, and summed cross-chain supply remain unavailable unless independently established.
 
 ---
 
@@ -61,20 +63,15 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 
 **Public label:** `AVAX BYTES Supply`  
 **Type:** Observed  
-**Definition:** ERC-20 `totalSupply()` on a future independently verified canonical Avalanche BYTES contract, adjusted only if the migration/bridge architecture proves that raw supply double-counts locked canonical tokens.  
-**Gate:** Remains unavailable until mint/burn/lock semantics are verified across ETH and AVAX.
+**Definition:** ERC-20 `totalSupply()` on the verified Avalanche proxy at one block after every identity invariant above succeeds.
+**Cross-chain treatment:** This is a per-chain representation supply. It is not added to Ethereum `totalSupply()` because Chainlink CCIP burns/mints remote representations while Ethereum uses Lock/Release.
+**Refresh:** 15 minutes. Failure degrades only the Avalanche metric.
 
 ### A4. Combined minted supply
 
-**Public label:** `Total Minted Supply`  
-**Type:** Calculated  
-**Provisional formula:**
-
-```text
-ETH BYTES 2.0 + legacy BYTES 1.0 + economically net AVAX supply
-```
-
-**Gate:** Do not ship this aggregation until cross-chain double-counting has been eliminated. If unresolved in v1, show chain supplies separately.
+**Public label:** Not published as a summed metric
+**Decision:** Do not add Ethereum and Avalanche `totalSupply()` values. The verified Avalanche Burn/Mint balance represents claims backed through the Ethereum Lock/Release topology, so addition would double count bridged units. Other remote chains are outside this release's runtime-verified scope.
+**Public treatment:** Show Ethereum canonical total supply and Avalanche per-chain supply separately. Use canonical Ethereum `totalSupply()` once for Total Supply Valuation.
 
 ### A5. Pending staking rewards
 
@@ -115,8 +112,25 @@ Economically net minted supply
 **Public label:** `Confirmed Burns`  
 **Type:** Observed/indexed  
 **Definition:** Cumulative BYTES permanently removed through verified burn transactions or contract mechanics.  
-**Required breakdown:** auction burns, protocol/activity burns, and any migration burns.  
-**Rule:** Transfers to an arbitrary dead-looking wallet count only after the project’s burn semantics are verified.
+**Required breakdown:** protocol burns, same-transaction remints, direct satellite-chain burns, and bridge-mechanic burns.
+**Rule:** Transfers to zero or a dead-looking wallet count only after transaction semantics are verified; CCIP bridge burns must remain separate from permanent destruction.
+**Release status:** Deferred. The receipt-complete historical Avalanche index did not pass conservation at the release gate, so no burn value or burn panel ships in this release.
+
+### A9. BYTES USD price
+
+**Public label:** `BYTES/USD Spot Price`
+**Type:** Calculated from observed on-chain inputs
+**Formula:** `(Uniswap V3 sqrtPriceX96 / 2^96)^2 WETH/BYTES × Chainlink ETH/USD`.
+**Identity gate:** The DEXTools-linked pool must have canonical Ethereum BYTES as token0, WETH as token1, positive liquidity, the approved Uniswap V3 factory, and factory registry confirmation at the Ethereum source block. The Chainlink answer must be positive, complete, and no more than 7,200 seconds old.
+**Caveat:** Single-pool `slot0` spot price; not a TWAP, volume-weighted price, or slippage-adjusted execution quote.
+
+### A10. Ethereum canonical total-supply valuation and market cap
+
+**Public label:** `Ethereum Canonical Total-Supply Valuation — Not Market Cap`
+**Type:** Calculated
+**Formula:** `canonical Ethereum totalSupply × BYTES/USD spot price`.
+**Supply definition:** Canonical Ethereum issued supply once. Remote BurnMint supplies are not added.
+**Market-cap rule:** `Market Cap` remains unavailable until circulating supply is independently established. This metric is also not conventional FDV because no verified maximum supply is applied.
 
 ---
 

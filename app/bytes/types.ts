@@ -46,8 +46,12 @@ export type BytesMetricsResponse = {
     configuredVsTheoretical: MetricRecord;
     theoreticalWeek: MetricRecord;
     ethBytes2Supply: MetricRecord;
+    avalancheBytesSupply: MetricRecord;
     bytesHeldByStakingContract: MetricRecord;
     pendingUnclaimedRewards: MetricRecord;
+    bytesPriceUsd: MetricRecord;
+    totalSupplyValuationUsd: MetricRecord;
+    circulatingMarketCapUsd: MetricRecord;
     [key: string]: MetricRecord<unknown> | undefined;
   };
   projections: {
@@ -55,7 +59,21 @@ export type BytesMetricsResponse = {
     maximumParticipationRemainingIssuance: MetricRecord;
     [key: string]: MetricRecord<unknown> | undefined;
   };
-  provenance: Record<string, unknown>;
+  provenance: {
+    avalanche: {
+      chain: string;
+      chainId: number;
+      sourceBlock: number | null;
+      sourceBlockHash: string | null;
+      asOf: string | null;
+      bytesTokenContract: string;
+      proxyImplementation: string;
+      ccipBurnMintPool: string;
+      tokenIdentityVerified: boolean;
+      tokenIdentityVerification: string;
+    };
+    [key: string]: unknown;
+  };
   warnings: string[];
 };
 

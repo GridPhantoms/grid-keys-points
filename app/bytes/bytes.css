@@ -54,6 +54,7 @@
 .bytes-panel-head { display: block; margin-bottom: 1.25rem; }
 .bytes-panel h2 { margin: 0 0 .35rem; font-size: 1.3rem; letter-spacing: -.03em; }
 .bytes-panel-head p:not(.bytes-eyebrow), .bytes-panel-copy { margin: 0; color: #7f8994; font-size: .76rem; line-height: 1.55; }
+.bytes-panel-copy a { color: var(--bytes-cyan); text-underline-offset: .18em; }
 .bytes-sample-count { display: inline-block; margin-top: .75rem; padding: .45rem .6rem; border: 1px solid #26323a; border-radius: .5rem; color: #8f9ba5; font: .61rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
 .bytes-chart-wrap { min-width: 0; }
 .bytes-chart { display: block; width: 100%; height: auto; min-height: 12rem; overflow: visible; }

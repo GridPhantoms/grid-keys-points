@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T04:42:23.000Z",
-  "sourceBlock": 25758127,
-  "sourceBlockHash": "0x856fd5b59dda1dd658ba7b980a7baa0be01dbac30bb80e9492d1e8eb64d8bba6",
+  "generatedAt": "2026-08-15T20:00:23.000Z",
+  "sourceBlock": 25762696,
+  "sourceBlockHash": "0xcc742744a178941131479796a401969686677735c43ac87d02b0e0f8dd19c9b9",
   "deploymentBlock": 17487669,
   "contract": "0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16",
   "methodology": "Unique Stake.staker and Claim.recipient addresses from deploymentBlock through sourceBlock inclusive; checksummed, deduplicated, and sorted by lowercase address.",

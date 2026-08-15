@@ -46,6 +46,8 @@ function validMetricsPayload() {
     status: 'partial',
     freshnessPolicy: {
       freshForSeconds: 900,
+      pendingRewardsSeconds: 86_400,
+      participantSnapshotSeconds: 604_800,
       staleWhileRevalidateSeconds: 3_600,
       staleIfErrorSeconds: 3_600,
     },
@@ -129,6 +131,7 @@ function validMetricsPayload() {
         logQueryCalls: 166,
         logQueryRetries: 0,
       },
+      pendingRewardsSnapshot: { sourceBlock: null, sourceBlockHash: null, asOf: null },
       pendingWorkLimits: { maxDeltaBlocks: 250_000, maxDeltaLogEvents: 10_000, maxParticipants: 5_000, maxChunks: 32 },
     },
     warnings: ['Supply source is not verified.'],
@@ -311,6 +314,11 @@ test('metrics validator enforces exact-value coherence, pairing, and metric plac
   });
   metrics.provenance.tokenIdentityVerified = true;
   metrics.provenance.tokenIdentityVerification = 'Verified at source block';
+  metrics.provenance.pendingRewardsSnapshot = {
+    sourceBlock: metrics.sourceBlock,
+    sourceBlockHash: metrics.provenance.sourceBlockHash,
+    asOf: metrics.metrics.pendingUnclaimedRewards.asOf,
+  };
   metrics.metrics.bytesPriceUsd = scalarMetric(0.2425, { unit: 'USD/BYTES', rawValue: '0.2425' });
   metrics.metrics.totalSupplyValuationUsd = scalarMetric(1_264_678, { unit: 'USD', rawValue: '1264678' });
   metrics.provenance.priceSource.verified = true;
@@ -355,6 +363,18 @@ test('metrics validator rejects missing or malformed pending/unclaimed source ga
   const unavailableNonNull = validMetricsPayload();
   unavailableNonNull.metrics.pendingUnclaimedRewards.value = 1;
   assert.throws(() => validateBytesMetricsResponse(unavailableNonNull), /pendingUnclaimedRewards.*value/);
+
+  const orphanPendingSnapshot = validMetricsPayload();
+  orphanPendingSnapshot.provenance.pendingRewardsSnapshot = {
+    sourceBlock: orphanPendingSnapshot.sourceBlock,
+    sourceBlockHash: orphanPendingSnapshot.provenance.sourceBlockHash,
+    asOf: AS_OF,
+  };
+  assert.throws(() => validateBytesMetricsResponse(orphanPendingSnapshot), /pendingRewardsSnapshot/);
+
+  const missingPendingSnapshot = validMetricsPayload();
+  delete missingPendingSnapshot.provenance.pendingRewardsSnapshot;
+  assert.throws(() => validateBytesMetricsResponse(missingPendingSnapshot), /pendingRewardsSnapshot/);
 });
 
 test('metrics validator rejects available null and malformed numbers', () => {

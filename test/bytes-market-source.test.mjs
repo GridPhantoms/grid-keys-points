@@ -6,6 +6,7 @@ const routeUrl = new URL('../app/api/bytes-metrics/route.ts', import.meta.url);
 const dashboardUrl = new URL('../app/bytes/BytesDashboard.tsx', import.meta.url);
 const pageUrl = new URL('../app/bytes/page.tsx', import.meta.url);
 const contractUrl = new URL('../docs/bytes-terminal-metric-contract.md', import.meta.url);
+const participantGeneratorUrl = new URL('../scripts/generate-bytes-staking-participants.mjs', import.meta.url);
 
 test('route source retains Avalanche, Uniswap factory, oracle, and reorg identity gates', async () => {
   const source = await readFile(routeUrl, 'utf8');
@@ -25,11 +26,36 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
     /Avalanche source block changed/,
     /configuredS1S2Daily = configured\.value\.S1 \+ configured\.value\.S2/,
     /projectedIssuanceOverDays\(configuredS1S2Daily/,
+    /unstable_cache/,
+    /\['bytes-lightweight-snapshot-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
+    /revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS/,
+    /\['bytes-pending-rewards-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
+    /revalidate: PENDING_SNAPSHOT_SECONDS/,
+    /readCachedPendingRewardsSnapshot\(\)/,
+    /pendingRewardsSnapshot: pendingRewardsSource/,
   ]) assert.match(source, pattern);
   assert.ok(
     source.lastIndexOf('secondaryProvider.getBlock(block.number)') > source.indexOf('readMarketMetrics(secondaryProvider'),
     'secondary provider must reconfirm the attributed block after all token and market reads',
   );
+  const getIndex = source.indexOf('export async function GET(request: Request)');
+  const pendingCacheCallIndex = source.indexOf('readCachedPendingRewardsSnapshot()', getIndex);
+  assert.ok(getIndex > 0 && pendingCacheCallIndex > getIndex, 'pending cache must be read at the top-level request boundary');
+  assert.equal(
+    source.slice(0, getIndex).includes('readCachedPendingRewardsSnapshot()'),
+    false,
+    'pending cache must never be called from inside the lightweight cache callback',
+  );
+  assert.match(source.slice(getIndex), /Promise\.allSettled\(\[\s*readCachedBytesMetricsPayload\(\),\s*readCachedPendingRewardsSnapshot\(\)/);
+});
+
+test('participant refresh indexes through the selected finalized source block', async () => {
+  const source = await readFile(participantGeneratorUrl, 'utf8');
+  assert.match(source, /getBlock\(refresh \? 'finalized' : BYTES_PARTICIPANT_SNAPSHOT_BLOCK\)/);
+  const collectorCall = source.match(
+    /collectParticipantEvidence\(\s*provider,\s*BYTES_STAKING_DEPLOYMENT_BLOCK,\s*([^,]+),\s*\)/,
+  );
+  assert.equal(collectorCall?.[1].trim(), 'sourceBlock.number');
 });
 
 test('BYTES page includes the universal Grid Phantoms footer', async () => {

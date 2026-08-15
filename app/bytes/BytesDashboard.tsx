@@ -345,7 +345,7 @@ export default function BytesDashboard() {
           <li><a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s Neo Tokyo listing</a> reflects an older reporting snapshot. On September 17, 2025, Neo Tokyo PM Firestorm and community contributors submitted a deliberately conservative maximum-supply scenario that assumed maximum participation beginning the next day. Actual participation and subsequent issuance did not follow that extreme path, so CMC&apos;s maximum, total, and self-reported circulating figures can now be stale or structurally mismatched. This terminal uses current contract reads instead.</li>
           <li>The projected next-365-day issuance assumes today&apos;s configured S1 and S2 participation remains steady while the weekly decay continues. It replaces the misleading flat-rate calculation of <code>current daily emissions × 365</code>.</li>
           <li>Staking-contract holdings are shown as a percentage of Ethereum total supply. The balance includes the BYTES that Citizens have staked alongside their S1s and S2s, but direct transfers can also enter the contract, so the raw balance is not a pure active-principal or circulating-supply definition.</li>
-          <li>Pending rewards are shown relative to current Ethereum total supply for scale. They are accrued and unclaimed rewards, not existing supply until they are claimed and minted.</li>
+          <li>Pending rewards are refreshed once every 24 hours and shown relative to current Ethereum total supply for scale. They are accrued and unclaimed rewards, not existing supply until they are claimed and minted; inspect the metric for its exact snapshot time.</li>
         </ol>
       </section>
     </main>

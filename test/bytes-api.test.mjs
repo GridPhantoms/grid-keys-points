@@ -68,6 +68,8 @@ test('expected chain validation requires Ethereum mainnet', () => {
 test('freshness policy and cache control expose the CDN contract', () => {
   assert.deepEqual(FRESHNESS_POLICY, {
     freshForSeconds: 900,
+    pendingRewardsSeconds: 86_400,
+    participantSnapshotSeconds: 604_800,
     staleWhileRevalidateSeconds: 3600,
     staleIfErrorSeconds: 3600,
   });

@@ -35,6 +35,8 @@ export type BytesMetricsResponse = {
   sourceBlock: number;
   freshnessPolicy: {
     freshForSeconds: number;
+    pendingRewardsSeconds: number;
+    participantSnapshotSeconds: number;
     staleWhileRevalidateSeconds: number;
     staleIfErrorSeconds: number;
   };
@@ -60,6 +62,11 @@ export type BytesMetricsResponse = {
     [key: string]: MetricRecord<unknown> | undefined;
   };
   provenance: {
+    pendingRewardsSnapshot: {
+      sourceBlock: number | null;
+      sourceBlockHash: string | null;
+      asOf: string | null;
+    };
     avalanche: {
       chain: string;
       chainId: number;

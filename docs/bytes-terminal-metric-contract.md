@@ -49,7 +49,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 **Definition:** ERC-20 `totalSupply()` on the verified Ethereum BYTES 2.0 contract after same-block bidirectional identity and decimals checks.
 **Refresh:** 15 minutes.  
 **V1 status:** Available as a direct observed Ethereum contract read. This is not circulating, cumulative minted, maximum, terminal, legacy, Avalanche, or combined cross-chain supply.
-**Failure behavior:** Return this metric as unavailable in a sanitized HTTP 200 partial response while preserving primary configured-emission data. Successful complete and partial responses use the declared 15-minute CDN policy; no persistent last-known-good metric store is claimed.
+**Failure behavior:** Return this metric as unavailable on a cold-cache failure. Successful source-confirmed snapshots are materialized in the fixed-key server data cache for 15 minutes and survive request/query variation; failed revalidation does not replace the last verified cached result.
 
 ### A2. Remaining BYTES 1.0 supply
 
@@ -82,6 +82,8 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 **Implementation:** Deduplicate all `Stake.staker` and conservative `Claim.recipient` addresses from deployment through a pinned participant snapshot, merge event deltas through the response block, and sum `getPendingPoolReward()` reward outputs for economically claimable S1-position, S2-position, and LP pools through Multicall3. S1/S2 position rewards include BYTES-staking bonus points. The DAO-tax return value is summed separately and excluded from the displayed net pending aggregate.
 **Snapshot evidence:** Pin and runtime-validate source block number/hash, contract, deployment block, participant count, canonical address-list SHA-256 digest, Stake/Claim event counts, unique participant counts, collector version, and log-query calls/retries.
 **Operational bounds:** The endpoint deduplicates delta addresses during each block batch and fails this secondary metric closed if the snapshot delta exceeds 250,000 blocks, the delta exceeds 10,000 raw Stake/Claim logs, participants exceed 5,000, or Multicall work exceeds 32 chunks. Chunks contain at most 500 calls and execute in one bounded wave of at most 32 chunks. A new snapshot must be generated before a limit is reached.
+**Refresh:** Materialized once every 24 hours under a fixed server cache key. Public traffic and query-string variation reuse that result rather than multiplying the aggregate work. The response publishes the pending snapshot's own source block, block hash, and timestamp separately from the 15-minute lightweight snapshot.
+**Participant baseline:** Regenerated weekly at an Ethereum finalized block, validated, committed, deployed, and then used as the bounded event-delta baseline.
 **V1 status:** Available when the complete index, canonical identity checks, and every bounded pending component succeed at one pinned block; otherwise `null` with partial status.
 **Failure behavior:** Never infer it as `projected max − minted supply`.
 
@@ -347,6 +349,8 @@ Prohibited framing:
 | Data | Cadence |
 |---|---|
 | Contract supply, balances, configured emissions | Every 15 minutes |
+| Pending / unclaimed reward aggregate | Every 24 hours |
+| Participant address baseline | Weekly at an Ethereum finalized block |
 | Staked Citizen/BYTES participation | Every 15 minutes or hourly |
 | Historical window reconstruction | Daily and when configuration changes |
 | Market price | Every 5–15 minutes |

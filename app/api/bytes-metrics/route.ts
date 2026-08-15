@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { Contract, FetchRequest, Interface, JsonRpcProvider, formatUnits, getAddress } from 'ethers';
+import { unstable_cache } from 'next/cache';
 import participantSnapshotValue from '@/data/bytes-staking-participants.json';
 import {
   AVALANCHE_BYTES_CCIP_POOL,
@@ -75,6 +76,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const PRIVATE_FAILURE_CACHE_CONTROL = 'private, no-store';
+const LIGHTWEIGHT_SNAPSHOT_SECONDS = 900;
+const PENDING_SNAPSHOT_SECONDS = 86_400;
 const RPC_TRANSPORT_TIMEOUT_MS = 9_000;
 const RPC_DEADLINE_MS = 10_000;
 const AVALANCHE_RPC_URL = 'https://api.avax.network/ext/bc/C/rpc';
@@ -322,6 +325,43 @@ async function readAggregatePendingRewards(provider: JsonRpcProvider, blockNumbe
   });
 }
 
+async function generatePendingRewardsSnapshot() {
+  const url = rpcUrl();
+  if (!url) throw new Error('Private Ethereum RPC configuration is required.');
+  const request = new FetchRequest(url);
+  request.timeout = RPC_TRANSPORT_TIMEOUT_MS;
+  const provider = new JsonRpcProvider(request, ETHEREUM_CHAIN_ID, { staticNetwork: true });
+  try {
+    const network = await withTimeout(provider.getNetwork(), RPC_DEADLINE_MS, 'Pending snapshot Ethereum network verification');
+    assertExpectedChainId(network.chainId, ETHEREUM_CHAIN_ID);
+    const block = await withTimeout(provider.getBlock('latest'), RPC_DEADLINE_MS, 'Pending snapshot latest-block read');
+    if (!block?.hash) throw new Error('Pending snapshot latest block unavailable');
+    const asOf = new Date(block.timestamp * 1_000).toISOString();
+    const staking = new Contract(BYTES_STAKING_CONTRACT, BYTES_STAKING_ABI, provider);
+    await withTimeout(
+      readCanonicalTokenMetrics(provider, staking, block.number, asOf),
+      RPC_DEADLINE_MS,
+      'Pending snapshot canonical BYTES identity reads',
+    );
+    const metric = await withTimeout(
+      readAggregatePendingRewards(provider, block.number, asOf),
+      RPC_DEADLINE_MS,
+      'Aggregate pending rewards',
+    );
+    const confirmed = await withTimeout(provider.getBlock(block.number), RPC_DEADLINE_MS, 'Pending snapshot source-block confirmation');
+    if (!confirmed?.hash || confirmed.hash !== block.hash) throw new Error('Pending snapshot source block changed');
+    return { metric, sourceBlock: block.number, sourceBlockHash: block.hash, asOf };
+  } finally {
+    provider.destroy();
+  }
+}
+
+const readCachedPendingRewardsSnapshot = unstable_cache(
+  generatePendingRewardsSnapshot,
+  ['bytes-pending-rewards-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST],
+  { revalidate: PENDING_SNAPSHOT_SECONDS, tags: ['bytes-pending-rewards'] },
+);
+
 function modeledRateMetric(week: number, asOf: string) {
   const value = {
     S1: emissionAtWeek(STEADY_RESERVOIRS.S1, week),
@@ -342,7 +382,7 @@ function modeledRateMetric(week: number, asOf: string) {
   };
 }
 
-export async function GET() {
+async function generateBytesMetricsResponse() {
   const generatedAt = new Date().toISOString();
   const url = rpcUrl();
   if (!url) {
@@ -404,6 +444,11 @@ export async function GET() {
 
   let tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
   let pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
+  let pendingRewardsSource: { sourceBlock: number | null; sourceBlockHash: string | null; asOf: string | null } = {
+    sourceBlock: null,
+    sourceBlockHash: null,
+    asOf: null,
+  };
   let marketMetricRecords = marketMetricsUnavailable(asOf);
   let avalancheBytesSupply = avalancheSupplyUnavailableMetric(asOf);
   let avalancheSource: { sourceBlock: number | null; sourceBlockHash: string | null; asOf: string | null; identityVerified: boolean } = {
@@ -444,16 +489,17 @@ export async function GET() {
     }
 
     if (tokenIdentityVerified && canonicalTotalSupply !== null) {
-      const [pendingResult, marketResult] = await Promise.allSettled([
-        withTimeout(readAggregatePendingRewards(secondaryProvider, block.number, asOf), RPC_DEADLINE_MS, 'Aggregate pending rewards'),
-        withTimeout(readMarketMetrics(secondaryProvider, block.number, block.timestamp, asOf, canonicalTotalSupply), RPC_DEADLINE_MS, 'BYTES price and valuation reads'),
-      ]);
-      if (pendingResult.status === 'fulfilled') pendingUnclaimedRewards = pendingResult.value;
-      else warnings.push('Pending and unclaimed rewards are temporarily unavailable.');
-      if (marketResult.status === 'fulfilled') marketMetricRecords = marketResult.value;
-      else warnings.push('BYTES pair price and total-supply valuation are temporarily unavailable.');
+      try {
+        marketMetricRecords = await withTimeout(
+          readMarketMetrics(secondaryProvider, block.number, block.timestamp, asOf, canonicalTotalSupply),
+          RPC_DEADLINE_MS,
+          'BYTES price and valuation reads',
+        );
+      } catch {
+        warnings.push('BYTES pair price and total-supply valuation are temporarily unavailable.');
+      }
     } else {
-      warnings.push('Pending, price, and valuation metrics require canonical Ethereum token verification.');
+      warnings.push('Price and valuation metrics require canonical Ethereum token verification.');
     }
 
     try {
@@ -468,10 +514,11 @@ export async function GET() {
     } catch {
       tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
       pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
+      pendingRewardsSource = { sourceBlock: null, sourceBlockHash: null, asOf: null };
       marketMetricRecords = marketMetricsUnavailable(asOf);
       canonicalTotalSupply = null;
       tokenIdentityVerified = false;
-      warnings.push('Ethereum token, pending, price, and valuation metrics failed post-read source-block confirmation.');
+      warnings.push('Ethereum token, price, and valuation metrics failed post-read source-block confirmation.');
     }
   } finally {
     secondaryProvider.destroy();
@@ -635,6 +682,7 @@ export async function GET() {
         participantSnapshotCount: participantSnapshot.count,
         participantSnapshotDigest: participantSnapshot.addressesSha256,
         participantSnapshotEvidence: participantSnapshot.evidence,
+        pendingRewardsSnapshot: pendingRewardsSource,
         pendingRewardPools: ['S1-position', 'S2-position', 'LP'],
         pendingDaoTaxTreatment: 'excluded from the net pending reward snapshot aggregate',
         pendingWorkLimits: PENDING_WORK_LIMITS,
@@ -644,4 +692,80 @@ export async function GET() {
     },
     { headers: { 'cache-control': PUBLIC_CACHE_CONTROL } },
   );
+}
+
+async function generateBytesMetricsPayload() {
+  const response = await generateBytesMetricsResponse();
+  if (!response.ok) throw new Error('Verified BYTES snapshot generation failed.');
+  return response.json();
+}
+
+const readCachedBytesMetricsPayload = unstable_cache(
+  generateBytesMetricsPayload,
+  ['bytes-lightweight-snapshot-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST],
+  { revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS, tags: ['bytes-lightweight-snapshot'] },
+);
+
+type PendingRewardsSnapshot = Awaited<ReturnType<typeof generatePendingRewardsSnapshot>>;
+
+function combineSnapshotTiers(
+  lightweightPayload: Awaited<ReturnType<typeof generateBytesMetricsPayload>>,
+  pendingResult: PromiseSettledResult<PendingRewardsSnapshot>,
+) {
+  const warnings = [...lightweightPayload.warnings];
+  let pendingMetric = lightweightPayload.metrics.pendingUnclaimedRewards;
+  let pendingSource = lightweightPayload.provenance.pendingRewardsSnapshot;
+  if (!lightweightPayload.provenance.tokenIdentityVerified) {
+    warnings.push('Pending rewards require canonical Ethereum token verification.');
+  } else if (pendingResult.status === 'fulfilled') {
+    pendingMetric = pendingResult.value.metric;
+    pendingSource = {
+      sourceBlock: pendingResult.value.sourceBlock,
+      sourceBlockHash: pendingResult.value.sourceBlockHash,
+      asOf: pendingResult.value.asOf,
+    };
+    const pendingAgeSeconds = Math.max(0, (
+      Date.parse(lightweightPayload.generatedAt) - Date.parse(pendingResult.value.asOf)
+    ) / 1_000);
+    if (pendingAgeSeconds > PENDING_SNAPSHOT_SECONDS + LIGHTWEIGHT_SNAPSHOT_SECONDS) {
+      warnings.push('Pending and unclaimed rewards are older than the 24-hour target; the last verified snapshot is being served.');
+    }
+  } else {
+    warnings.push('Pending and unclaimed rewards are temporarily unavailable.');
+  }
+  return {
+    ...lightweightPayload,
+    status: warnings.length === 0 ? 'fresh' : 'partial',
+    metrics: { ...lightweightPayload.metrics, pendingUnclaimedRewards: pendingMetric },
+    provenance: { ...lightweightPayload.provenance, pendingRewardsSnapshot: pendingSource },
+    warnings,
+  };
+}
+
+export async function GET(request: Request) {
+  const generatedAt = new Date().toISOString();
+  const searchParams = new URL(request.url).searchParams;
+  const isCanonical = searchParams.size === 0;
+  const isScheduledWarm = searchParams.size === 1 && searchParams.get('warm') === '1';
+  if (!isCanonical && !isScheduledWarm) {
+    return Response.json({ status: 'invalid_request' }, {
+      status: 400,
+      headers: { 'cache-control': PRIVATE_FAILURE_CACHE_CONTROL },
+    });
+  }
+  try {
+    const [lightweightResult, pendingResult] = await Promise.allSettled([
+      readCachedBytesMetricsPayload(),
+      readCachedPendingRewardsSnapshot(),
+    ]);
+    if (lightweightResult.status === 'rejected') throw new Error('Lightweight snapshot unavailable.');
+    const payload = combineSnapshotTiers(lightweightResult.value, pendingResult);
+    return Response.json(payload, { headers: { 'cache-control': PUBLIC_CACHE_CONTROL } });
+  } catch {
+    console.error('BYTES materialized snapshot unavailable.');
+    return Response.json(publicFailurePayload(generatedAt), {
+      status: 503,
+      headers: { 'cache-control': PRIVATE_FAILURE_CACHE_CONTROL },
+    });
+  }
 }

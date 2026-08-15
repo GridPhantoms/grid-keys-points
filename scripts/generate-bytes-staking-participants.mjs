@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FetchRequest, JsonRpcProvider, getAddress, id } from 'ethers';
@@ -17,6 +17,7 @@ import { buildParticipantSnapshot, validateParticipantSnapshot } from '../lib/by
 const INITIAL_BLOCK_CHUNK = 50_000;
 const MINIMUM_BLOCK_CHUNK = 100;
 const OUTPUT = resolve(dirname(fileURLToPath(import.meta.url)), '../data/bytes-staking-participants.json');
+const ADDRESSES_MODULE = resolve(dirname(fileURLToPath(import.meta.url)), '../lib/bytes-addresses.mjs');
 const EVENT_TOPICS = [
   id('Stake(address,address,uint256,uint256)'),
   id('Claim(address,uint256,uint256)'),
@@ -96,19 +97,20 @@ export async function collectParticipantEvidence(provider, fromBlock, toBlock) {
 }
 
 async function main() {
+  const refresh = process.argv.includes('--refresh');
   const request = new FetchRequest(rpcUrl());
   request.timeout = 20_000;
   const provider = new JsonRpcProvider(request, ETHEREUM_CHAIN_ID, { staticNetwork: true });
   const network = await provider.getNetwork();
   if (network.chainId !== BigInt(ETHEREUM_CHAIN_ID)) throw new Error('Unexpected Ethereum chain.');
-  const sourceBlock = await provider.getBlock(BYTES_PARTICIPANT_SNAPSHOT_BLOCK);
+  const sourceBlock = await provider.getBlock(refresh ? 'finalized' : BYTES_PARTICIPANT_SNAPSHOT_BLOCK);
   if (!sourceBlock) throw new Error('Pinned source block is unavailable.');
 
-  if (sourceBlock.hash?.toLowerCase() !== BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH) throw new Error('Pinned source block hash does not match.');
+  if (!refresh && sourceBlock.hash?.toLowerCase() !== BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH) throw new Error('Pinned source block hash does not match.');
   const { addresses, evidence } = await collectParticipantEvidence(
     provider,
     BYTES_STAKING_DEPLOYMENT_BLOCK,
-    BYTES_PARTICIPANT_SNAPSHOT_BLOCK,
+    sourceBlock.number,
   );
   const snapshot = buildParticipantSnapshot({
     generatedAt: new Date(sourceBlock.timestamp * 1_000).toISOString(),
@@ -119,7 +121,10 @@ async function main() {
     evidence,
     addresses,
   });
-  validateParticipantSnapshot(snapshot, {
+  validateParticipantSnapshot(snapshot, refresh ? {
+    contract: BYTES_STAKING_CONTRACT,
+    deploymentBlock: BYTES_STAKING_DEPLOYMENT_BLOCK,
+  } : {
     contract: BYTES_STAKING_CONTRACT,
     deploymentBlock: BYTES_STAKING_DEPLOYMENT_BLOCK,
     sourceBlock: BYTES_PARTICIPANT_SNAPSHOT_BLOCK,
@@ -127,12 +132,31 @@ async function main() {
     count: BYTES_PARTICIPANT_SNAPSHOT_COUNT,
     addressesSha256: BYTES_PARTICIPANT_SNAPSHOT_DIGEST,
   });
-  if (snapshot.count !== BYTES_PARTICIPANT_SNAPSHOT_COUNT) {
+  if (!refresh && snapshot.count !== BYTES_PARTICIPANT_SNAPSHOT_COUNT) {
     throw new Error(`Participant count ${snapshot.count} does not match verified checkpoint ${BYTES_PARTICIPANT_SNAPSHOT_COUNT}.`);
   }
 
   await mkdir(dirname(OUTPUT), { recursive: true });
-  await writeFile(OUTPUT, `${JSON.stringify(snapshot, null, 2)}\n`);
+  const snapshotTemp = `${OUTPUT}.tmp`;
+  await writeFile(snapshotTemp, `${JSON.stringify(snapshot, null, 2)}\n`);
+  if (refresh) {
+    const source = await readFile(ADDRESSES_MODULE, 'utf8');
+    const replacements = [
+      [/export const BYTES_PARTICIPANT_SNAPSHOT_BLOCK = [\d_]+;/, `export const BYTES_PARTICIPANT_SNAPSHOT_BLOCK = ${snapshot.sourceBlock.toLocaleString('en-US').replaceAll(',', '_')};`],
+      [/export const BYTES_PARTICIPANT_SNAPSHOT_COUNT = [\d_]+;/, `export const BYTES_PARTICIPANT_SNAPSHOT_COUNT = ${snapshot.count.toLocaleString('en-US').replaceAll(',', '_')};`],
+      [/export const BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH = '[^']+';/, `export const BYTES_PARTICIPANT_SNAPSHOT_BLOCK_HASH = '${snapshot.sourceBlockHash}';`],
+      [/export const BYTES_PARTICIPANT_SNAPSHOT_DIGEST = '[^']+';/, `export const BYTES_PARTICIPANT_SNAPSHOT_DIGEST = '${snapshot.addressesSha256}';`],
+    ];
+    let updated = source;
+    for (const [pattern, replacement] of replacements) {
+      if (!pattern.test(updated)) throw new Error(`Participant checkpoint constant not found: ${pattern}`);
+      updated = updated.replace(pattern, replacement);
+    }
+    const addressesTemp = `${ADDRESSES_MODULE}.tmp`;
+    await writeFile(addressesTemp, updated);
+    await rename(addressesTemp, ADDRESSES_MODULE);
+  }
+  await rename(snapshotTemp, OUTPUT);
   console.log(`Wrote ${snapshot.count.toLocaleString('en-US')} participants at block ${snapshot.sourceBlock.toLocaleString('en-US')}.`);
 }
 

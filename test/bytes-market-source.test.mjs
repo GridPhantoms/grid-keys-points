@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const routeUrl = new URL('../app/api/bytes-metrics/route.ts', import.meta.url);
 const dashboardUrl = new URL('../app/bytes/BytesDashboard.tsx', import.meta.url);
+const pageUrl = new URL('../app/bytes/page.tsx', import.meta.url);
 const contractUrl = new URL('../docs/bytes-terminal-metric-contract.md', import.meta.url);
 
 test('route source retains Avalanche, Uniswap factory, oracle, and reorg identity gates', async () => {
@@ -29,6 +30,18 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
     source.lastIndexOf('secondaryProvider.getBlock(block.number)') > source.indexOf('readMarketMetrics(secondaryProvider'),
     'secondary provider must reconfirm the attributed block after all token and market reads',
   );
+});
+
+test('BYTES page includes the universal Grid Phantoms footer', async () => {
+  const page = await readFile(pageUrl, 'utf8');
+  for (const expected of [
+    'https://discord.gg/gridphantoms',
+    'https://x.com/GridPhantoms',
+    'https://opensea.io/collection/grid-phantoms-genesis-keys',
+    'https://snapshot.box/#/s:gridphantoms.eth',
+    'https://manifold.xyz/@gridphantoms/id/4067746032',
+    '© 2026 Grid Phantoms Ltd. All rights reserved.',
+  ]) assert.match(page, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
 test('dashboard and metric contract use corrected valuation labels', async () => {

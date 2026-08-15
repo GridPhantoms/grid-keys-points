@@ -7,6 +7,8 @@
   --bytes-text: #f4f7fa;
   --bytes-cyan: #28d7f2;
   --bytes-violet: #a98cff;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   overflow-x: clip;
   color: var(--bytes-text);

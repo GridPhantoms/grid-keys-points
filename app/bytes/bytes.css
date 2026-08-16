@@ -17,11 +17,10 @@
 
 .bytes-topline { height: 2px; background: linear-gradient(90deg, transparent, var(--bytes-cyan), transparent); }
 .bytes-main { width: min(1180px, 100%); margin-inline: auto; padding: 2.25rem 1rem 4rem; }
-.bytes-hero { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 1.75rem; margin-bottom: 2rem; }
+.bytes-hero { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 1.75rem; margin-bottom: 1.25rem; }
 .bytes-eyebrow { margin: 0 0 .65rem; color: var(--bytes-cyan); font: 600 .69rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .2em; text-transform: uppercase; }
-.bytes-hero h1 { margin: 0 0 1rem; font-size: clamp(3rem, 8vw, 4.8rem); line-height: .94; letter-spacing: -.065em; }
+.bytes-hero h1 { margin: 0; font-size: clamp(3rem, 8vw, 4.8rem); line-height: .94; letter-spacing: -.065em; }
 .bytes-hero h1 span { display: block; color: var(--bytes-cyan); }
-.bytes-lede { max-width: 45rem; margin: 0; color: #a5aeb8; font-size: clamp(.96rem, 2vw, 1.08rem); line-height: 1.6; letter-spacing: -.015em; }
 .bytes-stamp { color: #78838e; font: .7rem/1.8 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: left; overflow-wrap: anywhere; }
 .bytes-source-status { display: inline-flex; align-items: center; gap: .5rem; color: #c3cad1; text-transform: uppercase; }
 .bytes-source-status i { width: .45rem; height: .45rem; flex: none; border-radius: 50%; background: #f2b84b; }

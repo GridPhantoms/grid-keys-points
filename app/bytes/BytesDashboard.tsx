@@ -376,7 +376,6 @@ export default function BytesDashboard() {
         <div>
           <p className="bytes-eyebrow">Neo Tokyo market intelligence</p>
           <h1 id="bytes-title">$BYTES <span>TERMINAL</span></h1>
-          <p className="bytes-lede">Contract-configured emissions, modeled decay, and supply research on our adopted utility token—separated by evidence class and shown with visible provenance.</p>
         </div>
         <div className="bytes-stamp" aria-label="Source status">
           <div className={`bytes-source-status ${metrics ? 'is-online' : ''}`}><i aria-hidden="true" />{metrics ? `${metrics.status} contract snapshot` : metricsDone ? 'Live metrics unavailable' : 'Connecting to metrics source'}</div>
@@ -386,7 +385,8 @@ export default function BytesDashboard() {
         </div>
       </section>
 
-      <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with a seven-figure supply valuation and 35.5% staked.</div>
+      <div className="bytes-notice"><strong>The Premise.</strong> A first-party view of $BYTES emissions, decay, supply, staking, holders, and valuation, separated by evidence class and backed by visible provenance.</div>
+      <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with a seven-figure supply valuation and 35.5% staked. $BYTES.</div>
       <div className="bytes-notice"><strong>Observed First.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}

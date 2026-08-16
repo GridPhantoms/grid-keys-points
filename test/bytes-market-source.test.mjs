@@ -179,9 +179,12 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /CoinGecko tracks more than/);
   assert.match(dashboard, /only about <strong>2,600<\/strong> currently clear a <strong>\$1 million market cap<\/strong>, roughly one in seven/i);
   assert.match(dashboard, /It is still here, still staked, and still economically meaningful/i);
-  for (const title of ['Valuation basis.', 'Market benchmark.', 'Issuance projection.', 'Staked and pending BYTES.', 'Holder counting.', 'Citizen staking denominators.']) {
+  for (const title of ['Valuation basis.', 'Market benchmark.', 'Issuance projection.', 'Staked and pending BYTES.', 'Holder counting.', 'Citizen staking denominators.', 'Not financial advice.']) {
     assert.match(dashboard, new RegExp(`<strong>${title.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}<\\/strong>`));
   }
+  assert.match(dashboard, /informational and educational purposes only/);
+  assert.match(dashboard, /not financial, investment, legal, or tax advice/);
+  assert.match(dashboard, /recommendation to buy, sell, hold, or stake any asset/);
   assert.match(dashboard, /Terminal&apos;s first-party onchain market cap, calculated from verified canonical supply/i);
   assert.doesNotMatch(dashboard, /not a conventional circulating market capitalization/i);
   assert.match(dashboard, /uses the remainder of the current decay week, and then applies weekly decay/i);
@@ -192,7 +195,14 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.doesNotMatch(dashboard, /PM Firestorm|community workbook|official Neo Tokyo reference graphics|current daily emissions × 365/i);
   assert.match(dashboardCss, /\.bytes-footnotes ol \{[^}]*list-style: decimal/);
   assert.match(dashboardCss, /\.bytes-footnotes li::marker \{[^}]*font-weight: 700/);
-  assert.match(dashboardCss, /\.bytes-human-grid p:last-child:nth-child\(odd\) \{[^}]*grid-column: 1 \/ -1/);
+  for (const title of ['Live Participation', 'Community Distribution', 'Issuance Outlook', 'Pressure Profile', 'Market Context']) {
+    assert.match(dashboard, new RegExp(`<h3>${title}<\\/h3>`));
+  }
+  assert.match(dashboardCss, /\.bytes-human-section \{[^}]*container-type: inline-size/);
+  assert.match(dashboardCss, /@container \(min-width: 40rem\)/);
+  assert.match(dashboardCss, /\.bytes-human-item--participation, \.bytes-human-item--pressure \{[^}]*grid-column: span 5/);
+  assert.match(dashboardCss, /\.bytes-human-item--distribution, \.bytes-human-item--issuance \{[^}]*grid-column: span 7/);
+  assert.match(dashboardCss, /\.bytes-human-item--context \{[^}]*grid-column: 1 \/ -1/);
   assert.doesNotMatch(dashboard, /Supply-side context:/i);
   assert.doesNotMatch(dashboard, /true bull market|points per Citizen combine|duration boost/i);
   assert.doesNotMatch(dashboard, /next 52-week boundary/i);

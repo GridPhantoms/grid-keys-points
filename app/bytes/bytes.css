@@ -137,7 +137,7 @@
 .bytes-human-grid p { margin: 0; color: #aab3bc; font-size: .86rem; line-height: 1.75; }
 .bytes-human-grid strong { color: #e4fbff; font-weight: 650; }
 .bytes-footnotes { background: var(--bytes-panel); }
-.bytes-footnotes ol { margin: 0; padding-left: 1.25rem; }
+.bytes-footnotes ol { margin: 0; padding-left: 1.25rem; list-style: decimal; }
 .bytes-footnotes li { padding-left: .35rem; color: #929ca6; font-size: .75rem; line-height: 1.7; }
 .bytes-footnotes li::marker { color: #e4fbff; font-weight: 700; }
 .bytes-footnotes li > strong:first-child { color: #e4fbff; font-weight: 700; }

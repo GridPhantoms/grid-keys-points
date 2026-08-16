@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const routeUrl = new URL('../app/api/bytes-metrics/route.ts', import.meta.url);
 const dashboardUrl = new URL('../app/bytes/BytesDashboard.tsx', import.meta.url);
+const dashboardCssUrl = new URL('../app/bytes/bytes.css', import.meta.url);
 const pageUrl = new URL('../app/bytes/page.tsx', import.meta.url);
 const contractUrl = new URL('../docs/bytes-terminal-metric-contract.md', import.meta.url);
 const participantGeneratorUrl = new URL('../scripts/generate-bytes-staking-participants.mjs', import.meta.url);
@@ -87,8 +88,9 @@ test('BYTES page includes the universal Grid Phantoms footer', async () => {
 });
 
 test('dashboard and metric contract use corrected valuation and reference-model language', async () => {
-  const [dashboard, contract] = await Promise.all([
+  const [dashboard, dashboardCss, contract] = await Promise.all([
     readFile(dashboardUrl, 'utf8'),
+    readFile(dashboardCssUrl, 'utf8'),
     readFile(contractUrl, 'utf8'),
   ]);
   for (const label of ['Market cap\\*', 'Ethereum chain-local total supply', 'Avalanche chain-local BYTES supply']) {
@@ -172,6 +174,8 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /divide live staked counts from the canonical V2 contracts by original collection supplies/i);
   assert.match(dashboard, /not an official BYTES rank or percentile/i);
   assert.doesNotMatch(dashboard, /PM Firestorm|community workbook|official Neo Tokyo reference graphics|current daily emissions × 365/i);
+  assert.match(dashboardCss, /\.bytes-footnotes ol \{[^}]*list-style: decimal/);
+  assert.match(dashboardCss, /\.bytes-footnotes li::marker \{[^}]*font-weight: 700/);
   assert.doesNotMatch(dashboard, /Supply-side context:/i);
   assert.doesNotMatch(dashboard, /true bull market|points per Citizen combine|duration boost/i);
   assert.doesNotMatch(dashboard, /next 52-week boundary/i);

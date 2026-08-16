@@ -379,8 +379,8 @@ export default function BytesDashboard() {
         </div>
       </section>
 
-      <div className="bytes-notice"><strong>Observed first.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
       <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with a seven-figure supply valuation and 35.5% staked.</div>
+      <div className="bytes-notice"><strong>Observed First.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}
       {metricsDone && !metrics ? <div className="bytes-message" role="status">Live contract metrics are temporarily unavailable. Historical emissions remain available below when loaded.</div> : null}

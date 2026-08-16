@@ -129,10 +129,10 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /A manual administrator adjustment is expected\./);
   assert.match(dashboard, /of the steady scenario.{0,80}total remaining issuance is projected to be emitted within the next 365 days/i);
   assert.match(dashboard, /<strong>Staying Power\.<\/strong> Born in 2021\. Still held across 8,808 wallets, with a seven-figure supply valuation and 35\.5% staked\./);
-  const observedFirstIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Observed first.</strong>');
   const stayingPowerIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Staying Power.</strong>');
+  const observedFirstIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Observed First.</strong>');
   const headlineStatsIndex = dashboard.indexOf('<section className="bytes-stats bytes-headline-stats"');
-  assert.ok(observedFirstIndex >= 0 && stayingPowerIndex > observedFirstIndex && headlineStatsIndex > stayingPowerIndex);
+  assert.ok(stayingPowerIndex >= 0 && observedFirstIndex > stayingPowerIndex && headlineStatsIndex > observedFirstIndex);
   assert.match(dashboard, /<strong>Community Groundwork\.<\/strong>/);
   const primaryIndex = dashboard.indexOf('<div className="bytes-primary">');
   const communityIndex = dashboard.indexOf('<div className="bytes-notice bytes-community-credit"><strong>Community Groundwork.</strong>');

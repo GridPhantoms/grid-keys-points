@@ -386,7 +386,7 @@ export default function BytesDashboard() {
       </section>
 
       <div className="bytes-notice"><strong>The Premise.</strong> A first-party view of $BYTES emissions, decay, supply, staking, holders, and valuation, separated by evidence class and backed by visible provenance.</div>
-      <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with a seven-figure supply valuation and 35.5% staked. $BYTES.</div>
+      <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with 35.5% staked and a market cap well above $1 million. $BYTES.</div>
       <div className="bytes-notice"><strong>Observed First.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}
@@ -497,7 +497,7 @@ export default function BytesDashboard() {
         <p className="bytes-eyebrow">Context &amp; caveats</p>
         <h2 id="footnotes-heading">Footnotes</h2>
         <ol>
-          <li><strong>Valuation basis.</strong> <strong>Market Cap*</strong> means Ethereum canonical <code>totalSupply() × BYTES/USD spot price</code>. It is a total-supply valuation, not a conventional circulating market capitalization. <a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s Neo Tokyo page</a> still shows older self-reported supply figures alongside a maximum-participation supply scenario, so this Terminal uses current contract supply instead. The spot reference can be affected by pool liquidity and manipulation.</li>
+          <li><strong>Valuation basis.</strong> <strong>Market Cap*</strong> means Ethereum canonical <code>totalSupply() × BYTES/USD spot price</code>. It is the Terminal&apos;s first-party onchain market cap, calculated from verified canonical supply rather than <a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s</a> older self-reported supply figures. Avalanche bridged representations are not added. The spot reference can be affected by pool liquidity and manipulation.</li>
           <li><strong>Market benchmark.</strong> <a href="https://www.coingecko.com/" target="_blank" rel="noreferrer">CoinGecko</a> tracked more than 18,000 cryptocurrencies when checked on August 16, 2026, and the $1 million line appeared around rank 2,600. Its universe includes assets without published market capitalizations, so this is broad context, not an official BYTES rank or percentile.</li>
           <li><strong>Issuance projection.</strong> The next-365-day projection starts with current configured S1 and S2 emissions, uses the remainder of the current decay week, and then applies weekly decay. It assumes participation stays near current levels. The contract does not apply the reference curve automatically.</li>
           <li><strong>Staked and pending BYTES.</strong> The staking-contract balance is existing minted BYTES held at that address, but direct transfers mean it is not a pure active-principal or circulating-supply measure. Pending rewards refresh daily and report indexed net user rewards; the separate DAO-tax aggregate is available in the metric details. Pending rewards do not enter token supply until claimed and minted.</li>

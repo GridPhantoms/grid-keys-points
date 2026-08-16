@@ -132,7 +132,7 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /of the steady scenario.{0,80}total remaining issuance is projected to be emitted within the next 365 days/i);
   assert.doesNotMatch(dashboard, /className="bytes-lede"/);
   assert.match(dashboard, /<strong>The Premise\.<\/strong> A first-party view of \$BYTES emissions, decay, supply, staking, holders, and valuation, separated by evidence class and backed by visible provenance\./);
-  assert.match(dashboard, /<strong>Staying Power\.<\/strong> Born in 2021\. Still held across 8,808 wallets, with a seven-figure supply valuation and 35\.5% staked\. \$BYTES\./);
+  assert.match(dashboard, /<strong>Staying Power\.<\/strong> Born in 2021\. Still held across 8,808 wallets, with 35\.5% staked and a market cap well above \$1 million\. \$BYTES\./);
   const premiseIndex = dashboard.indexOf('<div className="bytes-notice"><strong>The Premise.</strong>');
   const stayingPowerIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Staying Power.</strong>');
   const observedFirstIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Observed First.</strong>');
@@ -171,6 +171,8 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   for (const title of ['Valuation basis.', 'Market benchmark.', 'Issuance projection.', 'Staked and pending BYTES.', 'Holder counting.', 'Citizen staking denominators.']) {
     assert.match(dashboard, new RegExp(`<strong>${title.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}<\\/strong>`));
   }
+  assert.match(dashboard, /Terminal&apos;s first-party onchain market cap, calculated from verified canonical supply/i);
+  assert.doesNotMatch(dashboard, /not a conventional circulating market capitalization/i);
   assert.match(dashboard, /uses the remainder of the current decay week, and then applies weekly decay/i);
   assert.match(dashboard, /the separate DAO-tax aggregate is available in the metric details/i);
   assert.match(dashboard, /merges matching Ethereum and Avalanche addresses so each address is counted once/i);

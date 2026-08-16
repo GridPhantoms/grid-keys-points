@@ -73,7 +73,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 
 **Public label:** Not published as a summed metric
 **Decision:** Do not add Ethereum and Avalanche `totalSupply()` values. The verified Avalanche Burn/Mint balance represents claims backed through the Ethereum Lock/Release topology, so addition would double count bridged units. Other remote chains are outside this release's runtime-verified scope.
-**Public treatment:** Show Ethereum canonical total supply and Avalanche per-chain supply separately. Use canonical Ethereum `totalSupply()` once for Total Supply Valuation.
+**Public treatment:** Show Ethereum canonical total supply and Avalanche per-chain supply separately. Use canonical Ethereum `totalSupply()` once for the Terminal's first-party `Market Cap*` calculation.
 
 ### A5. Pending staking rewards
 
@@ -135,7 +135,7 @@ Economically net minted supply
 **Type:** Calculated
 **Formula:** `canonical Ethereum totalSupply × BYTES/USD spot price`.
 **Supply definition:** Canonical Ethereum issued supply once. Remote BurnMint supplies are not added.
-**Asterisk rule:** The community widely uses this Ethereum canonical total-supply valuation as the effective BYTES market cap. The public label may use `Market Cap*` only when the page footnote states that it is not a conventional circulating market capitalization, because a defensible circulating-supply figure is unavailable. It is also not conventional FDV because no verified maximum supply is applied.
+**Asterisk rule:** The Terminal defines this first-party onchain market cap as canonical Ethereum `totalSupply() × BYTES/USD spot price`. The public label may use `Market Cap*` when the page footnote exposes that exact basis, confirms that remote bridged representations are not added, and preserves the spot-liquidity and manipulation caveat. It is not conventional FDV because no maximum supply is applied. Do not convert this first-party calculation into an official CoinMarketCap or CoinGecko rank or percentile.
 
 ### A11. Positive-balance holder counts
 

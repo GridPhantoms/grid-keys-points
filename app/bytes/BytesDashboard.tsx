@@ -452,7 +452,7 @@ export default function BytesDashboard() {
               </article>
               <article className="bytes-human-item bytes-human-item--pressure">
                 <h3>Pressure Profile</h3>
-                <p>Earlier reward windows emitted far more BYTES each day, so the current stream creates less new inventory for the market to absorb. That may reduce emissions-driven pressure, but it does not predict price. Pending claims, future reward settings, demand, liquidity, and holder behavior still determine what happens next.</p>
+                <p>Earlier reward windows emitted far more BYTES each day, <strong>so the current stream creates less new inventory for the market to absorb.</strong> That may reduce emissions-driven pressure, but it does not predict price. Pending claims, future reward settings, demand, liquidity, and holder behavior still determine what happens next.</p>
               </article>
               <article className="bytes-human-item bytes-human-item--context">
                 <h3>Market Context</h3>

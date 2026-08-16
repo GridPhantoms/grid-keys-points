@@ -175,7 +175,7 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /Those settings align with the reference model from/i);
   assert.match(dashboard, /projectedIssuanceShare/);
   assert.match(dashboard, /Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted/i);
-  assert.match(dashboard, /current stream creates less new inventory for the market to absorb/i);
+  assert.match(dashboard, /<strong>so the current stream creates less new inventory for the market to absorb\.<\/strong>/i);
   assert.match(dashboard, /CoinGecko tracks more than/);
   assert.match(dashboard, /only about <strong>2,600<\/strong> currently clear a <strong>\$1 million market cap<\/strong>, roughly one in seven/i);
   assert.match(dashboard, /It is still here, still staked, and still economically meaningful/i);

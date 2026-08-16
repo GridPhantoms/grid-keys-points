@@ -135,7 +135,7 @@ function EmissionsSummaryCard({ configured, modeled, divergence, theoryWeek }: {
         <div><b>{modeledAvailable ? formatNumber(modeledTotal) : '—'}</b><small>Modeled reference rate · BYTES/day</small></div>
         <div><b>{divergenceAvailable ? `${formatSigned(divergence.value)} · ${variancePercent === null ? '—' : formatSigned(variancePercent)}%` : '—'}</b><small>Configured vs. modeled · BYTES/day</small></div>
       </div>
-      {alignedReferenceWeek !== null && modelWeek !== null ? <p className="bytes-observer-note">Active reward windows align with reference week {alignedReferenceWeek} · calendar model: week {modelWeek}</p> : null}
+      {alignedReferenceWeek !== null && modelWeek !== null && roundedOffsetWeeks !== null && roundedOffsetWeeks > 0 ? <p className="bytes-observer-note">Configured emissions currently match the modeled rate from {roundedOffsetWeeks} weeks ago (week {alignedReferenceWeek} vs. week {modelWeek} today).</p> : null}
       {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional nonzero contract reward-window configuration detected for BYTES/LP asset indices: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect claimability and pool treatment before including it in headline issuance.</p> : null}
     </article>
   );
@@ -153,7 +153,7 @@ function ProjectedIssuanceCard({ metric, steady }: {
       <div className="bytes-card-label"><span>Projected next-365-day issuance</span>{metric ? <Badge classification={metric.classification} /> : <span className="bytes-badge">waiting</span>}</div>
       <div className="bytes-value">{issuanceValue !== null ? integerFormatter.format(issuanceValue) : 'Unavailable'}</div>
       <div className="bytes-unit">{issuanceValue !== null ? 'BYTES' : metric?.reason ?? 'Waiting for live metrics'}</div>
-      <p className="bytes-card-note">{share === null ? 'Steady-scenario share unavailable' : <><strong>{formatNumber(share, 1)}%</strong> of the steady scenario&apos;s total modeled remaining issuance is projected within the next 365 days</>}</p>
+      <p className="bytes-card-note">{share === null ? 'Steady-scenario share unavailable' : <><strong>{formatNumber(share, 1)}%</strong> of the steady scenario&apos;s total remaining issuance is projected to be emitted within the next 365 days</>}</p>
     </article>
   );
 }
@@ -379,7 +379,6 @@ export default function BytesDashboard() {
         </div>
       </section>
 
-      <div className="bytes-notice bytes-community-credit"><strong>Community groundwork.</strong> OG Citizen <a href="https://x.com/0xSanSSerif" target="_blank" rel="noreferrer">@0xSanSSerif</a> spent years doing exhaustive manual work on BytesMetrics.io, helping make BYTES tokenomics legible and paving the way for the concept of this terminal. His original database was compromised, but the contribution deserves to be remembered.</div>
       <div className="bytes-notice"><strong>Observed first.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}
@@ -411,6 +410,7 @@ export default function BytesDashboard() {
 
       <div className="bytes-layout">
         <div className="bytes-primary">
+          <div className="bytes-notice bytes-community-credit"><strong>Community Groundwork.</strong> OG Citizen <a href="https://x.com/0xSanSSerif" target="_blank" rel="noreferrer">@0xSanSSerif</a> spent years doing exhaustive manual work on BytesMetrics.io, helping make BYTES tokenomics legible and paving the way for the concept of this terminal. His original database was compromised, but the contribution deserves to be remembered.</div>
           <section className="bytes-panel bytes-chart-panel" aria-labelledby="emissions-heading">
           <div className="bytes-panel-head">
             <div><p className="bytes-eyebrow">Reconstructed configured history + explicit reference model</p><h2 id="emissions-heading">Emissions Decay</h2><p>Calculated daily reward windows reconstructed from observed inputs, compared with a separate weekly reference curve that the contract does not execute automatically.</p></div>

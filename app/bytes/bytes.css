@@ -31,6 +31,7 @@
 .bytes-notice a { color: var(--bytes-cyan); font-weight: 700; text-underline-offset: .18em; }
 .bytes-community-credit { border-color: rgb(169 140 255 / 28%); background: linear-gradient(90deg, rgb(169 140 255 / 9%), rgb(40 215 242 / 2%)); }
 .bytes-community-credit strong { color: #cfc3ff; }
+.bytes-primary > .bytes-community-credit { margin-bottom: 0; }
 .bytes-loading, .bytes-message, .bytes-chart-placeholder { padding: 1rem; border: 1px solid var(--bytes-line); border-radius: .85rem; background: rgb(14 19 23 / 75%); color: #aeb7c0; font-size: .85rem; }
 .bytes-loading, .bytes-message { margin-bottom: 1rem; }
 .bytes-chart-placeholder { min-height: 15rem; display: grid; place-items: center; }

@@ -267,9 +267,9 @@ live configured emissions − modeled curve emissions
 ### C4. Next milestone
 
 **Type:** Calculated  
-**Definition:** The next 52-week boundary after the current reference-model week.
+**Definition:** The next reference-model checkpoint at which the modeled S1 daily rate reaches half its prior 52-week level.
 **Current research checkpoint:** Week 208, modeled for June 10, 2027, when S1 reaches `343.75 BYTES/day` and combined S1+S2 reaches `367.1875 BYTES/day`.
-**Display:** Date and rate must be labeled as model context; actual configured emissions can differ because reward windows are explicitly configured.
+**Display:** Explain the next emissions half-level in plain language. The date and rate remain model context; actual configured emissions can differ because reward windows are explicitly configured.
 
 ---
 

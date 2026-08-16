@@ -130,7 +130,10 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /If Community Staking Incentives were at maximum participation from here forward/i);
   assert.doesNotMatch(dashboard, /historical reference scenario begins|historical all-pool model ceiling/i);
   assert.match(dashboard, /contract does not execute automatically/i);
-  assert.match(dashboard, /actual configured windows can differ/i);
+  assert.match(dashboard, /In the reference model, the next emissions half-level is reached on/i);
+  assert.match(dashboard, /when the modeled S1 rate falls to/i);
+  assert.match(dashboard, /Actual configured emissions may differ/i);
+  assert.doesNotMatch(dashboard, /next 52-week boundary/i);
   assert.doesNotMatch(dashboard, /of Ethereum total supply|of Ethereum BYTES supply/i);
   assert.match(dashboard, /bytes-citizen-percentage/);
   assert.doesNotMatch(dashboard, /verified weekly decay|verified 5,875|next Genesis half-level/i);

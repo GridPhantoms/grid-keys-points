@@ -162,7 +162,7 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /crossChainUniqueHolderCount/);
   assert.match(dashboard, /more than two-thirds of S1 Citizens and nearly half of S2 Outer Citizens are staked/i);
   assert.match(dashboard, /Distribution is another strength/);
-  assert.match(dashboard, /100% community allocated/);
+  assert.match(dashboard, /100% allocated to the community/);
   assert.match(dashboard, /no team allocation or VC unlocks/);
   assert.match(dashboard, /original token was claimable only by full Citizens with Vault Cards/);
   assert.match(dashboard, /today&apos;s configured BYTES 2\.0 issuance flows through/);

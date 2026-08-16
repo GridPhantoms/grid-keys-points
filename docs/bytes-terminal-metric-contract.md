@@ -160,7 +160,7 @@ Economically net minted supply
 
 ### B1. Live configured emissions
 
-**Public label:** `Configured Daily Emissions`
+**Public label:** `Current Daily Emissions: Configured`
 **Type:** Observed  
 **Definition:** Sum of the most recent 24-hour output from:
 
@@ -192,7 +192,7 @@ getTotalEmissions(3, now - 86400) // internal asset-type index 3
 
 ### B4. Modeled curve emissions
 
-**Public label:** `Modeled Current Daily Rate`
+**Public label:** `Current Daily Emissions: Modeled`
 **Type:** Projected/calculated  
 **Formula:**
 
@@ -281,7 +281,7 @@ V1 publishes projected remaining issuance only. The terminal-supply equations be
 
 **Public label:** `Steady Scenario`  
 **Type:** Projected  
-**Assumption:** Current verified reservoir tiers remain constant while the weekly exponential decay continues.  
+**Assumption:** Staking participation remains around the steady level represented by the model while the reference curve continues. Actual configured reward windows can differ.
 **Formula:**
 
 ```text
@@ -293,9 +293,9 @@ projected terminal supply
 
 ### D2. Maximum participation scenario
 
-**Public label:** `Maximum Participation Scenario`  
+**Public label:** `Max Staking Scenario`
 **Type:** Projected  
-**Assumption:** Maximum 11,000/day reservoir is used for the remaining curve.  
+**Assumption:** Community Staking Incentives remain at maximum participation from the current model week forward.
 **Purpose:** Upper-bound comparison, not a likely forecast.
 
 ### D3. Configured-window scenario

@@ -98,6 +98,8 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /sourceBlock=\{avalancheSourceBlock\}/);
   assert.match(dashboard, /@0xSanSSerif/);
   assert.match(dashboard, /https:\/\/x\.com\/0xSanSSerif/);
+  assert.match(dashboard, /OG Citizen/);
+  assert.match(dashboard, /paving the way for the concept of this terminal/i);
   assert.match(dashboard, /database was compromised/i);
   assert.match(dashboard, /His original database was compromised/i);
   assert.match(dashboard, /Transparent by design/i);
@@ -112,15 +114,21 @@ test('dashboard and metric contract use corrected valuation and reference-model 
     /Cross-chain unique holders/,
     /S1 Citizens staked/,
     /S2 Outer Citizens staked/,
-    /Citizen Yield Pool mechanics/,
   ]) assert.match(dashboard, pattern);
-  assert.match(dashboard, /Configured daily emissions/);
-  assert.match(dashboard, /Modeled current daily rate/);
+  assert.doesNotMatch(dashboard, /Citizen Yield Pool mechanics/);
+  assert.match(dashboard, /Current daily emissions: configured/i);
+  assert.match(dashboard, /Current daily emissions: modeled/i);
   assert.match(dashboard, /Configured vs\. modeled variance/);
   assert.match(dashboard, /positive variance means configured daily emissions are above/i);
-  assert.match(dashboard, /historical reference scenario begins with a 5,875 BYTES\/day week-zero model reservoir/i);
+  assert.match(dashboard, /title="Steady scenario"/);
+  assert.match(dashboard, /title="Max staking scenario"/);
+  assert.match(dashboard, /If staking participation stays around the steady level represented by this model/i);
+  assert.match(dashboard, /If Community Staking Incentives were at maximum participation from here forward/i);
+  assert.doesNotMatch(dashboard, /historical reference scenario begins|historical all-pool model ceiling/i);
   assert.match(dashboard, /contract does not execute automatically/i);
   assert.match(dashboard, /actual configured windows can differ/i);
+  assert.doesNotMatch(dashboard, /of Ethereum total supply|of Ethereum BYTES supply/i);
+  assert.match(dashboard, /bytes-citizen-percentage/);
   assert.doesNotMatch(dashboard, /verified weekly decay|verified 5,875|next Genesis half-level/i);
   assert.match(dashboard, /potential emissions-driven sell pressure/i);
   assert.match(dashboard, /Emissions only become sell pressure when recipients sell/i);

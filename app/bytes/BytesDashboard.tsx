@@ -133,7 +133,7 @@ function CitizenStakingCard({ label, count, percentage, collectionSupply, v2Supp
       <div className={countAvailable ? 'bytes-value bytes-cyan' : 'bytes-value'}>{countAvailable ? integerFormatter.format(count.value as number) : 'Unavailable'}</div>
       <div className="bytes-unit">STAKED IN THE CANONICAL CITIZEN YIELD POOL</div>
       <div className="bytes-split">
-        <div><b>{percentageAvailable ? formatPercentage(percentage.value) : '—'}</b><small>of {collectionAvailable ? integerFormatter.format(collectionSupply.value as number) : '—'} total collection supply</small></div>
+        <div><b className="bytes-citizen-percentage">{percentageAvailable ? formatPercentage(percentage.value) : '—'}</b><small>of {collectionAvailable ? integerFormatter.format(collectionSupply.value as number) : '—'} total collection supply</small></div>
         <div><b>{v2Available ? integerFormatter.format(v2Supply.value as number) : '—'}</b><small>current assembled V2 supply</small></div>
       </div>
       <MetricDetails metric={count} label={`Inspect ${label.toLowerCase()} count`} />
@@ -273,7 +273,7 @@ export default function BytesDashboard() {
         </div>
       </section>
 
-      <div className="bytes-notice bytes-community-credit"><strong>Community groundwork.</strong> <a href="https://x.com/0xSanSSerif" target="_blank" rel="noreferrer">@0xSanSSerif</a> spent years doing exhaustive manual work on BytesMetrics.io, helping make BYTES tokenomics legible and paving the way for this terminal. His original database was compromised, but the contribution deserves to be remembered.</div>
+      <div className="bytes-notice bytes-community-credit"><strong>Community groundwork.</strong> OG Citizen <a href="https://x.com/0xSanSSerif" target="_blank" rel="noreferrer">@0xSanSSerif</a> spent years doing exhaustive manual work on BytesMetrics.io, helping make BYTES tokenomics legible and paving the way for the concept of this terminal. His original database was compromised, but the contribution deserves to be remembered.</div>
       <div className="bytes-notice"><strong>Observed first.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}
@@ -282,8 +282,8 @@ export default function BytesDashboard() {
       {metrics?.warnings?.length ? <div className="bytes-message" role="status">Partial source response: {metrics.warnings.join(' ')}</div> : null}
 
       <section className="bytes-stats" aria-label="Current BYTES metrics">
-        <StatCard label="Configured daily emissions" metric={configured} pools />
-        <StatCard label="Modeled current daily rate" metric={modeled} />
+        <StatCard label="Current daily emissions: configured" metric={configured} pools />
+        <StatCard label="Current daily emissions: modeled" metric={modeled} />
         <StatCard label="Projected next-365-day issuance" metric={next365DayIssuance} />
         <StatCard label="Configured vs. modeled variance" metric={divergence} signed />
       </section>
@@ -316,8 +316,8 @@ export default function BytesDashboard() {
 
           <div className="bytes-scenarios" aria-labelledby="scenario-heading">
             <h2 id="scenario-heading" className="bytes-section-title">Remaining issuance scenarios</h2>
-            <ScenarioCard title="Reference trajectory" description="This historical reference scenario begins with a 5,875 BYTES/day week-zero model reservoir and applies weekly decay. It is model context, not today's configured issuance or an automatic contract schedule." metric={steady} sourceBlock={metrics?.sourceBlock} />
-            <ScenarioCard title="Historical all-pool ceiling" description="The 11,000 BYTES/day reservoir is a historical all-pool model ceiling. It is decayed to the same model week for an upper-bound comparison, not presented as today's S1/S2 configured rate or a future commitment." metric={maximum} sourceBlock={metrics?.sourceBlock} />
+            <ScenarioCard title="Steady scenario" description="If staking participation stays around the steady level represented by this model, this is the estimated BYTES still to be emitted over the remaining life of the curve." metric={steady} sourceBlock={metrics?.sourceBlock} />
+            <ScenarioCard title="Max staking scenario" description="If Community Staking Incentives were at maximum participation from here forward, this is the model's maximum potential remaining BYTES issuance." metric={maximum} sourceBlock={metrics?.sourceBlock} />
           </div>
 
             <div className="bytes-context"><strong>Supply-side context:</strong> Lower new issuance can require less demand to absorb potential emissions-driven sell pressure, but it does not guarantee price appreciation. Emissions only become sell pressure when recipients sell; demand, liquidity, holder behavior, and wider market conditions still matter.</div>
@@ -327,7 +327,7 @@ export default function BytesDashboard() {
             <p className="bytes-eyebrow">The human read</p>
             <h2 id="plain-english-heading">In plain English</h2>
             <div className="bytes-human-grid">
-              <p>Neo Tokyo&apos;s BYTES 2.0 system routes rewards through separate <strong>S1 Citizen</strong> and <strong>S2 Outer Citizen Yield Pools</strong>. Citizen positions are hard-locked for a selected staking period; points per Citizen combine pool-specific NFT inputs, a duration boost, and eligible BYTES contribution, while an S1 position may also include a Vault modifier. The contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>. Separately, the staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of Ethereum BYTES supply, including BYTES Citizens have committed alongside S1 and S2 positions.</p>
+              <p>Neo Tokyo&apos;s BYTES 2.0 system routes rewards through separate <strong>S1 Citizen</strong> and <strong>S2 Outer Citizen Yield Pools</strong>. Citizen positions are hard-locked for a selected staking period; points per Citizen combine pool-specific NFT inputs, a duration boost, and eligible BYTES contribution, while an S1 position may also include a Vault modifier. The contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>. Separately, the staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of BYTES supply, including BYTES Citizens have committed alongside S1 and S2 positions.</p>
               <p>If participation stays near today&apos;s level and future configured reward windows continue to track the weekly reference curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. The next 52-week boundary in that reference model occurs on <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when the modeled S1 Citizen Yield Pool rate reaches {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day. Actual configured windows can differ.</p>
               <p>Earlier configured reward windows sent much more reward inventory to stakers than current windows. Whether those rewards were held or sold is not measured here. If attention and demand return in a true bull market, they may meet a lighter configured emissions stream than in the early years, but only future contract configuration can establish that path. This does not predict demand, price, or actual selling.</p>
               <p>The published reference model is predictably decaying; contract output remains administrator-configured through reward windows. This terminal now measures positive-balance holder addresses, but it does not infer beneficial owners, custody relationships, holder concentration, liquidity depth, or realized volatility. Its price input is one verified spot reference rather than a promise of executable size. For the Citizens still watching the city&apos;s economy, the goal is to keep the mechanics honest without sanding off the uncertainty.</p>
@@ -348,19 +348,10 @@ export default function BytesDashboard() {
           <section className="bytes-panel" aria-labelledby="supply-heading">
             <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Staking status</h2></div></div>
             <p className="bytes-panel-copy">The staking contract&apos;s BYTES balance and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. These token balances are distinct from the S1 Citizen and S2 Outer Citizen NFT counts above.</p>
-            <AvailabilityRow label="BYTES held by staking contract" metric={stakingBalance} sourceBlock={metrics?.sourceBlock} valueNote={stakingPercentage === null ? undefined : `${formatPercentage(stakingPercentage)} of Ethereum total supply`} />
+            <AvailabilityRow label="BYTES held by staking contract" metric={stakingBalance} sourceBlock={metrics?.sourceBlock} valueNote={stakingPercentage === null ? undefined : `${formatPercentage(stakingPercentage)} of total supply`} />
             <AvailabilityRow label="Pending / Unclaimed Rewards" metric={pendingRewards} sourceBlock={metrics?.sourceBlock} />
           </section>
 
-          <section className="bytes-panel" aria-labelledby="mechanics-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Official BYTES 2.0 reference</p><h2 id="mechanics-heading">Citizen Yield Pool mechanics</h2></div></div>
-            <p className="bytes-panel-copy">The official diagrams describe <strong>points per Citizen (PPC)</strong>, not one generic staking rate. Live emissions remain contract-configured; the mechanics below are a reference framework, not a promise of an individual reward.</p>
-            <div className="bytes-mechanics-grid">
-              <article><h3>S1 Citizen Yield Pool</h3><p>PPC = S1 Credit Yield points × eligible Vault Credit multiplier × staking-period boost + committed BYTES ÷ 200.</p><ul><li>Hard-lock options: 1, 3, 6, 12, or 24 months</li><li>Reference boosts: 1×, 1.25×, 1.5×, 2×, 3×</li><li>Contract cap: 2,000 BYTES with an eligible Vault; 200 without</li></ul></article>
-              <article><h3>S2 Outer Citizen Yield Pool</h3><p>PPC = S2 Allocation Yield point × staking-period boost + committed BYTES ÷ 200. The published S2 allocation categories each contribute one base point.</p><ul><li>Hard-lock options: 1, 3, 6, 12, or 24 months</li><li>Reference boosts: 1×, 1.25×, 1.5×, 1.75×, 2×</li><li>Contract cap: 200 BYTES</li></ul></article>
-            </div>
-            <p className="bytes-method-note">A position&apos;s points divided by total points in its Citizen Yield Pool determines its share of configured reward windows, less configured DAO tax. Community Staking Incentives separately tie pool-level emissions to participation thresholds for S1 Citizens, S2 Outer Citizens, and BYTES committed to staking.</p>
-          </section>
 
           <section className="bytes-panel" aria-labelledby="ledger-heading">
             <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Transparent by design</p><h2 id="ledger-heading">Methodology ledger</h2><p>Every published number names what it is.</p></div></div>
@@ -369,8 +360,8 @@ export default function BytesDashboard() {
               <Badge classification="calculated" /><span>derived or reconstructed from observed inputs</span>
               <Badge classification="projected" /><span>scenario output with assumptions</span>
             </div>
-            <MetricDetails metric={configured} label="Configured daily emissions" sourceBlock={metrics?.sourceBlock} />
-            <MetricDetails metric={modeled} label="Modeled current daily rate" sourceBlock={metrics?.sourceBlock} />
+            <MetricDetails metric={configured} label="Current daily emissions: configured" sourceBlock={metrics?.sourceBlock} />
+            <MetricDetails metric={modeled} label="Current daily emissions: modeled" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={next365DayIssuance} label="Projected next-365-day issuance" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={divergence} label="Configured vs. modeled variance" sourceBlock={metrics?.sourceBlock} />
             <MetricDetails metric={theoryWeek} label="Theoretical model week" sourceBlock={metrics?.sourceBlock} />
@@ -398,7 +389,7 @@ export default function BytesDashboard() {
           <li><strong>Market Cap*</strong> is the community&apos;s practical shorthand for Ethereum canonical <code>totalSupply() × BYTES/USD spot price</code>. It is not a conventional circulating market capitalization because a defensible circulating-supply figure is not currently available. The spot reference can be affected by liquidity and pool manipulation.</li>
           <li><a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s Neo Tokyo listing</a> reflects an older reporting snapshot. On September 17, 2025, Neo Tokyo PM Firestorm and community contributors submitted a deliberately conservative maximum-supply scenario that assumed maximum participation beginning the next day. Actual participation and subsequent issuance did not follow that extreme path, so CMC&apos;s maximum, total, and self-reported circulating figures can now be stale or structurally mismatched. This terminal uses current contract reads instead.</li>
           <li>The projected next-365-day issuance assumes today&apos;s configured S1 and S2 participation remains steady and future configured reward windows continue to track the weekly reference curve. The contract does not execute that curve automatically. This replaces the misleading flat-rate calculation of <code>current daily emissions × 365</code>.</li>
-          <li>Staking-contract holdings are shown as a percentage of Ethereum total supply. The balance includes the BYTES Citizens have committed alongside S1 and S2 positions, but direct transfers can also enter the contract, so the raw balance is not a pure active-principal or circulating-supply definition.</li>
+          <li>Staking-contract holdings are shown as a percentage of total supply. The balance includes the BYTES Citizens have committed alongside S1 and S2 positions, but direct transfers can also enter the contract, so the raw balance is not a pure active-principal or circulating-supply definition.</li>
           <li>Pending rewards are refreshed once every 24 hours. They are accrued and unclaimed rewards, not existing supply until they are claimed and minted; inspect the metric for its exact snapshot time.</li>
           <li>Holder counts include addresses with a strictly positive chain-local BYTES balance. The weekly cross-chain figure unions matching lowercase EVM addresses so an address present on both chains counts once. It does not infer whether multiple wallets share one beneficial owner or whether one custodial address represents many users.</li>
           <li>Citizen-staking percentages use original S1 and S2 collection contract <code>totalSupply()</code> values at the same Ethereum block: 2,081 S1 and 3,770 S2 at this release checkpoint. These match the community workbook. Live staked counts and current assembled V2 supplies come from the canonical V2 contracts; because Citizens can be assembled and disassembled, V2 supply is dynamic and is shown separately.</li>

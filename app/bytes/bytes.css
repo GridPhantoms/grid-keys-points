@@ -51,6 +51,7 @@
 .bytes-split div { min-width: 0; padding-top: .6rem; border-top: 1px solid #1b2127; }
 .bytes-split b, .bytes-split small { display: block; overflow-wrap: anywhere; }
 .bytes-split b { color: #e3e8ed; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.bytes-split b.bytes-citizen-percentage { color: var(--bytes-cyan); }
 .bytes-split small { color: #74808b; font-size: .57rem; text-transform: uppercase; }
 .bytes-contract-alert { margin: .75rem 0 0; padding: .55rem .65rem; border: 1px solid rgb(242 184 75 / 35%); border-radius: .55rem; color: #d7b870; font-size: .65rem; line-height: 1.45; }
 

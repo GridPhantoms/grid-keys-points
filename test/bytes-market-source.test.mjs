@@ -163,8 +163,15 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /CoinGecko tracks more than/);
   assert.match(dashboard, /only about <strong>2,600<\/strong> currently clear a <strong>\$1 million market cap<\/strong>, roughly one in seven/i);
   assert.match(dashboard, /It is still here, still staked, and still economically meaningful/i);
-  assert.match(dashboard, /Broad market context:/);
-  assert.match(dashboard, /not an official CoinGecko rank or percentile for BYTES/i);
+  for (const title of ['Valuation basis.', 'Market benchmark.', 'Issuance projection.', 'Staked and pending BYTES.', 'Holder counting.', 'Citizen staking denominators.']) {
+    assert.match(dashboard, new RegExp(`<strong>${title.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}<\\/strong>`));
+  }
+  assert.match(dashboard, /uses the remainder of the current decay week, and then applies weekly decay/i);
+  assert.match(dashboard, /the separate DAO-tax aggregate is available in the metric details/i);
+  assert.match(dashboard, /merges matching Ethereum and Avalanche addresses so each address is counted once/i);
+  assert.match(dashboard, /divide live staked counts from the canonical V2 contracts by original collection supplies/i);
+  assert.match(dashboard, /not an official BYTES rank or percentile/i);
+  assert.doesNotMatch(dashboard, /PM Firestorm|community workbook|official Neo Tokyo reference graphics|current daily emissions × 365/i);
   assert.doesNotMatch(dashboard, /Supply-side context:/i);
   assert.doesNotMatch(dashboard, /true bull market|points per Citizen combine|duration boost/i);
   assert.doesNotMatch(dashboard, /next 52-week boundary/i);
@@ -176,7 +183,6 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.doesNotMatch(dashboard, /<small>BYTES pool<\/small>|<small>LP pool<\/small>/i);
   assert.match(dashboard, /legacyEmissionTotal !== null && legacyEmissionTotal > 0/);
   assert.match(dashboard, /Additional nonzero contract reward-window configuration detected for BYTES\/LP asset indices/);
-  assert.match(dashboard, /original S1 and S2 collection contract/);
   assert.match(contract, /original S1 Citizen/);
   assert.match(contract, /Market Cap\*/i);
 });

@@ -139,6 +139,8 @@
 .bytes-footnotes { background: var(--bytes-panel); }
 .bytes-footnotes ol { margin: 0; padding-left: 1.25rem; }
 .bytes-footnotes li { padding-left: .35rem; color: #929ca6; font-size: .75rem; line-height: 1.7; }
+.bytes-footnotes li::marker { color: #e4fbff; font-weight: 700; }
+.bytes-footnotes li > strong:first-child { color: #e4fbff; font-weight: 700; }
 .bytes-footnotes li + li { margin-top: .75rem; }
 .bytes-footnotes a { color: var(--bytes-cyan); text-underline-offset: .18em; }
 .bytes-footnotes code { color: #c9bcfb; overflow-wrap: anywhere; }

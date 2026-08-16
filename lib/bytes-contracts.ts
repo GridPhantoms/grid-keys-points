@@ -16,6 +16,10 @@ import {
   ETHEREUM_CHAIN_ID,
   ETHEREUM_CHAIN_NAME,
   MULTICALL3_CONTRACT,
+  S1_CITIZEN_CONTRACT,
+  S1_LEGACY_CITIZEN_CONTRACT,
+  S2_OUTER_CITIZEN_CONTRACT,
+  S2_LEGACY_OUTER_CITIZEN_CONTRACT,
   UNISWAP_V3_FACTORY,
   WETH_CONTRACT,
 } from './bytes-addresses.mjs';
@@ -38,6 +42,10 @@ export {
   ETHEREUM_CHAIN_ID,
   ETHEREUM_CHAIN_NAME,
   MULTICALL3_CONTRACT,
+  S1_CITIZEN_CONTRACT,
+  S1_LEGACY_CITIZEN_CONTRACT,
+  S2_OUTER_CITIZEN_CONTRACT,
+  S2_LEGACY_OUTER_CITIZEN_CONTRACT,
   UNISWAP_V3_FACTORY,
   WETH_CONTRACT,
 };
@@ -58,6 +66,8 @@ export const BYTES_POOL_LABELS = {
 
 export const BYTES_STAKING_ABI = [
   'function BYTES() view returns (address)',
+  'function S1_CITIZEN() view returns (address)',
+  'function S2_CITIZEN() view returns (address)',
   'function getTotalEmissions(uint8 assetType, uint256 fromTimestamp) view returns (uint256)',
   'function getPendingPoolReward(uint8 assetType, address recipient) view returns (uint256 reward, uint256 tax)',
   'event Stake(address indexed staker, address indexed asset, uint256 timelockOption, uint256 amountOrTokenId)',
@@ -69,6 +79,11 @@ export const BYTES_TOKEN_ABI = [
   'function decimals() view returns (uint8)',
   'function totalSupply() view returns (uint256)',
   'function balanceOf(address account) view returns (uint256)',
+] as const;
+
+export const CITIZEN_ERC721_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
 ] as const;
 
 export const AVALANCHE_BYTES_TOKEN_ABI = [

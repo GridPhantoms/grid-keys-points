@@ -7,6 +7,7 @@ const dashboardUrl = new URL('../app/bytes/BytesDashboard.tsx', import.meta.url)
 const pageUrl = new URL('../app/bytes/page.tsx', import.meta.url);
 const contractUrl = new URL('../docs/bytes-terminal-metric-contract.md', import.meta.url);
 const participantGeneratorUrl = new URL('../scripts/generate-bytes-staking-participants.mjs', import.meta.url);
+const holderGeneratorUrl = new URL('../scripts/generate-bytes-holder-snapshot.mjs', import.meta.url);
 
 test('route source retains Avalanche, Uniswap factory, oracle, and reorg identity gates', async () => {
   const source = await readFile(routeUrl, 'utf8');
@@ -29,7 +30,7 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
     /configuredS1S2Daily = configured\.value\.S1 \+ configured\.value\.S2/,
     /projectedIssuanceOverDays\(configuredS1S2Daily/,
     /unstable_cache/,
-    /\['bytes-lightweight-snapshot-v2', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
+    /\['bytes-lightweight-snapshot-v3', BYTES_PARTICIPANT_SNAPSHOT_DIGEST, holderSnapshot\.crossChain\.addressesSha256\]/,
     /revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS/,
     /\['bytes-pending-rewards-v1', BYTES_PARTICIPANT_SNAPSHOT_DIGEST\]/,
     /revalidate: PENDING_SNAPSHOT_SECONDS/,
@@ -60,6 +61,19 @@ test('participant refresh indexes through the selected finalized source block', 
   assert.equal(collectorCall?.[1].trim(), 'sourceBlock.number');
 });
 
+test('holder refresh validates chain-local ledgers before calculating the cross-chain union', async () => {
+  const source = await readFile(holderGeneratorUrl, 'utf8');
+  for (const pattern of [
+    /collectEthereumHolders\(ethereum, ethereumBlock\.number\)/,
+    /collectAvalancheHolders\(\)/,
+    /assertNoAvalancheTransferGap/,
+    /assertSupplyParity\('Ethereum'/,
+    /assertSupplyParity\('Avalanche'/,
+    /const union = new Set/,
+    /wallet lists are not published/,
+  ]) assert.match(source, pattern);
+});
+
 test('BYTES page includes the universal Grid Phantoms footer', async () => {
   const page = await readFile(pageUrl, 'utf8');
   for (const expected of [
@@ -72,7 +86,7 @@ test('BYTES page includes the universal Grid Phantoms footer', async () => {
   ]) assert.match(page, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
-test('dashboard and metric contract use corrected valuation labels', async () => {
+test('dashboard and metric contract use corrected valuation and reference-model language', async () => {
   const [dashboard, contract] = await Promise.all([
     readFile(dashboardUrl, 'utf8'),
     readFile(contractUrl, 'utf8'),
@@ -90,19 +104,33 @@ test('dashboard and metric contract use corrected valuation labels', async () =>
   assert.match(dashboard, /In plain English/i);
   assert.match(dashboard, /https:\/\/coinmarketcap\.com\/currencies\/neo-tokyo\//);
   assert.match(dashboard, /35\.53%|stakingPercentage/);
-  assert.match(dashboard, /pendingRewardsPercentage/);
+  assert.doesNotMatch(dashboard, /pendingRewardsPercentage|relative to current Ethereum total supply/);
+  for (const pattern of [
+    /our adopted utility token/i,
+    /Ethereum BYTES holders/,
+    /Avalanche BYTES holders/,
+    /Cross-chain unique holders/,
+    /S1 Citizens staked/,
+    /S2 Outer Citizens staked/,
+    /Citizen Yield Pool mechanics/,
+  ]) assert.match(dashboard, pattern);
   assert.match(dashboard, /Configured daily emissions/);
   assert.match(dashboard, /Modeled current daily rate/);
   assert.match(dashboard, /Configured vs\. modeled variance/);
   assert.match(dashboard, /positive variance means configured daily emissions are above/i);
-  assert.match(dashboard, /week-zero daily allocation before decay/i);
+  assert.match(dashboard, /historical reference scenario begins with a 5,875 BYTES\/day week-zero model reservoir/i);
+  assert.match(dashboard, /contract does not execute automatically/i);
+  assert.match(dashboard, /actual configured windows can differ/i);
+  assert.doesNotMatch(dashboard, /verified weekly decay|verified 5,875|next Genesis half-level/i);
   assert.match(dashboard, /potential emissions-driven sell pressure/i);
   assert.match(dashboard, /Emissions only become sell pressure when recipients sell/i);
   assert.match(dashboard, /label="Market Cap\*"[^>]*valuePrefix="\$"/);
   assert.match(dashboard, /label="BYTES spot price"[^>]*valuePrefix="\$"/);
   assert.doesNotMatch(dashboard, /<small>BYTES pool<\/small>|<small>LP pool<\/small>/i);
   assert.match(dashboard, /legacyEmissionTotal !== null && legacyEmissionTotal > 0/);
-  assert.match(dashboard, /Additional configured legacy asset-type emissions/);
+  assert.match(dashboard, /Additional nonzero contract reward-window configuration detected for BYTES\/LP asset indices/);
+  assert.match(dashboard, /original S1 and S2 collection contract/);
+  assert.match(contract, /original S1 Citizen/);
   assert.match(contract, /Market Cap\*/i);
 });
 

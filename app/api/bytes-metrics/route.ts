@@ -2,6 +2,7 @@ import 'server-only';
 
 import { Contract, FetchRequest, Interface, JsonRpcProvider, formatUnits, getAddress } from 'ethers';
 import { unstable_cache } from 'next/cache';
+import holderSnapshotValue from '@/data/bytes-holder-snapshot.json';
 import participantSnapshotValue from '@/data/bytes-staking-participants.json';
 import {
   AVALANCHE_BYTES_CCIP_POOL,
@@ -28,8 +29,13 @@ import {
   CCIP_BURN_MINT_POOL_ABI,
   CHAINLINK_AGGREGATOR_ABI,
   CHAINLINK_ETH_USD_FEED,
+  CITIZEN_ERC721_ABI,
   MULTICALL3_ABI,
   MULTICALL3_CONTRACT,
+  S1_CITIZEN_CONTRACT,
+  S1_LEGACY_CITIZEN_CONTRACT,
+  S2_OUTER_CITIZEN_CONTRACT,
+  S2_LEGACY_OUTER_CITIZEN_CONTRACT,
   UNISWAP_V3_FACTORY,
   UNISWAP_V3_FACTORY_ABI,
   WETH_CONTRACT,
@@ -121,6 +127,57 @@ const participantSnapshot = validateParticipantSnapshot(participantSnapshotValue
   count: BYTES_PARTICIPANT_SNAPSHOT_COUNT,
   addressesSha256: BYTES_PARTICIPANT_SNAPSHOT_DIGEST,
 });
+const holderSnapshot = holderSnapshotValue;
+
+function holderCountMetric(value: number, source: string, asOf: string, assumptions: string[]) {
+  return availableMetric(value, 'positive-balance wallets', 'observed', source, asOf, undefined, assumptions);
+}
+
+function unavailableCitizenStakingMetrics(asOf: string) {
+  const unavailableObserved = (unit: string, source: string) => unavailableMetric(unit, 'observed', source, asOf, 'Canonical Citizen contract reads are unavailable.');
+  const unavailableCalculated = (unit: string, source: string) => unavailableMetric(unit, 'calculated', source, asOf, 'Canonical Citizen contract reads are unavailable.');
+  return {
+    s1CitizensStaked: unavailableObserved('S1 Citizens', 'S1 Citizen V2 balanceOf(staking contract)'),
+    s1CitizenV2Supply: unavailableObserved('S1 Citizens', 'S1 Citizen V2 totalSupply'),
+    s1CollectionSupply: unavailableObserved('S1 Citizens', 'original S1 Citizen totalSupply'),
+    s1StakedPercentage: unavailableCalculated('% of total collection supply', 'S1 staked / original S1 collection supply'),
+    s2CitizensStaked: unavailableObserved('S2 Outer Citizens', 'S2 Outer Citizen V2 balanceOf(staking contract)'),
+    s2CitizenV2Supply: unavailableObserved('S2 Outer Citizens', 'S2 Outer Citizen V2 totalSupply'),
+    s2CollectionSupply: unavailableObserved('S2 Outer Citizens', 'original S2 Outer Citizen totalSupply'),
+    s2StakedPercentage: unavailableCalculated('% of total collection supply', 'S2 staked / original S2 collection supply'),
+  };
+}
+
+async function readCitizenStakingMetrics(provider: JsonRpcProvider, staking: Contract, blockNumber: number, asOf: string) {
+  const s1 = new Contract(S1_CITIZEN_CONTRACT, CITIZEN_ERC721_ABI, provider);
+  const s2 = new Contract(S2_OUTER_CITIZEN_CONTRACT, CITIZEN_ERC721_ABI, provider);
+  const s1Legacy = new Contract(S1_LEGACY_CITIZEN_CONTRACT, CITIZEN_ERC721_ABI, provider);
+  const s2Legacy = new Contract(S2_LEGACY_OUTER_CITIZEN_CONTRACT, CITIZEN_ERC721_ABI, provider);
+  const [stakingS1, stakingS2, s1StakedRaw, s1V2SupplyRaw, s1SupplyRaw, s2StakedRaw, s2V2SupplyRaw, s2SupplyRaw] = await Promise.all([
+    staking.S1_CITIZEN({ blockTag: blockNumber }) as Promise<string>,
+    staking.S2_CITIZEN({ blockTag: blockNumber }) as Promise<string>,
+    s1.balanceOf(BYTES_STAKING_CONTRACT, { blockTag: blockNumber }) as Promise<bigint>,
+    s1.totalSupply({ blockTag: blockNumber }) as Promise<bigint>,
+    s1Legacy.totalSupply({ blockTag: blockNumber }) as Promise<bigint>,
+    s2.balanceOf(BYTES_STAKING_CONTRACT, { blockTag: blockNumber }) as Promise<bigint>,
+    s2.totalSupply({ blockTag: blockNumber }) as Promise<bigint>,
+    s2Legacy.totalSupply({ blockTag: blockNumber }) as Promise<bigint>,
+  ]);
+  if (getAddress(stakingS1) !== S1_CITIZEN_CONTRACT || getAddress(stakingS2) !== S2_OUTER_CITIZEN_CONTRACT) throw new Error('Canonical Citizen staking links mismatch');
+  const [s1Staked, s1V2Supply, s1Supply, s2Staked, s2V2Supply, s2Supply] = [s1StakedRaw, s1V2SupplyRaw, s1SupplyRaw, s2StakedRaw, s2V2SupplyRaw, s2SupplyRaw].map(Number);
+  if (![s1Staked, s1V2Supply, s1Supply, s2Staked, s2V2Supply, s2Supply].every(Number.isSafeInteger) || s1Supply <= 0 || s2Supply <= 0) throw new Error('Citizen staking metric exceeds safe integer range or has an invalid denominator');
+  const denominatorAssumptions = ['Original collection contract totalSupply() is the full collection denominator', 'Dynamic assembled V2 totalSupply() is published separately'];
+  return {
+    s1CitizensStaked: availableMetric(s1Staked, 'S1 Citizens', 'observed', 'canonical S1 Citizen V2 balanceOf(staking contract)', asOf),
+    s1CitizenV2Supply: availableMetric(s1V2Supply, 'S1 Citizens', 'observed', 'canonical S1 Citizen V2 totalSupply', asOf),
+    s1CollectionSupply: availableMetric(s1Supply, 'S1 Citizens', 'observed', 'original S1 Citizen totalSupply', asOf),
+    s1StakedPercentage: availableMetric((s1Staked / s1Supply) * 100, '% of total collection supply', 'calculated', 'S1 staked / original S1 collection supply', asOf, 'S1 Citizen V2 balanceOf(staking contract) / original S1 Citizen totalSupply() * 100', denominatorAssumptions),
+    s2CitizensStaked: availableMetric(s2Staked, 'S2 Outer Citizens', 'observed', 'canonical S2 Outer Citizen V2 balanceOf(staking contract)', asOf),
+    s2CitizenV2Supply: availableMetric(s2V2Supply, 'S2 Outer Citizens', 'observed', 'canonical S2 Outer Citizen V2 totalSupply', asOf),
+    s2CollectionSupply: availableMetric(s2Supply, 'S2 Outer Citizens', 'observed', 'original S2 Outer Citizen totalSupply', asOf),
+    s2StakedPercentage: availableMetric((s2Staked / s2Supply) * 100, '% of total collection supply', 'calculated', 'S2 staked / original S2 collection supply', asOf, 'S2 Outer Citizen V2 balanceOf(staking contract) / original S2 Outer Citizen totalSupply() * 100', denominatorAssumptions),
+  };
+}
 function rpcUrl() {
   return ethereumRpcUrl(process.env);
 }
@@ -459,6 +516,7 @@ async function generateBytesMetricsResponse() {
   });
 
   let tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
+  let citizenMetricRecords = unavailableCitizenStakingMetrics(asOf);
   let pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
   let pendingRewardsSource: { sourceBlock: number | null; sourceBlockHash: string | null; asOf: string | null } = {
     sourceBlock: null,
@@ -504,6 +562,16 @@ async function generateBytesMetricsResponse() {
       warnings.push('Ethereum BYTES supply and staking-contract balance are temporarily unavailable.');
     }
 
+    try {
+      citizenMetricRecords = await withTimeout(
+        readCitizenStakingMetrics(secondaryProvider, secondaryStaking, block.number, asOf),
+        RPC_DEADLINE_MS,
+        'Canonical Citizen staking reads',
+      );
+    } catch {
+      warnings.push('S1 and S2 Citizen staking counts are temporarily unavailable.');
+    }
+
     if (tokenIdentityVerified && canonicalTotalSupply !== null) {
       try {
         marketMetricRecords = await withTimeout(
@@ -529,6 +597,7 @@ async function generateBytesMetricsResponse() {
       }
     } catch {
       tokenMetricRecords = canonicalIdentityUnavailableMetrics(asOf);
+      citizenMetricRecords = unavailableCitizenStakingMetrics(asOf);
       pendingUnclaimedRewards = pendingRewardsUnavailableMetric(asOf);
       pendingRewardsSource = { sourceBlock: null, sourceBlockHash: null, asOf: null };
       marketMetricRecords = marketMetricsUnavailable(asOf);
@@ -566,6 +635,28 @@ async function generateBytesMetricsResponse() {
     ethBytes2Supply,
     avalancheBytesSupply,
     bytesHeldByStakingContract,
+    ...citizenMetricRecords,
+    ethereumBytesHolderCount: holderCountMetric(
+      holderSnapshot.chains.ethereum.holderCount,
+      'finalized Ethereum BYTES Transfer-log reconstruction',
+      holderSnapshot.chains.ethereum.asOf,
+      ['Strictly positive balances only', 'Balance sum equals chain-local totalSupply', 'Smart contracts and custodial addresses count as one holder address each'],
+    ),
+    avalancheBytesHolderCount: holderCountMetric(
+      holderSnapshot.chains.avalanche.holderCount,
+      'validated Routescan Avalanche positive-balance ledger',
+      holderSnapshot.chains.avalanche.asOf,
+      ['Strictly positive balances only', 'Balance sum equals chain-local totalSupply', 'No finalized Transfer gap after the latest indexed token transfer'],
+    ),
+    crossChainUniqueBytesHolderCount: availableMetric(
+      holderSnapshot.crossChain.uniqueHolderCount,
+      'unique positive-balance wallets',
+      'calculated',
+      'validated Ethereum and Avalanche holder-set union',
+      holderSnapshot.generatedAt,
+      'lowercase union(Ethereum positive-balance addresses, Avalanche positive-balance addresses)',
+      ['One identical EVM address across both chains counts once', 'Wallet ownership is not inferred; each address is one holder identity', `${holderSnapshot.crossChain.overlapCount.toLocaleString('en-US')} addresses appear on both chains`],
+    ),
     pendingUnclaimedRewards,
     bytesPriceUsd,
     totalSupplyValuationUsd,
@@ -678,6 +769,23 @@ async function generateBytesMetricsResponse() {
             : 'Unavailable; Avalanche token-dependent metrics are source-gated',
         },
         crossChainSupplyTreatment: 'Ethereum is the canonical Lock/Release issuance chain. The verified Avalanche BurnMint supply is a bridge representation and is not added to Ethereum totalSupply.',
+        citizenStaking: {
+          s1CitizenV2Contract: S1_CITIZEN_CONTRACT,
+          s1OriginalCollectionContract: S1_LEGACY_CITIZEN_CONTRACT,
+          s2OuterCitizenV2Contract: S2_OUTER_CITIZEN_CONTRACT,
+          s2OriginalCollectionContract: S2_LEGACY_OUTER_CITIZEN_CONTRACT,
+          contractLinksVerified: citizenMetricRecords.s1CitizensStaked.availability === 'available',
+          communityCrossCheckUrl: 'https://docs.google.com/spreadsheets/d/1syRuJkav_NG5WsypwN9Xdmc9EuHHPeaboxs6Pt4fCms/htmlview',
+          interpretation: 'Staked counts are live V2 NFT balanceOf(staking contract) reads. Percentages use original collection contract totalSupply() at the same Ethereum block; dynamic assembled V2 totalSupply() values are published separately.',
+        },
+        holderSnapshot: {
+          generatedAt: holderSnapshot.generatedAt,
+          methodology: holderSnapshot.methodology,
+          ethereum: holderSnapshot.chains.ethereum,
+          avalanche: holderSnapshot.chains.avalanche,
+          crossChain: holderSnapshot.crossChain,
+          privacy: 'Only counts, source evidence, and address-set SHA-256 digests are published; the wallet lists are not included in the site artifact.',
+        },
         priceSource: {
           verified: bytesPriceUsd.availability === 'available',
           verification: bytesPriceUsd.availability === 'available'
@@ -718,7 +826,7 @@ async function generateBytesMetricsPayload() {
 
 const readCachedBytesMetricsPayload = unstable_cache(
   generateBytesMetricsPayload,
-  ['bytes-lightweight-snapshot-v2', BYTES_PARTICIPANT_SNAPSHOT_DIGEST],
+  ['bytes-lightweight-snapshot-v3', BYTES_PARTICIPANT_SNAPSHOT_DIGEST, holderSnapshot.crossChain.addressesSha256],
   { revalidate: LIGHTWEIGHT_SNAPSHOT_SECONDS, tags: ['bytes-lightweight-snapshot'] },
 );
 

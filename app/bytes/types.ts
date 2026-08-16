@@ -50,6 +50,17 @@ export type BytesMetricsResponse = {
     ethBytes2Supply: MetricRecord;
     avalancheBytesSupply: MetricRecord;
     bytesHeldByStakingContract: MetricRecord;
+    s1CitizensStaked: MetricRecord;
+    s1CitizenV2Supply: MetricRecord;
+    s1CollectionSupply: MetricRecord;
+    s1StakedPercentage: MetricRecord;
+    s2CitizensStaked: MetricRecord;
+    s2CitizenV2Supply: MetricRecord;
+    s2CollectionSupply: MetricRecord;
+    s2StakedPercentage: MetricRecord;
+    ethereumBytesHolderCount: MetricRecord;
+    avalancheBytesHolderCount: MetricRecord;
+    crossChainUniqueBytesHolderCount: MetricRecord;
     pendingUnclaimedRewards: MetricRecord;
     bytesPriceUsd: MetricRecord;
     totalSupplyValuationUsd: MetricRecord;

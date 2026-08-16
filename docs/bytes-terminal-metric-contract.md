@@ -28,12 +28,14 @@ Every displayed value must carry a source class and timestamp:
 |---|---|---|
 | Neo Tokyo staking contract `0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16` | Configured asset-type indices 0–3; S1 and S2 are the recognized public emission components | Primary and verified |
 | Ethereum BYTES 2.0 `0xa19f5264F7D7Be11c451C093D8f92592820Bea86` | Ethereum ERC-20 total supply and direct balances | Primary and verified bidirectionally through `staker.BYTES()` and `token.STAKER()` |
+| S1 Citizen V2 `0xB9951B43802dCF3ef5b14567cb17adF367ed1c0F` and S2 Outer Citizen V2 `0x4481507cc228FA19D203BD42110d679571f7912E` | Live Citizen NFT balances held by the staking contract and dynamic assembled V2 supplies | Primary; contract links verified through `staker.S1_CITIZEN()` and `staker.S2_CITIZEN()` at the response block |
 | Legacy Ethereum BYTES token source | Remaining legacy supply | Unresolved; unavailable in v1 until token identity, interface, and economic treatment are independently verified |
 | Avalanche BYTES `0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b` | Avalanche ERC-20 representation supply | Primary; source-gated by chain 43114, EIP-1967 implementation `0x5430…7874`, BYTES metadata, and verified CCIP BurnMint pool `0xAb2e…0A9A` |
 | Chainlink CCIP BYTES directory | Ethereum–Avalanche Lock/Release versus Burn/Mint topology | Canonical bridge reference for the verified release scope; Ethereum is Lock/Release and Avalanche is a Burn/Mint representation |
 | Ethereum BYTES/WETH Uniswap V3 pool `0xfeb09c7e130a4b87b27ebd648ec485657b688b34` | BYTES/WETH spot ratio linked from DEXTools | Primary on-chain price venue, paired with Chainlink ETH/USD for USD conversion |
 | BYTES 2.0 launch tokenomics document | Reservoir tiers, 3% DAO tax, decay formula | Canonical reference |
 | Citizen staking spreadsheet | Independent per-point and participation cross-check | Reference only |
+| Routescan Avalanche holder ledger | Weekly positive-balance Avalanche address set | Indexed on-chain secondary source; accepted only after exact balance-sum/`totalSupply()` parity and a direct finalized Transfer-gap check |
 | Ktrap and 0xSanSSerif historical reports | Historical checkpoints and explanatory context | Reference only |
 
 The Ethereum BYTES 2.0 identity is established by a same-block bidirectional contract relationship: the verified staker's immutable `BYTES()` getter returns the token above, the token's `STAKER()` getter returns the verified staker, and `decimals()` returns 18. Avalanche identity is independently established at one Avalanche block through an actual RPC `eth_chainId` response, proxy implementation, name, symbol, decimals, `BurnMintTokenPool.getToken()`, pool version, pool `MINTER_ROLE` linkage, and a block-tagged simulation proving the pool can call the token's public self-burn `burn(uint256)` path. The verified BYTES implementation has no `BURNER_ROLE`; burn capability comes from the pool burning tokens held by its own address. Legacy Ethereum, circulating supply, maximum supply, terminal supply, and summed cross-chain supply remain unavailable unless independently established.
@@ -78,7 +80,7 @@ The Ethereum BYTES 2.0 identity is established by a same-block bidirectional con
 **Public label:** `Pending / Unclaimed Rewards`  
 **Type:** Calculated from indexed observed contract inputs
 **Definition:** Net pending reward snapshot aggregate across indexed stakers at one pinned Ethereum block. It is not an amount claimable by one caller and changes as rewards accrue or claims execute.
-**Companion metric:** The aggregate may be shown as a percentage relative to current Ethereum total supply for scale. This is not a supply share: pending rewards are accrued and unclaimed and do not enter `totalSupply()` until claimed and minted.
+**Display rule:** Do not show this aggregate as a percentage of current Ethereum supply. Pending rewards are accrued and unclaimed and do not enter `totalSupply()` until claimed and minted, so that percentage is more confusing than explanatory.
 **Implementation:** Deduplicate all `Stake.staker` and conservative `Claim.recipient` addresses from deployment through a pinned participant snapshot, merge event deltas through the response block, and sum `getPendingPoolReward()` reward outputs for economically claimable S1-position, S2-position, and LP pools through Multicall3. S1/S2 position rewards include BYTES-staking bonus points. The DAO-tax return value is summed separately and excluded from the displayed net pending aggregate.
 **Snapshot evidence:** Pin and runtime-validate source block number/hash, contract, deployment block, participant count, canonical address-list SHA-256 digest, Stake/Claim event counts, unique participant counts, collector version, and log-query calls/retries.
 **Operational bounds:** The endpoint deduplicates delta addresses during each block batch and fails this secondary metric closed if the snapshot delta exceeds 250,000 blocks, the delta exceeds 10,000 raw Stake/Claim logs, participants exceed 5,000, or Multicall work exceeds 32 chunks. Chunks contain at most 500 calls and execute in one bounded wave of at most 32 chunks. A new snapshot must be generated before a limit is reached.
@@ -135,6 +137,23 @@ Economically net minted supply
 **Supply definition:** Canonical Ethereum issued supply once. Remote BurnMint supplies are not added.
 **Asterisk rule:** The community widely uses this Ethereum canonical total-supply valuation as the effective BYTES market cap. The public label may use `Market Cap*` only when the page footnote states that it is not a conventional circulating market capitalization, because a defensible circulating-supply figure is unavailable. It is also not conventional FDV because no verified maximum supply is applied.
 
+### A11. Positive-balance holder counts
+
+**Public labels:** `Ethereum BYTES Holders`, `Avalanche BYTES Holders`, `Cross-Chain Unique Holders`
+**Types:** Chain counts are observed/indexed; the cross-chain union is calculated.
+**Definition:** Addresses with a strictly positive chain-local ERC-20 balance. Ethereum is reconstructed from every finalized `Transfer` event from deployment. Avalanche uses the paginated Routescan positive-balance ledger only when all balances sum exactly to direct chain-local `totalSupply()` and a direct finalized-chain query finds no token `Transfer` after Routescan's latest indexed token transfer.
+**Union:** Lowercase EVM addresses across the two validated sets and count each identical address once. Do not infer beneficial ownership, exchange subaccounts, multisig membership, or custody relationships.
+**Integrity evidence:** Publish source block numbers/hashes, chain-local balance sums and `totalSupply()` values, address-set SHA-256 digests, event/query counts, excluded nonpositive rows, overlap count, and collector methodology. Do not publish the wallet lists in the site artifact.
+**Refresh:** Weekly. The cross-chain metric fails closed if either set fails validation.
+
+### A12. Citizen Yield Pool participation
+
+**Public labels:** `S1 Citizens Staked`, `S2 Outer Citizens Staked`
+**Type:** Observed counts and supplies plus calculated total-collection percentages.
+**Definition:** Direct `balanceOf(NeoTokyoStaker)` on the canonical S1 Citizen V2 and S2 Outer Citizen V2 contracts at the response block, after the staker's own Citizen contract getters match those addresses.
+**Denominators:** Read `totalSupply()` from the original S1 Citizen (`0xb668…dd65`) and S2 Outer Citizen (`0x9b09…32ec4`) collection contracts at the same block. The current checkpoint is 2,081 S1 and 3,770 S2 and matches the linked community workbook. These totals are not interchangeable with dynamic assembled V2 `totalSupply()` values, which must be read live and shown separately.
+**Mechanics terminology:** Use `S1 Citizen Yield Pool`, `S2 Outer Citizen Yield Pool`, `points per Citizen (PPC)`, `staking-period boost`, `Vault Credit multiplier`, `S1 Credit Yield`, `S2 Allocation Yield`, and `Community Staking Incentives`. `200 BYTES = 1 point`; the contract caps eligible committed BYTES at 2,000 for an S1 position with an eligible Vault and 200 for S1 without one or S2. A position's points divided by total pool points determines its configured-window share, less configured DAO tax. Live configured emissions remain authoritative for current output.
+
 ---
 
 ## B. Emissions Reactor
@@ -152,7 +171,7 @@ getTotalEmissions(2, now - 86400) // internal asset-type index 2
 getTotalEmissions(3, now - 86400) // internal asset-type index 3
 ```
 
-**Display:** BYTES/day plus the community-recognized S1 and S2 components. The verified contract enum names indices 2 and 3 `BYTES` and `LP`, but BYTES staking contributes bonus points to S1/S2 positions rather than exposing a separately claimable BYTES reward category, while LP is a legacy LP-token staking path. Both emission reads are currently zero, so they are not presented publicly as active ecosystem pools. They remain mandatory internal reads; if either becomes nonzero, the headline card must show a conditional legacy-asset emission alert so its total cannot silently exceed the visible S1/S2 split.
+**Display:** BYTES/day plus the S1 Citizen and S2 Outer Citizen Yield Pool components. The verified contract enum names indices 2 and 3 `BYTES` and `LP`, but BYTES deposits add points to Citizen positions rather than exposing a separately claimable BYTES reward category, while LP is a distinct staking path. Both emission reads are currently zero, so they are not presented as active headline pools. If either becomes nonzero, show a conditional configuration alert and require claimability/pool-treatment review before including the value in headline issuance.
 **Current research checkpoint:** approximately `744.2296 BYTES/day`, subject to a fresh block read when implemented.  
 **Authority:** This is the headline current-emissions metric.
 
@@ -168,7 +187,7 @@ getTotalEmissions(3, now - 86400) // internal asset-type index 3
 **Public label:** `Estimated Yield per Point`  
 **Type:** Reference/observed sample  
 **Definition:** Citizen spreadsheet’s wallet-accrual sampling, split into owner and DAO rates.  
-**Current research checkpoint:** S1 owner `0.0451`, S1 DAO `0.0014`, S2 owner `0.0130`, S2 DAO `0.0004` BYTES/point/day.  
+**Current research checkpoint:** S1 owner `0.0451`, S1 DAO `0.0014`, S2 owner `0.0131`, S2 DAO `0.0004` BYTES/point/day.
 **Copy rule:** Label as estimated and cite the sample timestamp/method.
 
 ### B4. Modeled curve emissions
@@ -210,12 +229,12 @@ live configured emissions − modeled curve emissions
 **Public label:** `Projected Next-365-Day Issuance`
 **Type:** Projected
 **Definition:** Sum the current configured S1/S2 daily rate through the remainder of the current decay week, then apply the weekly factor `2^(-1/52)` across the next 365 days.
-**Assumptions:** Current participation remains steady and the verified weekly decay continues.
+**Assumptions:** Current participation remains steady and future administrator-configured reward windows continue to track the published weekly reference curve. The deployed contract does not execute this decay equation automatically.
 **Rule:** Never substitute `current daily emissions × 365`; that flat run-rate ignores the decay curve and materially overstates modeled issuance.
 
 ---
 
-## C. Decay Curve and Genesis Milestones
+## C. Configured History and Reference-Model Milestones
 
 ### C1. Historical configured emissions
 
@@ -229,11 +248,11 @@ live configured emissions − modeled curve emissions
 **Definition:** Formula output using a selected participation reservoir.  
 **Display:** Smooth or weekly-stepped comparison line, visually distinct from actual contract windows.
 
-### C3. Genesis emissions milestones
+### C3. Historical reference-model milestones
 
-**Public label:** `Genesis Emissions Milestones`  
-**Reference baseline:** 11,000 BYTES/day maximum launch reservoir.
-**Reservoir definition:** A reservoir is the week-zero daily allocation supplied to the decay model before weekly decay. It is a model baseline, not the current daily issuance rate. The steady-participation baseline combines S1 `5,500/day` and S2 `375/day` for `5,875/day`; the maximum-participation baseline uses `11,000/day`.
+**Public label:** `Historical Reference Milestones`
+**Reference baseline:** Historical 11,000 BYTES/day all-pool model ceiling.
+**Reservoir definition:** A reservoir is a week-zero allocation supplied to a contextual decay model. The 5,875/day and 11,000/day scenarios are historical model context, not current S1/S2 configured rates, automatic contract schedules, or future commitments.
 
 | Milestone | Rate |
 |---|---:|
@@ -243,14 +262,14 @@ live configured emissions − modeled curve emissions
 | 3rd half-level | 1,375/day |
 | 4th half-level | 687.5/day |
 
-**Copy rule:** Prefer `half-level` or `Genesis emissions milestone` in methodology. The UI may use familiar `halving milestone` language only with a tooltip explaining that participation tiers can move realized emissions independently of the decay factor.
+**Copy rule:** Always identify these as reference-model boundaries. Never imply a scheduled protocol event; actual reward windows remain explicitly configured and can differ.
 
 ### C4. Next milestone
 
 **Type:** Calculated  
-**Definition:** The next 52-week Genesis half-level after the current theoretical model week.
+**Definition:** The next 52-week boundary after the current reference-model week.
 **Current research checkpoint:** Week 208, modeled for June 10, 2027, when S1 reaches `343.75 BYTES/day` and combined S1+S2 reaches `367.1875 BYTES/day`.
-**Display:** Date and rate must be labeled projected; realized configured emissions can differ with participation and explicit reward windows.
+**Display:** Date and rate must be labeled as model context; actual configured emissions can differ because reward windows are explicitly configured.
 
 ---
 
@@ -351,7 +370,8 @@ Prohibited framing:
 | Contract supply, balances, configured emissions | Every 15 minutes |
 | Pending / unclaimed reward aggregate | Every 24 hours |
 | Participant address baseline | Weekly at an Ethereum finalized block |
-| Staked Citizen/BYTES participation | Every 15 minutes or hourly |
+| Cross-chain positive-balance holder sets and unique union | Weekly; fail closed unless both chain sets validate |
+| Staked Citizen counts and dynamic V2 supplies | Every 15 minutes with the lightweight contract snapshot |
 | Historical window reconstruction | Daily and when configuration changes |
 | Market price | Every 5–15 minutes |
 | Burn index | Hourly |

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { validateBytesMetricsResponse, validateEmissionsHistory } from '../../lib/bytes-client-data.mjs';
-import { nextGenesisHalfLevel } from '../../lib/bytes-model.mjs';
 import EmissionsChart from './EmissionsChart';
 import type { BytesMetricsResponse, EmissionsHistory, EmissionPools, MetricRecord } from './types';
 
@@ -17,7 +16,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
   timeZoneName: 'short',
 });
-const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const VERIFIED_EMISSIONS_EPOCH_SECONDS = 1_686_787_200;
 
 function formatNumber(value: unknown, digits = 2) {
@@ -359,8 +357,17 @@ export default function BytesDashboard() {
     && ethereumSupply.value > 0
     ? (stakingBalance.value / ethereumSupply.value) * 100
     : null;
-  const nextMilestone = theoryWeek?.availability === 'available' && typeof theoryWeek.value === 'number'
-    ? nextGenesisHalfLevel(VERIFIED_EMISSIONS_EPOCH_SECONDS, theoryWeek.value)
+  const configuredTotal = configured?.availability === 'available' && isPoolValue(configured.value) ? configured.value.total : null;
+  const modeledTotal = modeled?.availability === 'available' && isPoolValue(modeled.value) ? modeled.value.total : null;
+  const modeledOffsetWeeks = configuredTotal !== null && modeledTotal !== null && configuredTotal > 0 && modeledTotal > 0
+    ? Math.round(Math.log2(configuredTotal / modeledTotal) * 52)
+    : null;
+  const projectedIssuanceShare = next365DayIssuance?.availability === 'available'
+    && steady?.availability === 'available'
+    && typeof next365DayIssuance.value === 'number'
+    && typeof steady.value === 'number'
+    && steady.value > 0
+    ? (next365DayIssuance.value / steady.value) * 100
     : null;
 
   return (
@@ -425,17 +432,16 @@ export default function BytesDashboard() {
             <ScenarioCard title="Max Staking Scenario" description="If Community Staking Incentives were at maximum participation from here forward, this is the model's maximum potential remaining BYTES issuance." metric={maximum} sourceBlock={metrics?.sourceBlock} />
           </div>
 
-            <div className="bytes-context"><strong>Supply-side context:</strong> Lower new issuance can require less demand to absorb potential emissions-driven sell pressure, but it does not guarantee price appreciation. Emissions only become sell pressure when recipients sell; demand, liquidity, holder behavior, and wider market conditions still matter.</div>
           </section>
 
           <section className="bytes-human-section" aria-labelledby="plain-english-heading">
             <p className="bytes-eyebrow">The human read</p>
             <h2 id="plain-english-heading">In Plain English</h2>
             <div className="bytes-human-grid">
-              <p>Neo Tokyo&apos;s BYTES 2.0 system routes rewards through separate <strong>S1 Citizen</strong> and <strong>S2 Outer Citizen Yield Pools</strong>. Citizen positions are hard-locked for a selected staking period; points per Citizen combine pool-specific NFT inputs, a duration boost, and eligible BYTES contribution, while an S1 position may also include a Vault modifier. The contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>. Separately, the staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of BYTES supply, including BYTES Citizens have committed alongside S1 and S2 positions.</p>
-              <p>If participation stays near today&apos;s level and future configured reward windows continue to track the weekly reference curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. In the reference model, the next emissions half-level is reached on <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when the modeled S1 rate falls to {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day. Actual configured emissions may differ.</p>
-              <p>Earlier configured reward windows sent much more reward inventory to stakers than current windows. Whether those rewards were held or sold is not measured here. If attention and demand return in a true bull market, they may meet a lighter configured emissions stream than in the early years, but only future contract configuration can establish that path. This does not predict demand, price, or actual selling.</p>
-              <p>The published reference model is predictably decaying; contract output remains administrator-configured through reward windows. This terminal now measures positive-balance holder addresses, but it does not infer beneficial owners, custody relationships, holder concentration, liquidity depth, or realized volatility. Its price input is one verified spot reference rather than a promise of executable size. For the Citizens still watching the city&apos;s economy, the goal is to keep the mechanics honest without sanding off the uncertainty.</p>
+              <p>Nearly five years after its 2021 origin, BYTES remains embedded in the Neo Tokyo economy. It is held across <strong>{crossChainUniqueHolderCount?.availability === 'available' && typeof crossChainUniqueHolderCount.value === 'number' ? `${integerFormatter.format(crossChainUniqueHolderCount.value)} positive-balance addresses` : 'an unavailable number of positive-balance addresses'}</strong> on Ethereum and Avalanche. The staking contract holds <strong>{stakingBalance?.availability === 'available' && typeof stakingBalance.value === 'number' ? `${integerFormatter.format(stakingBalance.value)} BYTES` : 'an unavailable amount of BYTES'}{stakingPercentage === null ? '' : `, or ${formatPercentage(stakingPercentage)} of canonical Ethereum supply`}</strong>, while more than two-thirds of S1 Citizens and nearly half of S2 Outer Citizens are staked.</p>
+              <p>The configured S1 and S2 reward windows currently emit about <strong>{configuredTotal === null ? 'an unavailable amount' : `${formatNumber(configuredTotal)} BYTES per day`}</strong>. {modeledOffsetWeeks !== null && modeledOffsetWeeks > 0 ? <>Those settings align with the reference model from <strong>{modeledOffsetWeeks} weeks ago</strong> rather than today&apos;s modeled rate, and a manual administrator adjustment is expected.</> : <>Actual configured emissions may differ from today&apos;s modeled rate.</>} If participation remains near current levels and future reward windows resume tracking the weekly curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' && typeof next365DayIssuance.value === 'number' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days{projectedIssuanceShare === null ? '.' : <>, or <strong>{formatNumber(projectedIssuanceShare, 1)}% of the steady scenario&apos;s remaining issuance</strong>.</>} The Terminal separately tracks about <strong>{pendingRewards?.availability === 'available' && typeof pendingRewards.value === 'number' ? `${integerFormatter.format(pendingRewards.value)} BYTES of net pending rewards` : 'an unavailable amount of net pending rewards'}</strong>. Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted.</p>
+              <p>Earlier reward windows emitted far more BYTES each day, so the current stream creates less new inventory for the market to absorb. That may reduce emissions-driven pressure, but it does not predict price. Pending claims, future reward settings, demand, liquidity, and holder behavior still determine what happens next.</p>
+              <p>CoinGecko tracks more than <strong>18,000 cryptocurrencies</strong>, yet only about <strong>2,600</strong> currently clear a <strong>$1 million market cap</strong>, roughly one in seven. Nearly five years after BYTES began, its onchain supply valuation still sits around <strong>{totalSupplyValuation?.availability === 'available' && typeof totalSupplyValuation.value === 'number' ? `$${formatNumber(totalSupplyValuation.value / 1_000_000)} million` : 'an unavailable amount'}</strong>. It is not enormous by crypto standards. It is still here, still staked, and still economically meaningful.</p>
             </div>
           </section>
         </div>
@@ -492,6 +498,7 @@ export default function BytesDashboard() {
         <h2 id="footnotes-heading">Footnotes</h2>
         <ol>
           <li><strong>Market Cap*</strong> is the community&apos;s practical shorthand for Ethereum canonical <code>totalSupply() × BYTES/USD spot price</code>. It is not a conventional circulating market capitalization because a defensible circulating-supply figure is not currently available. The spot reference can be affected by liquidity and pool manipulation.</li>
+          <li><strong>Broad market context:</strong> <a href="https://www.coingecko.com/" target="_blank" rel="noreferrer">CoinGecko&apos;s</a> tracked universe includes assets without published market capitalizations. The comparison describes where the $1 million threshold appeared in CoinGecko&apos;s ranked table on August 16, 2026; it is not an official CoinGecko rank or percentile for BYTES.</li>
           <li><a href="https://coinmarketcap.com/currencies/neo-tokyo/" target="_blank" rel="noreferrer">CoinMarketCap&apos;s Neo Tokyo listing</a> reflects an older reporting snapshot. On September 17, 2025, Neo Tokyo PM Firestorm and community contributors submitted a deliberately conservative maximum-supply scenario that assumed maximum participation beginning the next day. Actual participation and subsequent issuance did not follow that extreme path, so CMC&apos;s maximum, total, and self-reported circulating figures can now be stale or structurally mismatched. This terminal uses current contract reads instead.</li>
           <li>The projected next-365-day issuance assumes today&apos;s configured S1 and S2 participation remains steady and future configured reward windows continue to track the weekly reference curve. The contract does not execute that curve automatically. This replaces the misleading flat-rate calculation of <code>current daily emissions × 365</code>.</li>
           <li>Staking-contract holdings are shown as a percentage of total supply. The balance includes the BYTES Citizens have committed alongside S1 and S2 positions, but direct transfers can also enter the contract, so the raw balance is not a pure active-principal or circulating-supply definition.</li>

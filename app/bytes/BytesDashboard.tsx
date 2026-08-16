@@ -135,7 +135,7 @@ function EmissionsSummaryCard({ configured, modeled, divergence, theoryWeek }: {
         <div><b>{modeledAvailable ? formatNumber(modeledTotal) : '—'}</b><small>Modeled reference rate · BYTES/day</small></div>
         <div><b>{divergenceAvailable ? `${formatSigned(divergence.value)} · ${variancePercent === null ? '—' : formatSigned(variancePercent)}%` : '—'}</b><small>Configured vs. modeled · BYTES/day</small></div>
       </div>
-      {alignedReferenceWeek !== null && modelWeek !== null && roundedOffsetWeeks !== null && roundedOffsetWeeks > 0 ? <p className="bytes-observer-note">Configured emissions currently match the modeled rate from {roundedOffsetWeeks} weeks ago (week {alignedReferenceWeek} vs. week {modelWeek} today).</p> : null}
+      {alignedReferenceWeek !== null && modelWeek !== null && roundedOffsetWeeks !== null && roundedOffsetWeeks > 0 ? <p className="bytes-observer-note">Configured emissions currently match the modeled rate from {roundedOffsetWeeks} weeks ago (week {alignedReferenceWeek} vs. week {modelWeek} today). A manual administrator adjustment is expected.</p> : null}
       {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional nonzero contract reward-window configuration detected for BYTES/LP asset indices: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect claimability and pool treatment before including it in headline issuance.</p> : null}
     </article>
   );

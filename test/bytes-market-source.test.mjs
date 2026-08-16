@@ -126,6 +126,7 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /Configured vs\. modeled/i);
   assert.match(dashboard, /Configured emissions currently match the modeled rate from \{roundedOffsetWeeks\} weeks ago/);
   assert.match(dashboard, /week \{alignedReferenceWeek\} vs\. week \{modelWeek\} today/);
+  assert.match(dashboard, /A manual administrator adjustment is expected\./);
   assert.match(dashboard, /of the steady scenario.{0,80}total remaining issuance is projected to be emitted within the next 365 days/i);
   assert.match(dashboard, /<strong>Community Groundwork\.<\/strong>/);
   const primaryIndex = dashboard.indexOf('<div className="bytes-primary">');

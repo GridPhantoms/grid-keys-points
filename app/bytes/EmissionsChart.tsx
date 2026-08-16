@@ -9,10 +9,10 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const THEORETICAL_RESERVOIR = 5_875;
 const MAX_POINTS = 180;
 const GENESIS_HALF_LEVELS = [
-  { level: '1st half-level', value: 5_500 },
-  { level: '2nd half-level', value: 2_750 },
-  { level: '3rd half-level', value: 1_375 },
-  { level: '4th half-level', value: 687.5 },
+  { level: '1st Half-Level', value: 5_500 },
+  { level: '2nd Half-Level', value: 2_750 },
+  { level: '3rd Half-Level', value: 1_375 },
+  { level: '4th Half-Level', value: 687.5 },
 ] as const;
 
 function compact(value: number) {
@@ -62,15 +62,13 @@ export default function EmissionsChart({ rows }: { rows: EmissionsHistoryRow[] }
       .filter(Boolean)
       .join(' ');
     const latest = sourceRows.at(-1)!;
-    const latestWeek = Math.max(0, Math.floor((endMs - EPOCH_MS) / WEEK_MS));
-    const latestTheoretical = THEORETICAL_RESERVOIR * 2 ** (-latestWeek / 52);
     const yTicks = Array.from({ length: 5 }, (_, index) => niceMaximum * (1 - index / 4));
     const dateTicks = Array.from({ length: 4 }, (_, index) => {
       const rowIndex = Math.round((sourceRows.length - 1) * (index / 3));
       return sourceRows[rowIndex];
     });
     const genesisMilestones = GENESIS_HALF_LEVELS.filter(({ value }) => value <= niceMaximum);
-    return { actualPoints, modeledPoints, latest, latestTheoretical, niceMaximum, yTicks, dateTicks, genesisMilestones, x, y, left, right, top, bottom };
+    return { actualPoints, modeledPoints, latest, niceMaximum, yTicks, dateTicks, genesisMilestones, x, y, left, right, top, bottom };
   }, [rows]);
 
   if (!chart) {
@@ -87,8 +85,8 @@ export default function EmissionsChart({ rows }: { rows: EmissionsHistoryRow[] }
   return (
     <div className="bytes-chart-wrap">
       <svg className="bytes-chart" viewBox="0 0 760 330" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby={`${gradientId}-title ${gradientId}-desc`}>
-        <title id={`${gradientId}-title`}>Reconstructed configured and theoretical BYTES daily emissions</title>
-        <desc id={`${gradientId}-desc`}>Calculated configured history reconstructed from observed inputs from {rows[0].date} through {chart.latest.date}, compared with a theoretical weekly decay model beginning June 15, 2023 with a 5,875 BYTES per day reservoir. Horizontal references mark the theoretical Genesis half-level milestones at 5,500, 2,750, 1,375, and 687.5 BYTES per day when they are within the chart domain.</desc>
+        <title id={`${gradientId}-title`}>Reconstructed Configured and Modeled BYTES Daily Emissions</title>
+        <desc id={`${gradientId}-desc`}>Calculated configured history reconstructed from observed inputs from {rows[0].date} through {chart.latest.date}, compared with a modeled weekly emissions-decay curve based on the historical steady scenario. Horizontal references mark half-level milestones versus Genesis at 5,500, 2,750, 1,375, and 687.5 BYTES per day when they are within the chart domain.</desc>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#28d7f2" stopOpacity=".18" />
@@ -127,14 +125,12 @@ export default function EmissionsChart({ rows }: { rows: EmissionsHistoryRow[] }
         <circle cx={latestX} cy={latestY} r="10" fill="none" stroke="#28d7f2" opacity=".28" />
       </svg>
       <div className="bytes-chart-latest" aria-label="Latest chart values">
-        <span><b>Reconstructed configured history</b> {chart.latest.total.toLocaleString('en-US', { maximumFractionDigits: 2 })} BYTES/day</span>
-        <span><b>Theoretical 5,875-reservoir model</b> {chart.latestTheoretical.toLocaleString('en-US', { maximumFractionDigits: 2 })} BYTES/day</span>
-        <span><b>Latest sample</b> {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${chart.latest.date}T00:00:00Z`))}</span>
+        <span><b>Latest Sample</b> {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${chart.latest.date}T00:00:00Z`))}</span>
       </div>
       <div className="bytes-chart-legend" aria-label="Chart legend">
-        <span><i className="legend-history" aria-hidden="true" />Reconstructed configured history · calculated from observed inputs</span>
-        <span><i className="legend-modeled" aria-hidden="true" />Theoretical 5,875-reservoir weekly model</span>
-        <span><i className="legend-milestone" aria-hidden="true" />Theoretical Genesis half-level milestones · 5,500 / 2,750 / 1,375 / 687.5 BYTES/day</span>
+        <span><i className="legend-history" aria-hidden="true" />Reconstructed Configured History · Calculated from Observed Inputs</span>
+        <span><i className="legend-modeled" aria-hidden="true" />Modeled Weekly Emissions Decay</span>
+        <span><i className="legend-milestone" aria-hidden="true" />Half-Level Milestones vs. Genesis · 5,500 / 2,750 / 1,375 / 687.5 BYTES/day</span>
       </div>
     </div>
   );

@@ -231,7 +231,7 @@ test('sampling the production history retains the June 23, 2023 reward-window dr
   assert.ok(sampled.some((row) => row.date === '2023-06-22' && row.total === 11_000));
 });
 
-test('chart source keeps all theoretical Genesis half-level references and accessible copy', async () => {
+test('chart source keeps all half-level references and accessible layman copy', async () => {
   const chartUrl = new URL('../app/bytes/EmissionsChart.tsx', import.meta.url);
   const cssUrl = new URL('../app/bytes/bytes.css', import.meta.url);
   const [chartSource, cssSource] = await Promise.all([
@@ -242,7 +242,10 @@ test('chart source keeps all theoretical Genesis half-level references and acces
   for (const milestone of ['5_500', '2_750', '1_375', '687.5']) {
     assert.match(chartSource, new RegExp(milestone.replace('.', '\\.')));
   }
-  assert.match(chartSource, /theoretical Genesis half-level milestones/i);
+  assert.match(chartSource, /Half-Level Milestones vs\. Genesis/);
+  assert.match(chartSource, /Modeled Weekly Emissions Decay/);
+  assert.doesNotMatch(chartSource, /Theoretical 5,875-reservoir|Theoretical Genesis half-level milestones/);
+  assert.doesNotMatch(chartSource, /<span><b>Reconstructed configured history<\/b>|<span><b>Theoretical 5,875-reservoir model<\/b>/i);
   assert.match(chartSource, /bytes-chart-milestone/);
   assert.match(cssSource, /\.bytes-chart-milestone line[^}]*stroke-dasharray/);
 });

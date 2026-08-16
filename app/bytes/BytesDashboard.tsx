@@ -315,9 +315,9 @@ export default function BytesDashboard() {
           {history ? <EmissionsChart rows={history.rows} /> : historyDone ? <div className="bytes-chart-placeholder">Historical chart unavailable.</div> : <div className="bytes-chart-placeholder">Loading historical series…</div>}
 
           <div className="bytes-scenarios" aria-labelledby="scenario-heading">
-            <h2 id="scenario-heading" className="bytes-section-title">Remaining issuance scenarios</h2>
-            <ScenarioCard title="Steady scenario" description="If staking participation stays around the steady level represented by this model, this is the estimated BYTES still to be emitted over the remaining life of the curve." metric={steady} sourceBlock={metrics?.sourceBlock} />
-            <ScenarioCard title="Max staking scenario" description="If Community Staking Incentives were at maximum participation from here forward, this is the model's maximum potential remaining BYTES issuance." metric={maximum} sourceBlock={metrics?.sourceBlock} />
+            <h2 id="scenario-heading" className="bytes-section-title">Remaining Issuance Scenarios</h2>
+            <ScenarioCard title="Steady Scenario" description="If staking participation stays around the steady level represented by this model, this is the estimated BYTES still to be emitted over the remaining life of the curve." metric={steady} sourceBlock={metrics?.sourceBlock} />
+            <ScenarioCard title="Max Staking Scenario" description="If Community Staking Incentives were at maximum participation from here forward, this is the model's maximum potential remaining BYTES issuance." metric={maximum} sourceBlock={metrics?.sourceBlock} />
           </div>
 
             <div className="bytes-context"><strong>Supply-side context:</strong> Lower new issuance can require less demand to absorb potential emissions-driven sell pressure, but it does not guarantee price appreciation. Emissions only become sell pressure when recipients sell; demand, liquidity, holder behavior, and wider market conditions still matter.</div>
@@ -325,7 +325,7 @@ export default function BytesDashboard() {
 
           <section className="bytes-human-section" aria-labelledby="plain-english-heading">
             <p className="bytes-eyebrow">The human read</p>
-            <h2 id="plain-english-heading">In plain English</h2>
+            <h2 id="plain-english-heading">In Plain English</h2>
             <div className="bytes-human-grid">
               <p>Neo Tokyo&apos;s BYTES 2.0 system routes rewards through separate <strong>S1 Citizen</strong> and <strong>S2 Outer Citizen Yield Pools</strong>. Citizen positions are hard-locked for a selected staking period; points per Citizen combine pool-specific NFT inputs, a duration boost, and eligible BYTES contribution, while an S1 position may also include a Vault modifier. The contract is currently configured to emit about <strong>{configured?.availability === 'available' && isPoolValue(configured.value) ? `${formatNumber(configured.value.total)} BYTES per day` : 'an unavailable amount'}</strong>. Separately, the staking contract holds <strong>{stakingPercentage === null ? 'an unavailable share' : formatPercentage(stakingPercentage)}</strong> of BYTES supply, including BYTES Citizens have committed alongside S1 and S2 positions.</p>
               <p>If participation stays near today&apos;s level and future configured reward windows continue to track the weekly reference curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days. The next 52-week boundary in that reference model occurs on <strong>{nextMilestone ? dateFormatter.format(new Date(nextMilestone.asOf)) : 'an unavailable date'}</strong>, when the modeled S1 Citizen Yield Pool rate reaches {nextMilestone ? formatNumber(nextMilestone.s1DailyRate) : '—'} BYTES per day. Actual configured windows can differ.</p>
@@ -337,7 +337,7 @@ export default function BytesDashboard() {
 
         <aside className="bytes-side">
           <section className="bytes-panel" aria-labelledby="valuation-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Cross-chain accounting</p><h2 id="valuation-heading">Supply &amp; valuation</h2></div></div>
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Cross-chain accounting</p><h2 id="valuation-heading">Supply &amp; Valuation</h2></div></div>
             <p className="bytes-panel-copy">Ethereum and Avalanche supplies are shown side by side but never added: verified Avalanche CCIP BurnMint units represent bridged BYTES while Ethereum uses lock/release accounting. Market Cap* uses Ethereum supply once. Price references the <a href="https://www.dextools.io/app/en/ether/pair-explorer/0xfeb09c7e130a4b87b27ebd648ec485657b688b34" target="_blank" rel="noreferrer">Ethereum BYTES/WETH pair on DEXTools</a>.</p>
             <AvailabilityRow label="Ethereum chain-local total supply" metric={ethereumSupply} sourceBlock={metrics?.sourceBlock} />
             <AvailabilityRow label="Avalanche chain-local BYTES supply" metric={avalancheSupply} sourceBlock={avalancheSourceBlock} />
@@ -346,7 +346,7 @@ export default function BytesDashboard() {
           </section>
 
           <section className="bytes-panel" aria-labelledby="supply-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Staking status</h2></div></div>
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Verification gate</p><h2 id="supply-heading">Staking Status</h2></div></div>
             <p className="bytes-panel-copy">The staking contract&apos;s BYTES balance and the net pending reward snapshot aggregate across indexed stakers are sourced on-chain. These token balances are distinct from the S1 Citizen and S2 Outer Citizen NFT counts above.</p>
             <AvailabilityRow label="BYTES held by staking contract" metric={stakingBalance} sourceBlock={metrics?.sourceBlock} valueNote={stakingPercentage === null ? undefined : `${formatPercentage(stakingPercentage)} of total supply`} />
             <AvailabilityRow label="Pending / Unclaimed Rewards" metric={pendingRewards} sourceBlock={metrics?.sourceBlock} />
@@ -354,7 +354,7 @@ export default function BytesDashboard() {
 
 
           <section className="bytes-panel" aria-labelledby="ledger-heading">
-            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Transparent by design</p><h2 id="ledger-heading">Methodology ledger</h2><p>Every published number names what it is.</p></div></div>
+            <div className="bytes-panel-head"><div><p className="bytes-eyebrow">Transparent by design</p><h2 id="ledger-heading">Methodology Ledger</h2><p>Every published number names what it is.</p></div></div>
             <div className="bytes-class-key" aria-label="Metric classifications">
               <Badge classification="observed" /><span>direct contract source data</span>
               <Badge classification="calculated" /><span>derived or reconstructed from observed inputs</span>

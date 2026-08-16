@@ -142,7 +142,7 @@
   .bytes-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   .bytes-sample-count { flex: none; margin-top: 0; }
   .bytes-chart { min-height: 14rem; }
-  .bytes-chart-latest { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bytes-chart-latest { grid-template-columns: minmax(0, 1fr); }
   .bytes-scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bytes-scenario p { min-height: 3.7rem; }
   .bytes-details dl > div { grid-template-columns: 5.6rem minmax(0, 1fr); gap: .65rem; }

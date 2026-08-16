@@ -120,8 +120,12 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /Current daily emissions: modeled/i);
   assert.match(dashboard, /Configured vs\. modeled variance/);
   assert.match(dashboard, /positive variance means configured daily emissions are above/i);
-  assert.match(dashboard, /title="Steady scenario"/);
-  assert.match(dashboard, /title="Max staking scenario"/);
+  assert.match(dashboard, /Remaining Issuance Scenarios/);
+  assert.match(dashboard, /title="Steady Scenario"/);
+  assert.match(dashboard, /title="Max Staking Scenario"/);
+  for (const heading of ['In Plain English', 'Supply &amp; Valuation', 'Staking Status', 'Methodology Ledger']) {
+    assert.match(dashboard, new RegExp(heading));
+  }
   assert.match(dashboard, /If staking participation stays around the steady level represented by this model/i);
   assert.match(dashboard, /If Community Staking Incentives were at maximum participation from here forward/i);
   assert.doesNotMatch(dashboard, /historical reference scenario begins|historical all-pool model ceiling/i);

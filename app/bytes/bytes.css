@@ -135,6 +135,7 @@
 .bytes-human-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .85rem 1.4rem; }
 .bytes-human-grid p { margin: 0; color: #aab3bc; font-size: .86rem; line-height: 1.75; }
 .bytes-human-grid strong { color: #e4fbff; font-weight: 650; }
+.bytes-human-grid a { color: var(--bytes-cyan); text-underline-offset: .18em; }
 .bytes-footnotes { background: var(--bytes-panel); }
 .bytes-footnotes ol { margin: 0; padding-left: 1.25rem; list-style: decimal; }
 .bytes-footnotes li { padding-left: .35rem; color: #929ca6; font-size: .75rem; line-height: 1.7; }
@@ -160,6 +161,7 @@
   .bytes-scenario p { min-height: 3.7rem; }
   .bytes-details dl > div { grid-template-columns: 5.6rem minmax(0, 1fr); gap: .65rem; }
   .bytes-human-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bytes-human-grid p:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 @media (min-width: 1000px) {

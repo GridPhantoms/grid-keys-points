@@ -161,6 +161,17 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /Nearly five years after its 2021 origin, BYTES remains embedded in the Neo Tokyo economy/i);
   assert.match(dashboard, /crossChainUniqueHolderCount/);
   assert.match(dashboard, /more than two-thirds of S1 Citizens and nearly half of S2 Outer Citizens are staked/i);
+  assert.match(dashboard, /Distribution is another strength/);
+  assert.match(dashboard, /100% community allocated/);
+  assert.match(dashboard, /no team allocation or VC unlocks/);
+  assert.match(dashboard, /original token was claimable only by full Citizens with Vault Cards/);
+  assert.match(dashboard, /today&apos;s configured BYTES 2\.0 issuance flows through/);
+  assert.match(dashboard, /community-held by design/);
+  assert.match(dashboard, /supply entered through participation rather than an insider treasury or vesting schedule/);
+  assert.match(dashboard, /2021 origin was unusually fair and broadly distributed, and the model remains difficult to match/);
+  for (const postId of ['1916838058432848248', '1915466651421626829', '1451646106522243076', '1915466654546329649']) {
+    assert.match(dashboard, new RegExp(`https://x\\.com/NeoTokyoCode/status/${postId}`));
+  }
   assert.match(dashboard, /Those settings align with the reference model from/i);
   assert.match(dashboard, /projectedIssuanceShare/);
   assert.match(dashboard, /Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted/i);
@@ -181,6 +192,7 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.doesNotMatch(dashboard, /PM Firestorm|community workbook|official Neo Tokyo reference graphics|current daily emissions × 365/i);
   assert.match(dashboardCss, /\.bytes-footnotes ol \{[^}]*list-style: decimal/);
   assert.match(dashboardCss, /\.bytes-footnotes li::marker \{[^}]*font-weight: 700/);
+  assert.match(dashboardCss, /\.bytes-human-grid p:last-child:nth-child\(odd\) \{[^}]*grid-column: 1 \/ -1/);
   assert.doesNotMatch(dashboard, /Supply-side context:/i);
   assert.doesNotMatch(dashboard, /true bull market|points per Citizen combine|duration boost/i);
   assert.doesNotMatch(dashboard, /next 52-week boundary/i);

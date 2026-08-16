@@ -34,11 +34,14 @@ Every displayed value must carry a source class and timestamp:
 | Chainlink CCIP BYTES directory | Ethereum–Avalanche Lock/Release versus Burn/Mint topology | Canonical bridge reference for the verified release scope; Ethereum is Lock/Release and Avalanche is a Burn/Mint representation |
 | Ethereum BYTES/WETH Uniswap V3 pool `0xfeb09c7e130a4b87b27ebd648ec485657b688b34` | BYTES/WETH spot ratio linked from DEXTools | Primary on-chain price venue, paired with Chainlink ETH/USD for USD conversion |
 | BYTES 2.0 launch tokenomics document | Reservoir tiers, 3% DAO tax, decay formula | Canonical reference |
+| Official Neo Tokyo distribution records ([2021 Vault eligibility](https://x.com/NeoTokyoCode/status/1451646106522243076), [2025 no-team statement](https://x.com/NeoTokyoCode/status/1915466651421626829), and [100% Community graphic](https://x.com/NeoTokyoCode/status/1916838058432848248)) | Initial claim eligibility and community-allocation design | Canonical public project records |
 | Citizen staking spreadsheet | Independent per-point and participation cross-check | Reference only |
 | Routescan Avalanche holder ledger | Weekly positive-balance Avalanche address set | Indexed on-chain secondary source; accepted only after exact balance-sum/`totalSupply()` parity and a direct finalized Transfer-gap check |
 | Ktrap and 0xSanSSerif historical reports | Historical checkpoints and explanatory context | Reference only |
 
 The Ethereum BYTES 2.0 identity is established by a same-block bidirectional contract relationship: the verified staker's immutable `BYTES()` getter returns the token above, the token's `STAKER()` getter returns the verified staker, and `decimals()` returns 18. Avalanche identity is independently established at one Avalanche block through an actual RPC `eth_chainId` response, proxy implementation, name, symbol, decimals, `BurnMintTokenPool.getToken()`, pool version, pool `MINTER_ROLE` linkage, and a block-tagged simulation proving the pool can call the token's public self-burn `burn(uint256)` path. The verified BYTES implementation has no `BURNER_ROLE`; burn capability comes from the pool burning tokens held by its own address. Legacy Ethereum, circulating supply, maximum supply, terminal supply, and summed cross-chain supply remain unavailable unless independently established.
+
+`100% community allocated` and `community-held by design` describe the verified allocation structure: the official distribution graphic labels all four buckets Community, Neo Tokyo states there was no team allocation or VC unlock, the original claim required a full Citizen plus Vault Card, and BYTES 2.0 issuance is routed through Citizen staking. This does not claim that the beneficial owner behind every current wallet is known.
 
 ---
 

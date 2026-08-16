@@ -109,16 +109,27 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.doesNotMatch(dashboard, /pendingRewardsPercentage|relative to current Ethereum total supply/);
   for (const pattern of [
     /our adopted utility token/i,
-    /Ethereum BYTES holders/,
-    /Avalanche BYTES holders/,
+    /Ethereum holders/,
+    /Avalanche holders/,
     /Cross-chain unique holders/,
     /S1 Citizens staked/,
     /S2 Outer Citizens staked/,
   ]) assert.match(dashboard, pattern);
   assert.doesNotMatch(dashboard, /Citizen Yield Pool mechanics/);
-  assert.match(dashboard, /Current daily emissions: configured/i);
-  assert.match(dashboard, /Current daily emissions: modeled/i);
-  assert.match(dashboard, /Configured vs\. modeled variance/);
+  assert.match(dashboard, /function EmissionsSummaryCard/);
+  assert.match(dashboard, /function ProjectedIssuanceCard/);
+  assert.match(dashboard, /function GenesisEpochCard/);
+  assert.match(dashboard, /function StakedBytesCard/);
+  assert.match(dashboard, /function HolderSummaryCard/);
+  assert.match(dashboard, /Current daily emissions/i);
+  assert.match(dashboard, /Modeled reference rate/i);
+  assert.match(dashboard, /Configured vs\. modeled/i);
+  assert.match(dashboard, /Active reward windows align with reference week/i);
+  assert.match(dashboard, /of the steady scenario.{0,80}modeled remaining issuance/i);
+  assert.match(dashboard, /Since BYTES 2\.0 Genesis epoch/i);
+  assert.match(dashboard, /Ethereum BYTES 2\.0.{0,40}canonical/i);
+  assert.match(dashboard, /Matching addresses across both chains are counted once/i);
+  assert.doesNotMatch(dashboard, /Modeled S1 Citizen Yield Pool|Modeled S2 Outer Citizen Yield Pool/);
   assert.match(dashboard, /positive variance means configured daily emissions are above/i);
   assert.match(dashboard, /Remaining Issuance Scenarios/);
   assert.match(dashboard, /title="Steady Scenario"/);

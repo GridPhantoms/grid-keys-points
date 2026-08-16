@@ -75,19 +75,13 @@ function MetricDetails({ metric, label, sourceBlock, valuePrefix = '' }: {
   );
 }
 
-function StatCard({ label, metric, signed = false, pools = false, digits = 0, prefix = '' }: {
+function StatCard({ label, metric, digits = 0, prefix = '' }: {
   label: string;
   metric?: MetricRecord<unknown>;
-  signed?: boolean;
-  pools?: boolean;
   digits?: number;
   prefix?: string;
 }) {
-  const poolValue = metric && isPoolValue(metric.value) ? metric.value : null;
-  const legacyEmissionTotal = poolValue && typeof poolValue.BYTES === 'number' && typeof poolValue.LP === 'number'
-    ? poolValue.BYTES + poolValue.LP
-    : null;
-  const formatted = poolValue ? formatNumber(poolValue.total) : signed ? formatSigned(metric?.value) : formatNumber(metric?.value, digits);
+  const formatted = formatNumber(metric?.value, digits);
   const display = formatted === 'Unavailable' ? formatted : `${prefix}${formatted}`;
   return (
     <article className="bytes-card">
@@ -97,21 +91,133 @@ function StatCard({ label, metric, signed = false, pools = false, digits = 0, pr
       </div>
       <div className={metric?.availability === 'available' && metric.classification !== 'projected' ? 'bytes-value bytes-cyan' : 'bytes-value'}>{display}</div>
       <div className="bytes-unit">{metric?.availability === 'available' ? metric.unit : metric?.reason ?? 'Waiting for live metrics'}</div>
-      {pools && poolValue ? (
-        <>
-          <div className="bytes-split">
-            <div><b>{formatNumber(poolValue.S1)}</b><small>S1 Citizen Yield Pool</small></div>
-            <div><b>{formatNumber(poolValue.S2)}</b><small>S2 Outer Citizen Yield Pool</small></div>
-          </div>
-          {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional nonzero contract reward-window configuration detected for BYTES/LP asset indices: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect claimability and pool treatment before including it in headline issuance.</p> : null}
-        </>
-      ) : null}
-      {poolValue && !pools ? (
-        <div className="bytes-split">
-          <div><b>{formatNumber(poolValue.S1)}</b><small>Modeled S1 Citizen Yield Pool</small></div>
-          <div><b>{formatNumber(poolValue.S2)}</b><small>Modeled S2 Outer Citizen Yield Pool</small></div>
-        </div>
-      ) : null}
+    </article>
+  );
+}
+
+function EmissionsSummaryCard({ configured, modeled, divergence, theoryWeek }: {
+  configured?: MetricRecord<unknown>;
+  modeled?: MetricRecord<unknown>;
+  divergence?: MetricRecord<unknown>;
+  theoryWeek?: MetricRecord<unknown>;
+}) {
+  const configuredPools = configured && isPoolValue(configured.value) ? configured.value : null;
+  const modeledPools = modeled && isPoolValue(modeled.value) ? modeled.value : null;
+  const configuredTotal = configuredPools?.total;
+  const modeledTotal = modeledPools?.total;
+  const configuredAvailable = configured?.availability === 'available' && typeof configuredTotal === 'number';
+  const modeledAvailable = modeled?.availability === 'available' && typeof modeledTotal === 'number';
+  const divergenceAvailable = divergence?.availability === 'available' && typeof divergence.value === 'number';
+  const modelWeek = theoryWeek?.availability === 'available' && typeof theoryWeek.value === 'number' ? theoryWeek.value : null;
+  const variancePercent = configuredAvailable && modeledAvailable && modeledTotal > 0
+    ? ((configuredTotal - modeledTotal) / modeledTotal) * 100
+    : null;
+  const rawOffsetWeeks = configuredAvailable && modeledAvailable && modeledTotal > 0 && configuredTotal > 0
+    ? Math.log2(configuredTotal / modeledTotal) * 52
+    : null;
+  const roundedOffsetWeeks = rawOffsetWeeks === null ? null : Math.round(rawOffsetWeeks);
+  const alignedReferenceWeek = modelWeek !== null
+    && rawOffsetWeeks !== null
+    && roundedOffsetWeeks !== null
+    && Math.abs(rawOffsetWeeks - roundedOffsetWeeks) < 0.05
+    ? modelWeek - roundedOffsetWeeks
+    : null;
+  const legacyEmissionTotal = configuredPools && typeof configuredPools.BYTES === 'number' && typeof configuredPools.LP === 'number'
+    ? configuredPools.BYTES + configuredPools.LP
+    : null;
+
+  return (
+    <article className="bytes-card bytes-emissions-summary">
+      <div className="bytes-card-label"><span>Current daily emissions</span>{configured ? <Badge classification={configured.classification} /> : <span className="bytes-badge">waiting</span>}</div>
+      <div className={configuredAvailable ? 'bytes-value bytes-cyan bytes-value-hero' : 'bytes-value bytes-value-hero'}>{configuredAvailable ? formatNumber(configuredTotal) : 'Unavailable'}</div>
+      <div className="bytes-unit">{configuredAvailable ? 'BYTES/DAY · CONTRACT-CONFIGURED' : configured?.reason ?? 'Waiting for live metrics'}</div>
+      <div className="bytes-summary-grid">
+        <div><b>{modeledAvailable ? formatNumber(modeledTotal) : '—'}</b><small>Modeled reference rate · BYTES/day</small></div>
+        <div><b>{divergenceAvailable ? `${formatSigned(divergence.value)} · ${variancePercent === null ? '—' : formatSigned(variancePercent)}%` : '—'}</b><small>Configured vs. modeled · BYTES/day</small></div>
+      </div>
+      {alignedReferenceWeek !== null && modelWeek !== null ? <p className="bytes-observer-note">Active reward windows align with reference week {alignedReferenceWeek} · calendar model: week {modelWeek}</p> : null}
+      {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional nonzero contract reward-window configuration detected for BYTES/LP asset indices: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect claimability and pool treatment before including it in headline issuance.</p> : null}
+    </article>
+  );
+}
+
+function ProjectedIssuanceCard({ metric, steady }: {
+  metric?: MetricRecord<unknown>;
+  steady?: MetricRecord<unknown>;
+}) {
+  const issuanceValue = metric?.availability === 'available' && typeof metric.value === 'number' ? metric.value : null;
+  const steadyValue = steady?.availability === 'available' && typeof steady.value === 'number' && steady.value > 0 ? steady.value : null;
+  const share = issuanceValue !== null && steadyValue !== null ? (issuanceValue / steadyValue) * 100 : null;
+  return (
+    <article className="bytes-card">
+      <div className="bytes-card-label"><span>Projected next-365-day issuance</span>{metric ? <Badge classification={metric.classification} /> : <span className="bytes-badge">waiting</span>}</div>
+      <div className="bytes-value">{issuanceValue !== null ? integerFormatter.format(issuanceValue) : 'Unavailable'}</div>
+      <div className="bytes-unit">{issuanceValue !== null ? 'BYTES' : metric?.reason ?? 'Waiting for live metrics'}</div>
+      <p className="bytes-card-note">{share === null ? 'Steady-scenario share unavailable' : <><strong>{formatNumber(share, 1)}%</strong> of the steady scenario&apos;s total modeled remaining issuance is projected within the next 365 days</>}</p>
+    </article>
+  );
+}
+
+function GenesisEpochCard({ asOf }: { asOf?: string }) {
+  const asOfMs = asOf && Number.isFinite(Date.parse(asOf)) ? Date.parse(asOf) : null;
+  const elapsedDays = asOfMs === null ? null : Math.max(0, Math.floor((asOfMs / 1000 - VERIFIED_EMISSIONS_EPOCH_SECONDS) / 86_400));
+  const elapsedWeeks = elapsedDays === null ? null : Math.floor(elapsedDays / 7);
+  const remainingDays = elapsedDays === null ? null : elapsedDays % 7;
+  return (
+    <article className="bytes-card bytes-epoch-card">
+      <div className="bytes-card-label"><span>Since BYTES 2.0 Genesis epoch</span><Badge classification="calculated" /></div>
+      <div className="bytes-value bytes-cyan">{elapsedDays === null ? 'Unavailable' : integerFormatter.format(elapsedDays)}</div>
+      <div className="bytes-unit">DAYS SINCE JUNE 15, 2023</div>
+      <p className="bytes-card-note">{elapsedWeeks === null ? 'Epoch counter unavailable' : <><strong>{integerFormatter.format(elapsedWeeks)} weeks</strong> · {remainingDays} {remainingDays === 1 ? 'day' : 'days'}</>}</p>
+    </article>
+  );
+}
+
+function TotalSupplyCard({ metric }: { metric?: MetricRecord<unknown> }) {
+  const value = metric?.availability === 'available' && typeof metric.value === 'number' ? metric.value : null;
+  return (
+    <article className="bytes-card">
+      <div className="bytes-card-label"><span>Total supply</span>{metric ? <Badge classification={metric.classification} /> : <span className="bytes-badge">waiting</span>}</div>
+      <div className={value !== null ? 'bytes-value bytes-cyan' : 'bytes-value'}>{value !== null ? formatNumber(value) : 'Unavailable'}</div>
+      <div className="bytes-unit">{value !== null ? 'BYTES' : metric?.reason ?? 'Waiting for live metrics'}</div>
+      <p className="bytes-card-note">Ethereum BYTES 2.0 · canonical <code>totalSupply()</code></p>
+    </article>
+  );
+}
+
+function StakedBytesCard({ metric, percentage }: {
+  metric?: MetricRecord<unknown>;
+  percentage: number | null;
+}) {
+  const value = metric?.availability === 'available' && typeof metric.value === 'number' ? metric.value : null;
+  return (
+    <article className="bytes-card">
+      <div className="bytes-card-label"><span>Staked BYTES</span>{metric ? <Badge classification={metric.classification} /> : <span className="bytes-badge">waiting</span>}</div>
+      <div className={value !== null ? 'bytes-value bytes-cyan' : 'bytes-value'}>{value !== null ? integerFormatter.format(value) : 'Unavailable'}</div>
+      <div className="bytes-unit">{value !== null ? 'BYTES HELD BY STAKING CONTRACT' : metric?.reason ?? 'Waiting for live metrics'}</div>
+      <p className="bytes-card-note">{percentage === null ? 'Share of total supply unavailable' : <><strong>{formatPercentage(percentage)}</strong> of total supply</>}</p>
+    </article>
+  );
+}
+
+function HolderSummaryCard({ crossChain, ethereum, avalanche }: {
+  crossChain?: MetricRecord<unknown>;
+  ethereum?: MetricRecord<unknown>;
+  avalanche?: MetricRecord<unknown>;
+}) {
+  const crossChainValue = crossChain?.availability === 'available' && typeof crossChain.value === 'number' ? crossChain.value : null;
+  const ethereumValue = ethereum?.availability === 'available' && typeof ethereum.value === 'number' ? ethereum.value : null;
+  const avalancheValue = avalanche?.availability === 'available' && typeof avalanche.value === 'number' ? avalanche.value : null;
+  return (
+    <article className="bytes-card bytes-holder-card">
+      <div className="bytes-card-label"><span>Cross-chain unique holders</span>{crossChain ? <Badge classification={crossChain.classification} /> : <span className="bytes-badge">waiting</span>}</div>
+      <div className={crossChainValue !== null ? 'bytes-value bytes-cyan' : 'bytes-value'}>{crossChainValue !== null ? integerFormatter.format(crossChainValue) : 'Unavailable'}</div>
+      <div className="bytes-unit">POSITIVE-BALANCE ADDRESSES</div>
+      <div className="bytes-summary-grid">
+        <div><b>{ethereumValue !== null ? integerFormatter.format(ethereumValue) : '—'}</b><small>Ethereum holders</small></div>
+        <div><b>{avalancheValue !== null ? integerFormatter.format(avalancheValue) : '—'}</b><small>Avalanche holders</small></div>
+      </div>
+      <p className="bytes-card-note">Matching addresses across both chains are counted once</p>
     </article>
   );
 }
@@ -281,28 +387,26 @@ export default function BytesDashboard() {
       {historyDone && !history ? <div className="bytes-message" role="status">Historical emissions could not be loaded. Live contract metrics remain available above when loaded.</div> : null}
       {metrics?.warnings?.length ? <div className="bytes-message" role="status">Partial source response: {metrics.warnings.join(' ')}</div> : null}
 
-      <section className="bytes-stats" aria-label="Current BYTES metrics">
-        <StatCard label="Current daily emissions: configured" metric={configured} pools />
-        <StatCard label="Current daily emissions: modeled" metric={modeled} />
-        <StatCard label="Projected next-365-day issuance" metric={next365DayIssuance} />
-        <StatCard label="Configured vs. modeled variance" metric={divergence} signed />
+      <section className="bytes-stats bytes-headline-stats" aria-label="Current BYTES emissions and issuance metrics">
+        <EmissionsSummaryCard configured={configured} modeled={modeled} divergence={divergence} theoryWeek={theoryWeek} />
+        <ProjectedIssuanceCard metric={next365DayIssuance} steady={steady} />
+        <GenesisEpochCard asOf={metrics?.generatedAt} />
       </section>
 
-      <section className="bytes-stats bytes-market-stats" aria-label="BYTES supply and valuation metrics">
-        <StatCard label="BYTES spot price" metric={bytesPrice} digits={4} prefix="$" />
-        <StatCard label="Ethereum chain-local total supply" metric={ethereumSupply} digits={2} />
-        <StatCard label="Market cap*" metric={totalSupplyValuation} prefix="$" />
-      </section>
-
-      <section className="bytes-stats bytes-market-stats" aria-label="BYTES positive-balance holder metrics">
-        <StatCard label="Ethereum BYTES holders" metric={ethereumHolderCount} />
-        <StatCard label="Avalanche BYTES holders" metric={avalancheHolderCount} />
-        <StatCard label="Cross-chain unique holders" metric={crossChainUniqueHolderCount} />
+      <section className="bytes-stats bytes-supply-stats" aria-label="BYTES supply, staking, and holder metrics">
+        <TotalSupplyCard metric={ethereumSupply} />
+        <StakedBytesCard metric={stakingBalance} percentage={stakingPercentage} />
+        <HolderSummaryCard crossChain={crossChainUniqueHolderCount} ethereum={ethereumHolderCount} avalanche={avalancheHolderCount} />
       </section>
 
       <section className="bytes-stats bytes-citizen-stats" aria-label="Neo Tokyo Citizen staking metrics">
         <CitizenStakingCard label="S1 Citizens staked" count={s1CitizensStaked} percentage={s1StakedPercentage} collectionSupply={s1CollectionSupply} v2Supply={s1CitizenV2Supply} />
         <CitizenStakingCard label="S2 Outer Citizens staked" count={s2CitizensStaked} percentage={s2StakedPercentage} collectionSupply={s2CollectionSupply} v2Supply={s2CitizenV2Supply} />
+      </section>
+
+      <section className="bytes-stats bytes-market-stats" aria-label="BYTES market reference metrics">
+        <StatCard label="BYTES spot price" metric={bytesPrice} digits={4} prefix="$" />
+        <StatCard label="Market cap*" metric={totalSupplyValuation} prefix="$" />
       </section>
 
       <div className="bytes-layout">

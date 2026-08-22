@@ -49,7 +49,7 @@ function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; title: st
 export default function CitizenTerminal() {
   const [lookupSeason, setLookupSeason] = useState<CitizenSeason>('s1');
   const [stakingSeason, setStakingSeason] = useState<CitizenSeason>('s1');
-  const [tokenId, setTokenId] = useState('937');
+  const [tokenId, setTokenId] = useState('3099');
   const [lookup, setLookup] = useState<Lookup | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState('');
@@ -177,9 +177,9 @@ export default function CitizenTerminal() {
       <SectionHeading eyebrow="01 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number reveals the Citizen, its traits, components, rarity and staking profile." />
       <form className="ct-lookup-form" onSubmit={performLookup}>
         <div className="ct-season-toggle" aria-label="Citizen season">
-          {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" disabled={lookupLoading} className={lookupSeason === value ? 'active' : ''} onClick={() => { setLookupSeason(value); setTokenId(value === 's1' ? '937' : '739'); setLookup(null); setLookupError(''); }}>{value.toUpperCase()}</button>)}
+          {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" disabled={lookupLoading} className={lookupSeason === value ? 'active' : ''} onClick={() => { setLookupSeason(value); setTokenId(value === 's1' ? '3099' : '1033'); setLookup(null); setLookupError(''); }}>{value.toUpperCase()}</button>)}
         </div>
-        <label><span>CITIZEN NUMBER</span><input inputMode="numeric" pattern="[0-9]*" value={tokenId} onChange={(event) => setTokenId(event.target.value)} placeholder={lookupSeason === 's1' ? '937' : '739'} /></label>
+        <label><span>CITIZEN NUMBER</span><input inputMode="numeric" pattern="[0-9]*" value={tokenId} onChange={(event) => setTokenId(event.target.value)} placeholder={lookupSeason === 's1' ? '3099' : '1033'} /></label>
         <button className="ct-primary-button" disabled={lookupLoading}>{lookupLoading ? 'DECODING…' : 'RUN LOOKUP'}</button>
       </form>
       {lookupError && <p className="ct-error">{lookupError}</p>}

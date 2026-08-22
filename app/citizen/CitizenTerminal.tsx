@@ -219,7 +219,7 @@ export default function CitizenTerminal() {
       </div>
     </section>
 
-    <section className="ct-panel">
+    <section className="ct-panel ct-market-panel">
       <SectionHeading eyebrow="03 / MARKET DASHBOARD" title="Every component, one screen" detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
       {marketError && <p className="ct-error">{marketError}</p>}
       <div className="ct-market-groups">

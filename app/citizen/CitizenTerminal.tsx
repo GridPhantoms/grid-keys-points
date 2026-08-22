@@ -49,21 +49,28 @@ export default function CitizenTerminal() {
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([
-      fetch('/api/citizen-terminal/market', { signal: controller.signal, cache: 'no-store' }).then(async (response) => {
-        const data = await response.json(); if (!response.ok) throw new Error(data.error ?? 'Market data unavailable'); return data as Market;
-      }),
-      fetch('/api/bytes-metrics', { signal: controller.signal }).then(async (response) => response.ok ? response.json() as Promise<BytesMetrics> : null),
-      fetch('/api/citizen-terminal/reward-rate', { signal: controller.signal, cache: 'no-store' }).then(async (response) => response.ok ? response.json() as Promise<RewardRates> : null),
-    ]).then(([marketData, bytesData, rateData]) => {
-      setMarket(marketData);
-      setRewardRates(rateData);
-      const spot = bytesData?.metrics?.bytesPriceUsd?.value;
-      if (typeof spot === 'number' && Number.isFinite(spot)) setBytesPrice(spot);
-    }).catch((error) => {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      setMarketError(error instanceof Error ? error.message : 'Market data unavailable');
-    });
+    const aborted = (error: unknown) => error instanceof DOMException && error.name === 'AbortError';
+
+    fetch('/api/citizen-terminal/market', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Market data unavailable');
+        setMarket(data as Market);
+      })
+      .catch((error) => { if (!aborted(error)) setMarketError(error instanceof Error ? error.message : 'Market data unavailable'); });
+
+    fetch('/api/citizen-terminal/reward-rate', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => { if (response.ok) setRewardRates(await response.json() as RewardRates); })
+      .catch((error) => { if (!aborted(error)) console.error('Reward-rate request failed.'); });
+
+    fetch('/api/bytes-metrics', { signal: controller.signal })
+      .then(async (response) => response.ok ? response.json() as Promise<BytesMetrics> : null)
+      .then((bytesData) => {
+        const spot = bytesData?.metrics?.bytesPriceUsd?.value;
+        if (typeof spot === 'number' && Number.isFinite(spot)) setBytesPrice(spot);
+      })
+      .catch((error) => { if (!aborted(error)) console.error('BYTES spot request failed.'); });
+
     return () => controller.abort();
   }, []);
 

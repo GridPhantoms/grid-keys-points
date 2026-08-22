@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { calculateStakingPoints, getStakingBytesCap } from '../lib/citizen-terminal.ts';
@@ -64,4 +65,21 @@ test('OpenSea estimated rank parser validates the requested item', () => {
   assert.equal(extractOpenSeaEstimatedRank(html, contract, '739'), 680);
   assert.equal(extractOpenSeaEstimatedRank(html, contract, '740'), null);
   assert.equal(extractOpenSeaEstimatedRank(html.replace('"rarity":{"rank":680,"category":"RARE"}', '"rarity":null'), contract, '739'), null);
+});
+
+test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {
+  const [page, footer] = await Promise.all([
+    readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/components/SiteFooter.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(page, /<SiteFooter\s*\/>/);
+  for (const expected of [
+    'https://discord.gg/gridphantoms',
+    'https://x.com/GridPhantoms',
+    'https://opensea.io/collection/grid-phantoms-genesis-keys',
+    'https://snapshot.box/#/s:gridphantoms.eth',
+    'https://manifold.xyz/@gridphantoms/id/4067746032',
+    '© 2026 Grid Phantoms Ltd. All rights reserved.',
+  ]) assert.ok(footer.includes(expected));
 });

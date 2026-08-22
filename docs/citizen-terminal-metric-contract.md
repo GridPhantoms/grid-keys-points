@@ -26,6 +26,8 @@ User-facing S2 points:
 lock multiplier + BYTES staked ÷ 200
 ```
 
+The calculation layer enforces the current onchain caps: 2,000 BYTES for an S1 with a Vault and 200 BYTES for an S2 or an S1 without a Vault. Lookup-derived Vault status is isolated to the S1 calculator. S1 and S2 retain separate lock/BYTES form state, so switching pools cannot carry an incompatible amount into the other pool.
+
 The deployed staking contract stores 100 internal units per user-facing point.
 
 ## Current BYTES per point per day
@@ -48,7 +50,7 @@ The rate is a current snapshot estimate. Staking changes, withdrawals, reward-wi
 
 ## Market references
 
-- Collection floors: current OpenSea collection statistics.
+- Collection floors: lowest executable listing returned by the current price-sorted OpenSea listing feed. The unauthenticated collection-statistics endpoint is not used because it returns unauthorized responses without an API key.
 - Elite floor: lowest current listed S1 in the scanned listing set whose current NeoTokyo.codes rank is 500 or better.
 - Elite table: current listed S1s joined to the current rank feed.
 - No executable listing: display `No Listings`, never a stale sale-derived floor.

@@ -41,24 +41,11 @@ async function s1Rankings() {
   return payload.result.rankings;
 }
 
-async function collectionStats(slug: string) {
-  const response = await fetch(`https://api.opensea.io/api/v2/collections/${slug}/stats`, {
-    headers: { accept: 'application/json', 'user-agent': OPEN_SEA_UA },
-    cache: 'no-store',
-  });
-  if (!response.ok) return null;
-  const payload = await response.json() as {
-    total?: { floor_price?: number | null; floor_price_symbol?: string | null; volume?: number; sales?: number; num_owners?: number };
-    intervals?: Array<{ interval?: string; volume?: number; sales?: number }>;
-  };
-  return payload;
-}
-
-async function openSeaS1Listings() {
+async function openSeaListings(collectionSlug: string, limit: number) {
   const variables = {
     address: '0x0000000000000000000000000000000000000000',
-    collectionSlug: 'neotokyo-citizens',
-    limit: 50,
+    collectionSlug,
+    limit,
     sort: { by: 'PRICE', direction: 'ASC' },
   };
   const extensions = { persistedQuery: { sha256Hash: OPEN_SEA_ITEMS_HASH, version: 1 } };
@@ -72,7 +59,7 @@ async function openSeaS1Listings() {
     headers: {
       accept: 'application/json',
       'user-agent': OPEN_SEA_UA,
-      referer: 'https://opensea.io/collection/neotokyo-citizens',
+      referer: `https://opensea.io/collection/${collectionSlug}`,
       origin: 'https://opensea.io',
     },
     cache: 'no-store',
@@ -92,9 +79,9 @@ async function openSeaS1Listings() {
 
 export async function GET() {
   try {
-    const [statsRows, listings, rankings] = await Promise.all([
-      Promise.all(CITIZEN_COLLECTIONS.map(async (collection) => ({ collection, stats: await collectionStats(collection.slug) }))),
-      openSeaS1Listings(),
+    const [listingRows, listings, rankings] = await Promise.all([
+      Promise.all(CITIZEN_COLLECTIONS.map(async (collection) => ({ collection, listings: await openSeaListings(collection.slug, 20) }))),
+      openSeaListings('neotokyo-citizens', 50),
       s1Rankings(),
     ]);
 
@@ -129,14 +116,17 @@ export async function GET() {
       asOf: new Date().toISOString(),
       ethUsd,
       collections: [
-        ...statsRows.map(({ collection, stats }) => ({
-          ...collection,
-          floorEth: stats?.total?.floor_price ?? null,
-          floorSymbol: stats?.total?.floor_price_symbol ?? 'ETH',
-          owners: stats?.total?.num_owners ?? null,
-          sales24h: stats?.intervals?.find((interval) => interval.interval === 'one_day')?.sales ?? null,
-          url: `https://opensea.io/collection/${collection.slug}`,
-        })),
+        ...listingRows.map(({ collection, listings: collectionListings }) => {
+          const listed = collectionListings.find((item) => item.bestListing?.pricePerItem?.token?.unit != null);
+          return {
+            ...collection,
+            floorEth: listed?.bestListing?.pricePerItem?.token?.unit ?? null,
+            floorSymbol: listed?.bestListing?.pricePerItem?.token?.symbol ?? 'ETH',
+            owners: null,
+            sales24h: null,
+            url: `https://opensea.io/collection/${collection.slug}`,
+          };
+        }),
         {
           key: 's1-elite', season: 'S1', label: 'Elite Citizens', slug: 'neotokyo-citizens',
           contract: '0xB9951B43802dCF3ef5b14567cb17adF367ed1c0F',
@@ -148,9 +138,10 @@ export async function GET() {
       eliteListings,
       notes: [
         'Elite means a current S1 rarity rank of 500 or better.',
+        'Floors are the lowest executable OpenSea listings returned by the current price-sorted listing feed.',
         'Floor and listing data are live OpenSea references and can change before a transaction confirms.',
       ],
-      sources: ['OpenSea collection stats and listing feed', 'NeoTokyo.codes Citizen rankings'],
+      sources: ['OpenSea current listing feed', 'NeoTokyo.codes Citizen rankings'],
     }, { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Citizen market data failed';

@@ -52,31 +52,56 @@ export const S2_LOCK_MULTIPLIERS: Record<string, number> = {
   '24 months': 2,
 };
 
+export const VAULT_CAP_BYTES = 2_000;
+export const NO_VAULT_CAP_BYTES = 200;
+
+export function getStakingBytesCap(season: CitizenSeason, hasVault?: boolean) {
+  return season === 's2' || hasVault === false ? NO_VAULT_CAP_BYTES : VAULT_CAP_BYTES;
+}
+
 export function calculateStakingPoints({
   season,
   creditYield = 'Low',
   vaultMultiplier = 'None',
   lockPeriod = '1 month',
   bytesStaked = 0,
+  hasVault,
 }: {
   season: CitizenSeason;
   creditYield?: string;
   vaultMultiplier?: string;
   lockPeriod?: string;
   bytesStaked?: number;
+  hasVault?: boolean;
 }) {
-  const safeBytes = Number.isFinite(bytesStaked) ? Math.max(0, bytesStaked) : 0;
+  const bytesCap = getStakingBytesCap(season, hasVault);
+  const requestedBytes = Number.isFinite(bytesStaked) ? Math.max(0, bytesStaked) : 0;
+  const safeBytes = Math.min(requestedBytes, bytesCap);
   const bytesPoints = safeBytes / 200;
   const lockMultiplier = season === 's1'
     ? (S1_LOCK_MULTIPLIERS[lockPeriod] ?? 1)
     : (S2_LOCK_MULTIPLIERS[lockPeriod] ?? 1);
 
   if (season === 's2') {
-    return { citizenPoints: lockMultiplier, bytesPoints, totalPoints: lockMultiplier + bytesPoints };
+    return {
+      citizenPoints: lockMultiplier,
+      bytesPoints,
+      totalPoints: lockMultiplier + bytesPoints,
+      bytesStaked: safeBytes,
+      bytesCap,
+      wasClamped: safeBytes !== requestedBytes,
+    };
   }
 
   const citizenPoints = (S1_CREDIT_YIELD_POINTS[creditYield] ?? 1)
     * lockMultiplier
     * (S1_VAULT_MULTIPLIERS[vaultMultiplier] ?? 1);
-  return { citizenPoints, bytesPoints, totalPoints: citizenPoints + bytesPoints };
+  return {
+    citizenPoints,
+    bytesPoints,
+    totalPoints: citizenPoints + bytesPoints,
+    bytesStaked: safeBytes,
+    bytesCap,
+    wasClamped: safeBytes !== requestedBytes,
+  };
 }

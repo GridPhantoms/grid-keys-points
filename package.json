@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:bytes": "node --test test/*.test.mjs",
+    "test:citizen": "node --experimental-strip-types --test test/citizen-terminal.test.ts",
     "validate:bytes-history": "node scripts/validate-bytes-history.mjs",
     "generate:bytes-participants": "node scripts/generate-bytes-staking-participants.mjs",
     "validate:bytes-participants": "node scripts/validate-bytes-staking-participants.mjs",

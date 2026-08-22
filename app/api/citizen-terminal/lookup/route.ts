@@ -175,7 +175,7 @@ async function lookupS2(tokenId: string) {
     season: 's2' as const,
     tokenId,
     name: metadata.name,
-    imageUrl: metadata.image?.pngUrl ?? metadata.image?.cachedUrl ?? metadata.image?.thumbnailUrl ?? null,
+    imageUrl: `/api/citizen-terminal/image?tokenId=${encodeURIComponent(tokenId)}`,
     rank: null,
     rarityScore: null,
     elite: false,

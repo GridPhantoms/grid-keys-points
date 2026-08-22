@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { calculateStakingPoints, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
+import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
 
 type Trait = { label: string; value: string };
 type Component = { label: string; tokenId: string | null; name: string; rank: number | null; rarityScore: number | null; componentScore: number | null; imageUrl: string | null; traits: Trait[] };
@@ -31,7 +31,8 @@ function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; title: st
 }
 
 export default function CitizenTerminal() {
-  const [season, setSeason] = useState<CitizenSeason>('s1');
+  const [lookupSeason, setLookupSeason] = useState<CitizenSeason>('s1');
+  const [stakingSeason, setStakingSeason] = useState<CitizenSeason>('s1');
   const [tokenId, setTokenId] = useState('937');
   const [lookup, setLookup] = useState<Lookup | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -42,8 +43,11 @@ export default function CitizenTerminal() {
   const [rewardRates, setRewardRates] = useState<RewardRates | null>(null);
   const [creditYield, setCreditYield] = useState('Low');
   const [vaultMultiplier, setVaultMultiplier] = useState('None');
-  const [lockPeriod, setLockPeriod] = useState('12 months');
-  const [bytesStaked, setBytesStaked] = useState('1000');
+  const [s1LockPeriod, setS1LockPeriod] = useState('12 months');
+  const [s2LockPeriod, setS2LockPeriod] = useState('12 months');
+  const [s1BytesStaked, setS1BytesStaked] = useState('1000');
+  const [s2BytesStaked, setS2BytesStaked] = useState('200');
+  const [s1HasVault, setS1HasVault] = useState<boolean | undefined>(undefined);
   const [bytesPerPointDayOverride, setBytesPerPointDayOverride] = useState('');
   const [targetBytesPrice, setTargetBytesPrice] = useState('');
 
@@ -77,25 +81,36 @@ export default function CitizenTerminal() {
   const performLookup = async (event?: FormEvent) => {
     event?.preventDefault();
     if (!/^\d+$/.test(tokenId.trim())) { setLookupError('Enter a valid Citizen number.'); return; }
-    setLookupLoading(true); setLookupError('');
+    const requestedSeason = lookupSeason;
+    setLookupLoading(true); setLookupError(''); setLookup(null);
     try {
-      const response = await fetch(`/api/citizen-terminal/lookup?season=${season}&tokenId=${encodeURIComponent(tokenId.trim())}`, { cache: 'no-store' });
+      const response = await fetch(`/api/citizen-terminal/lookup?season=${requestedSeason}&tokenId=${encodeURIComponent(tokenId.trim())}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Citizen lookup failed');
       const result = data as Lookup;
       setLookup(result);
+      setStakingSeason(result.season);
       if (result.season === 's1') {
+        const hasVault = result.components.some((component) => component.label === 'Vault Card' && component.tokenId != null && component.tokenId !== '0');
+        setS1HasVault(hasVault);
         if (result.calculatorPreset.creditYield) setCreditYield(result.calculatorPreset.creditYield);
         if (result.calculatorPreset.creditMultiplier) setVaultMultiplier(result.calculatorPreset.creditMultiplier);
+        if (!hasVault) setS1BytesStaked((value) => String(Math.min(Number(value) || 0, getStakingBytesCap('s1', false))));
       }
     } catch (error) {
       setLookup(null); setLookupError(error instanceof Error ? error.message : 'Citizen lookup failed');
     } finally { setLookupLoading(false); }
   };
 
+  const lockPeriod = stakingSeason === 's1' ? s1LockPeriod : s2LockPeriod;
+  const bytesStaked = stakingSeason === 's1' ? s1BytesStaked : s2BytesStaked;
+  const setActiveLockPeriod = stakingSeason === 's1' ? setS1LockPeriod : setS2LockPeriod;
+  const setActiveBytesStaked = stakingSeason === 's1' ? setS1BytesStaked : setS2BytesStaked;
   const parsedBytes = Number(bytesStaked);
-  const points = calculateStakingPoints({ season, creditYield, vaultMultiplier, lockPeriod, bytesStaked: parsedBytes });
-  const liveRate = rewardRates?.pools.find((pool) => pool.pool === season.toUpperCase())?.netBytesPerPointPerDay ?? null;
+  const bytesCap = getStakingBytesCap(stakingSeason, stakingSeason === 's1' ? s1HasVault : false);
+  const bytesOverCap = Number.isFinite(parsedBytes) && parsedBytes > bytesCap;
+  const points = calculateStakingPoints({ season: stakingSeason, creditYield, vaultMultiplier, lockPeriod, bytesStaked: parsedBytes, hasVault: stakingSeason === 's1' ? s1HasVault : false });
+  const liveRate = rewardRates?.pools.find((pool) => pool.pool === stakingSeason.toUpperCase())?.netBytesPerPointPerDay ?? null;
   const usingOverride = bytesPerPointDayOverride.trim() !== '';
   const parsedRate = usingOverride ? Number(bytesPerPointDayOverride) : liveRate;
   const hasRate = parsedRate != null && Number.isFinite(parsedRate) && parsedRate >= 0;
@@ -103,13 +118,13 @@ export default function CitizenTerminal() {
   const activeBytesPrice = targetBytesPrice.trim() !== '' && Number.isFinite(Number(targetBytesPrice)) && Number(targetBytesPrice) >= 0
     ? Number(targetBytesPrice)
     : bytesPrice;
-  const citizenFloor = market?.collections.find((row) => row.key === `${season}-citizens`)?.floorEth ?? null;
+  const citizenFloor = market?.collections.find((row) => row.key === `${stakingSeason}-citizens`)?.floorEth ?? null;
   const acquisitionValue = citizenFloor != null && market?.ethUsd != null && bytesPrice != null
-    ? citizenFloor * market.ethUsd + Math.max(0, Number.isFinite(parsedBytes) ? parsedBytes : 0) * bytesPrice
+    ? citizenFloor * market.ethUsd + points.bytesStaked * bytesPrice
     : null;
   const annualRewardValue = rewardPerDay != null && activeBytesPrice != null ? rewardPerDay * 365 * activeBytesPrice : null;
   const apy = acquisitionValue && annualRewardValue != null ? annualRewardValue / acquisitionValue * 100 : null;
-  const lockOptions = season === 's1' ? Object.keys(S1_LOCK_MULTIPLIERS) : Object.keys(S2_LOCK_MULTIPLIERS);
+  const lockOptions = stakingSeason === 's1' ? Object.keys(S1_LOCK_MULTIPLIERS) : Object.keys(S2_LOCK_MULTIPLIERS);
   const groupedFloors = market ? ['S1', 'S2'].map((group) => ({ group, rows: market.collections.filter((row) => row.season === group) })) : [];
 
   return <main className="ct-main">
@@ -124,9 +139,9 @@ export default function CitizenTerminal() {
       <SectionHeading eyebrow="01 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number pulls the Citizen, its traits, component breakdown, rarity data and staking inputs." />
       <form className="ct-lookup-form" onSubmit={performLookup}>
         <div className="ct-season-toggle" aria-label="Citizen season">
-          {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" className={season === value ? 'active' : ''} onClick={() => { setSeason(value); setLockPeriod(value === 's1' ? '12 months' : '12 months'); }}>{value.toUpperCase()}</button>)}
+          {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" disabled={lookupLoading} className={lookupSeason === value ? 'active' : ''} onClick={() => { setLookupSeason(value); setTokenId(value === 's1' ? '937' : '739'); setLookup(null); setLookupError(''); }}>{value.toUpperCase()}</button>)}
         </div>
-        <label><span>CITIZEN NUMBER</span><input inputMode="numeric" pattern="[0-9]*" value={tokenId} onChange={(event) => setTokenId(event.target.value)} placeholder={season === 's1' ? '937' : '739'} /></label>
+        <label><span>CITIZEN NUMBER</span><input inputMode="numeric" pattern="[0-9]*" value={tokenId} onChange={(event) => setTokenId(event.target.value)} placeholder={lookupSeason === 's1' ? '937' : '739'} /></label>
         <button className="ct-primary-button" disabled={lookupLoading}>{lookupLoading ? 'DECODING…' : 'RUN LOOKUP'}</button>
       </form>
       {lookupError && <p className="ct-error">{lookupError}</p>}
@@ -160,14 +175,14 @@ export default function CitizenTerminal() {
       <SectionHeading eyebrow="02 / BANK OF NEO TOKYO" title="Price the staking return" detail="The Citizen lookup feeds its known S1 yield and Vault multiplier directly into this calculator." />
       <div className="ct-bank-grid">
         <div className="ct-bank-controls">
-          <div className="ct-season-toggle wide">{(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" className={season === value ? 'active' : ''} onClick={() => setSeason(value)}>{value.toUpperCase()} STAKING</button>)}</div>
-          {season === 's1' && <div className="ct-field-grid">
+          <div className="ct-season-toggle wide">{(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" className={stakingSeason === value ? 'active' : ''} onClick={() => setStakingSeason(value)}>{value.toUpperCase()} STAKING</button>)}</div>
+          {stakingSeason === 's1' && <div className="ct-field-grid">
             <label><span>CREDIT YIELD {lookup?.season === 's1' && <b>AUTO</b>}</span><select value={creditYield} onChange={(event) => setCreditYield(event.target.value)}>{Object.keys(S1_CREDIT_YIELD_POINTS).filter((value) => value !== 'Mid').map((value) => <option key={value}>{value}</option>)}</select></label>
             <label><span>VAULT MULTIPLIER {lookup?.season === 's1' && <b>AUTO</b>}</span><select value={vaultMultiplier} onChange={(event) => setVaultMultiplier(event.target.value)}>{Object.keys(S1_VAULT_MULTIPLIERS).filter((value) => !['Medium-High', '?'].includes(value)).map((value) => <option key={value}>{value}</option>)}</select></label>
           </div>}
           <div className="ct-field-grid">
-            <label><span>LOCK PERIOD</span><select value={lockPeriod} onChange={(event) => setLockPeriod(event.target.value)}>{lockOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
-            <label><span>BYTES STAKED</span><input type="number" min="0" step="1" value={bytesStaked} onChange={(event) => setBytesStaked(event.target.value)} /></label>
+            <label><span>LOCK PERIOD</span><select value={lockPeriod} onChange={(event) => setActiveLockPeriod(event.target.value)}>{lockOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
+            <label><span>BYTES STAKED <b>MAX {bytesCap.toLocaleString()}</b></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
           </div>
           <label className="ct-rate-field"><span>CURRENT BYTES / POINT / DAY <b>{usingOverride ? 'MANUAL OVERRIDE' : liveRate != null ? 'LIVE ONCHAIN' : 'UNAVAILABLE'}</b></span><input type="number" min="0" step="any" value={bytesPerPointDayOverride} onChange={(event) => setBytesPerPointDayOverride(event.target.value)} placeholder={liveRate != null ? String(liveRate) : 'Live rate unavailable'} /></label>
           {rewardRates && !usingOverride && <p className="ct-rate-source">Calculated at Ethereum block {rewardRates.blockNumber.toLocaleString()} · {new Date(rewardRates.asOf).toLocaleString()} · Net of DAO tax</p>}

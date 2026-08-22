@@ -7,6 +7,7 @@ type Trait = { label: string; value: string };
 type Component = { label: string; tokenId: string | null; name: string; rank: number | null; rarityScore: number | null; componentScore: number | null; imageUrl: string | null; traits: Trait[] };
 type Lookup = {
   season: CitizenSeason; tokenId: string; name: string; imageUrl: string | null; rank: number | null; rarityScore: number | null;
+  estimatedRank?: number | null; estimatedRankStatus?: 'available' | 'unavailable'; estimatedRankSource?: string; estimatedRankAsOf?: string; estimatedRankUrl?: string;
   elite: boolean; rewardRate: number | null; traits: Trait[]; components: Component[];
   calculatorPreset: { creditYield?: string; creditMultiplier?: string }; notices?: string[]; sources: string[];
 };
@@ -158,9 +159,14 @@ export default function CitizenTerminal() {
           <div className="ct-citizen-title">
             <p>{lookup.season.toUpperCase()} · ASSEMBLED CITIZEN</p>
             <h3>{lookup.name}</h3>
-            <div className="ct-badges">{lookup.elite && <span className="elite">ELITE S1</span>}<span>{lookup.rank ? `RANK #${lookup.rank.toLocaleString()}` : 'RANK NOT PUBLISHED'}</span>{lookup.rewardRate != null && <span>REWARD RATE {lookup.rewardRate}</span>}</div>
+            <div className="ct-badges">
+              {lookup.elite && <span className="elite">ELITE S1</span>}
+              {lookup.season === 's1' && <span>{lookup.rank ? `RANK #${lookup.rank.toLocaleString()}` : 'RANK NOT PUBLISHED'}</span>}
+              {lookup.season === 's2' && <span>{lookup.estimatedRank != null ? `OPENSEA EST. RANK #${lookup.estimatedRank.toLocaleString()}` : 'OPENSEA EST. RANK UNAVAILABLE'}</span>}
+              {lookup.rewardRate != null && <span>REWARD RATE {lookup.rewardRate}</span>}
+            </div>
             <dl>
-              <div><dt>Rarity score</dt><dd>{formatNumber(lookup.rarityScore, 2)}</dd></div>
+              {lookup.season === 's1' && <div><dt>Rarity score</dt><dd>{formatNumber(lookup.rarityScore, 2)}</dd></div>}
               <div><dt>Components</dt><dd>{lookup.components.length}</dd></div>
               <div><dt>Calculator</dt><dd>{lookup.season === 's1' ? 'Auto-filled' : 'S2 baseline loaded'}</dd></div>
             </dl>
@@ -174,6 +180,7 @@ export default function CitizenTerminal() {
           </article>)}
         </div>
         {lookup.notices?.map((notice) => <p className="ct-notice" key={notice}>{notice}</p>)}
+        {lookup.season === 's2' && lookup.estimatedRankAsOf && <p className="ct-rank-source">Source: <a href={lookup.estimatedRankUrl} target="_blank" rel="noreferrer">{lookup.estimatedRankSource ?? 'OpenSea OpenRarity'} ↗</a> · Checked {new Date(lookup.estimatedRankAsOf).toLocaleString()}</p>}
       </div>}
     </section>
 
@@ -188,7 +195,7 @@ export default function CitizenTerminal() {
           </div>}
           <div className="ct-field-grid">
             <label><span>LOCK PERIOD</span><select value={lockPeriod} onChange={(event) => setActiveLockPeriod(event.target.value)}>{lockOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
-            <label><span>BYTES STAKED <b>MAX {bytesCap.toLocaleString()}</b></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
+            <label><span>BYTES STAKED <button className="ct-max-button" type="button" onClick={() => setActiveBytesStaked(String(bytesCap))}>MAX {bytesCap.toLocaleString()}</button></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
           </div>
           <label className="ct-rate-field"><span>CURRENT BYTES / POINT / DAY <b>{usingOverride ? 'MANUAL OVERRIDE' : liveRate != null ? 'LIVE ONCHAIN' : 'UNAVAILABLE'}</b></span><input type="number" min="0" step="any" value={bytesPerPointDayOverride} onChange={(event) => setBytesPerPointDayOverride(event.target.value)} placeholder={liveRate != null ? String(liveRate) : 'Live rate unavailable'} /></label>
           {rewardRates && !usingOverride && <p className="ct-rate-source">Calculated at Ethereum block {rewardRates.blockNumber.toLocaleString()} · {new Date(rewardRates.asOf).toLocaleString()} · Net of DAO tax</p>}

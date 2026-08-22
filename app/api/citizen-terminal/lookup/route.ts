@@ -3,6 +3,7 @@ import { Contract, FetchRequest, JsonRpcProvider } from 'ethers';
 import { CITIZEN_CONTRACTS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { ethereumRpcUrl } from '@/lib/bytes-api.mjs';
 import { ETHEREUM_CHAIN_ID } from '@/lib/bytes-contracts';
+import { fetchOpenSeaEstimatedRank } from '@/lib/opensea-rarity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -160,12 +161,13 @@ async function lookupS2(tokenId: string) {
   request.timeout = 10_000;
   const provider = new JsonRpcProvider(request);
   const citizen = new Contract(CITIZEN_CONTRACTS.s2, S2_COMPONENT_ABI, provider);
-  const [metadata, network, identityId, itemCacheId, landDeedId] = await Promise.all([
+  const [metadata, network, identityId, itemCacheId, landDeedId, openSeaRank] = await Promise.all([
     alchemyMetadata('s2', tokenId),
     provider.getNetwork(),
     citizen.getIdentityIdOfTokenId(tokenId) as Promise<bigint>,
     citizen.getItemCacheIdOfTokenId(tokenId) as Promise<bigint>,
     citizen.getLandDeedIdOfTokenId(tokenId) as Promise<bigint>,
+    fetchOpenSeaEstimatedRank(CITIZEN_CONTRACTS.s2, tokenId),
   ]);
   if (network.chainId !== BigInt(ETHEREUM_CHAIN_ID)) throw new Error('Ethereum source verification failed');
   const allTraits = traits(metadata.raw?.metadata?.attributes);
@@ -178,6 +180,11 @@ async function lookupS2(tokenId: string) {
     imageUrl: `/api/citizen-terminal/image?tokenId=${encodeURIComponent(tokenId)}`,
     rank: null,
     rarityScore: null,
+    estimatedRank: openSeaRank.rank,
+    estimatedRankStatus: openSeaRank.status,
+    estimatedRankSource: openSeaRank.source,
+    estimatedRankAsOf: openSeaRank.asOf,
+    estimatedRankUrl: openSeaRank.sourceUrl,
     elite: false,
     rewardRate: null,
     traits: allTraits,
@@ -187,8 +194,13 @@ async function lookupS2(tokenId: string) {
       { label: 'Outer Land Deed', tokenId: landDeedId.toString(), name: `Outer Land Deed #${landDeedId}`, rank: null, rarityScore: null, componentScore: null, imageUrl: null, traits: byLabels(['Location']) },
     ],
     calculatorPreset: {},
-    notices: ['S2 component token numbers are read from the Citizen contract. A canonical current S2 rarity rank is not published.'],
-    sources: ['S2 Outer Citizen contract', 'Alchemy NFT metadata'],
+    notices: [
+      'S2 component token numbers are read from the Citizen contract.',
+      openSeaRank.status === 'available'
+        ? 'The displayed S2 rank is an OpenSea marketplace estimate. Neo Tokyo currently has not issued a canonical official S2 rarity rank.'
+        : 'OpenSea did not provide an estimated rank at lookup time. Neo Tokyo currently has not issued a canonical official S2 rarity rank.',
+    ],
+    sources: ['S2 Outer Citizen contract', 'Alchemy NFT metadata', 'OpenSea OpenRarity'],
   };
 }
 

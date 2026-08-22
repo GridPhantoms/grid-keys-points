@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { calculateStakingPoints, getStakingBytesCap } from '../lib/citizen-terminal.ts';
+// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
+import { extractOpenSeaEstimatedRank } from '../lib/opensea-rarity.ts';
 
 test('S2 accepts 200 BYTES and never calculates more than one BYTES point', () => {
   const atCap = calculateStakingPoints({ season: 's2', lockPeriod: '12 months', bytesStaked: 200 });
@@ -54,4 +56,12 @@ test('vaulted S1 retains the configured 2,000 BYTES cap', () => {
 test('invalid and negative BYTES inputs contribute zero points', () => {
   assert.equal(calculateStakingPoints({ season: 's2', bytesStaked: Number.NaN }).bytesPoints, 0);
   assert.equal(calculateStakingPoints({ season: 's2', bytesStaked: -50 }).bytesPoints, 0);
+});
+
+test('OpenSea estimated rank parser validates the requested item', () => {
+  const contract = '0x4481507cc228FA19D203BD42110d679571f7912E';
+  const html = '<script>{"itemByIdentifier":{"contractAddress":"0x4481507cc228fa19d203bd42110d679571f7912e","tokenId":"739","rarity":{"rank":680,"category":"RARE"}}}</script>';
+  assert.equal(extractOpenSeaEstimatedRank(html, contract, '739'), 680);
+  assert.equal(extractOpenSeaEstimatedRank(html, contract, '740'), null);
+  assert.equal(extractOpenSeaEstimatedRank(html.replace('"rarity":{"rank":680,"category":"RARE"}', '"rarity":null'), contract, '739'), null);
 });

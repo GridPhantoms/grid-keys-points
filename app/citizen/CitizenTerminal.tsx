@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
+import { calculateImpliedValuation, type ValuationMethod } from '@/lib/citizen-valuation';
 
 type Trait = { label: string; value: string };
 type Component = { label: string; tokenId: string | null; name: string; rank: number | null; rarityScore: number | null; componentScore: number | null; imageUrl: string | null; traits: Trait[] };
@@ -13,8 +14,18 @@ type Lookup = {
 };
 type CollectionFloor = { key: string; season: 'S1' | 'S2'; label: string; floorEth: number | null; owners: number | null; sales24h: number | null; url: string };
 type EliteListing = { tokenId: string; name: string; imageUrl: string | null; rank: number; rarityScore: number; priceEth: number | null; priceUsd: number | null; rewardRate: string | null; url: string };
-type Market = { asOf: string; ethUsd: number | null; collections: CollectionFloor[]; s1ListingCount: number | string; eliteListings: EliteListing[]; notes: string[] };
-type BytesMetrics = { metrics?: { bytesPriceUsd?: { value?: number; asOf?: string; availability?: string } } };
+type ValuationRow = { key: string; season: 'S1' | 'S2'; label: string; url: string; supply: number | null; supplyBreakdown: { legacyExternal: number; v2External?: number; v2Active?: number; economicallyDistinct: number } | null; floorEth: number | null; offerEth: number | null; offerQuantity: number | null; offerCount: number | null };
+type Market = {
+  asOf: string; ethUsd: number | null; collections: CollectionFloor[]; s1ListingCount: number | string; eliteListings: EliteListing[]; notes: string[];
+  valuation: { classification: 'estimated'; sourceBlock: number; sourceBlockHash: string; blockAsOf: string; totalCollections: number; rows: ValuationRow[]; methodology: string };
+};
+type BytesMetrics = {
+  generatedAt?: string; sourceBlock?: number;
+  metrics?: {
+    bytesPriceUsd?: { value?: number; asOf?: string; availability?: string };
+    totalSupplyValuationUsd?: { value?: number; asOf?: string; availability?: string };
+  };
+};
 type RewardRates = {
   availability: 'available'; asOf: string; blockNumber: number; source: string;
   pools: Array<{ pool: 'S1' | 'S2'; netBytesPerPointPerDay: number; currentEmissionBytesPerDay: number; totalDisplayPoints: number; daoTaxBps: number }>;
@@ -26,6 +37,9 @@ const formatNumber = (value: number | null | undefined, digits = 2) => value == 
 const formatUsd = (value: number | null | undefined) => value == null || !Number.isFinite(value)
   ? '—'
   : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: value < 1 ? 4 : 0 });
+const formatCompactUsd = (value: number | null | undefined) => value == null || !Number.isFinite(value)
+  ? '—'
+  : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 }).format(value);
 const S1_FLOOR_ORDER = ['s1-citizens', 's1-elite', 's1-identities', 's1-vaults', 's1-items', 's1-lands'];
 
 function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; title: string; detail: string }) {
@@ -42,6 +56,10 @@ export default function CitizenTerminal() {
   const [market, setMarket] = useState<Market | null>(null);
   const [marketError, setMarketError] = useState('');
   const [bytesPrice, setBytesPrice] = useState<number | null>(null);
+  const [bytesMarketCap, setBytesMarketCap] = useState<number | null>(null);
+  const [bytesMarketAsOf, setBytesMarketAsOf] = useState<string | null>(null);
+  const [bytesSourceBlock, setBytesSourceBlock] = useState<number | null>(null);
+  const [valuationMethod, setValuationMethod] = useState<ValuationMethod>('floor');
   const [rewardRates, setRewardRates] = useState<RewardRates | null>(null);
   const [creditYield, setCreditYield] = useState('Low');
   const [vaultMultiplier, setVaultMultiplier] = useState('None');
@@ -72,7 +90,13 @@ export default function CitizenTerminal() {
       .then(async (response) => response.ok ? response.json() as Promise<BytesMetrics> : null)
       .then((bytesData) => {
         const spot = bytesData?.metrics?.bytesPriceUsd?.value;
+        const marketCap = bytesData?.metrics?.totalSupplyValuationUsd?.value;
         if (typeof spot === 'number' && Number.isFinite(spot)) setBytesPrice(spot);
+        if (typeof marketCap === 'number' && Number.isFinite(marketCap)) {
+          setBytesMarketCap(marketCap);
+          setBytesMarketAsOf(bytesData?.metrics?.totalSupplyValuationUsd?.asOf ?? bytesData?.generatedAt ?? null);
+          setBytesSourceBlock(typeof bytesData?.sourceBlock === 'number' ? bytesData.sourceBlock : null);
+        }
       })
       .catch((error) => { if (!aborted(error)) console.error('BYTES spot request failed.'); });
 
@@ -130,6 +154,16 @@ export default function CitizenTerminal() {
       .filter((row) => row.season === group)
       .sort((a, b) => group === 'S1' ? S1_FLOOR_ORDER.indexOf(a.key) - S1_FLOOR_ORDER.indexOf(b.key) : 0),
   })) : [];
+  const valuationInputs = market?.valuation.rows
+    .filter((row): row is ValuationRow & { supply: number } => row.supply != null && Number.isFinite(row.supply))
+    .map((row) => ({ key: row.key, supply: row.supply, floorEth: row.floorEth, offerEth: row.offerEth, offerQuantity: row.offerQuantity })) ?? [];
+  const impliedValuation = market && valuationInputs.length === market.valuation.totalCollections
+    ? calculateImpliedValuation(valuationInputs, valuationMethod, market.ethUsd, bytesMarketCap)
+    : null;
+  const valuationRows = market && impliedValuation
+    ? impliedValuation.rows.map((calculated) => ({ ...market.valuation.rows.find((row) => row.key === calculated.key)!, ...calculated }))
+    : [];
+  const totalValueEth = impliedValuation?.totalUsd != null && market?.ethUsd ? impliedValuation.totalUsd / market.ethUsd : null;
 
   return <main className="ct-main">
     <section className="ct-hero">
@@ -222,6 +256,43 @@ export default function CitizenTerminal() {
     <section className="ct-panel ct-market-panel">
       <SectionHeading eyebrow="03 / MARKET DASHBOARD" title="The Neo Tokyo market, mapped." detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
       {marketError && <p className="ct-error">{marketError}</p>}
+      <div className="ct-valuation-card">
+        <div className="ct-valuation-topline">
+          <div><p>NEO TOKYO IMPLIED ECOSYSTEM VALUE</p><span>ESTIMATED · NFT COLLECTIONS + $BYTES</span></div>
+          <div className="ct-valuation-toggle" aria-label="Valuation method">
+            <button type="button" className={valuationMethod === 'floor' ? 'active' : ''} aria-pressed={valuationMethod === 'floor'} onClick={() => setValuationMethod('floor')}>FLOOR-LED</button>
+            <button type="button" className={valuationMethod === 'offer' ? 'active' : ''} aria-pressed={valuationMethod === 'offer'} onClick={() => setValuationMethod('offer')}>OFFER-LED</button>
+          </div>
+        </div>
+        <div className="ct-valuation-main">
+          <div className="ct-valuation-headline">
+            <span>{impliedValuation?.complete ? 'IMPLIED VALUE' : impliedValuation ? 'COVERAGE GATE' : 'CALCULATING'}</span>
+            <strong>{!impliedValuation ? 'Calculating…' : impliedValuation.complete ? formatCompactUsd(impliedValuation.totalUsd) : 'INCOMPLETE VALUATION'}</strong>
+            <small>{impliedValuation?.complete ? `${formatNumber(totalValueEth, 0)} ETH` : 'A missing collection reference is never treated as zero.'}</small>
+          </div>
+          <dl className="ct-valuation-summary">
+            <div><dt>NFT collections</dt><dd>{formatCompactUsd(impliedValuation?.nftUsd)}</dd></div>
+            <div><dt>$BYTES market cap*</dt><dd>{formatCompactUsd(bytesMarketCap)}</dd></div>
+            <div><dt>Coverage</dt><dd>{impliedValuation ? `${impliedValuation.coverage} / ${impliedValuation.totalCollections}` : '—'}</dd></div>
+            <div><dt>Method</dt><dd>{valuationMethod === 'floor' ? 'Floor-led' : 'Offer-led'}</dd></div>
+          </dl>
+        </div>
+        <details className="ct-valuation-details">
+          <summary>VIEW COLLECTION MATH <span>+</span></summary>
+          <div className="ct-valuation-table-wrap"><table><thead><tr><th>Collection</th><th>Distinct supply</th><th>Reference</th><th>Price</th><th>Offer depth</th><th>Subtotal</th></tr></thead><tbody>
+            {valuationRows.map((row) => <tr key={row.key}>
+              <td><a href={row.url} target="_blank" rel="noreferrer"><strong>{row.season} {row.label}</strong><small>{row.supplyBreakdown?.v2Active != null ? `${row.supplyBreakdown.v2Active.toLocaleString()} V2 + ${row.supplyBreakdown.legacyExternal.toLocaleString()} unmigrated V1` : `${row.supplyBreakdown?.v2External?.toLocaleString() ?? '—'} V2 + ${row.supplyBreakdown?.legacyExternal.toLocaleString() ?? '—'} legacy unassembled`} ↗</small></a></td>
+              <td>{row.supply.toLocaleString()}</td>
+              <td><span className={`ct-source-badge ${row.method}`}>{row.method === 'floor' ? 'FLOOR' : row.method === 'bid-fallback' ? 'BID FALLBACK' : row.method === 'top-offer' ? 'TOP OFFER' : 'UNAVAILABLE'}</span></td>
+              <td>{row.referenceEth == null ? '—' : `${formatNumber(row.referenceEth, 4)} Ξ`}</td>
+              <td>{row.offerQuantity == null ? '—' : `${row.offerQuantity.toLocaleString()} unit${row.offerQuantity === 1 ? '' : 's'}`}</td>
+              <td>{row.subtotalEth == null ? '—' : `${formatNumber(row.subtotalEth, 2)} Ξ`}</td>
+            </tr>)}
+          </tbody></table></div>
+        </details>
+        <p className="ct-valuation-caveat">Modeled reference value, not a company valuation or liquidation value. Floors use current executable asks; offers have limited depth. Elite Citizens are excluded because they are already part of S1 Citizens.</p>
+        {market?.valuation && <p className="ct-valuation-source">NFT supply pinned to Ethereum block <a href={`https://etherscan.io/block/${market.valuation.sourceBlock}`} target="_blank" rel="noreferrer">{market.valuation.sourceBlock.toLocaleString()} ↗</a> · {new Date(market.valuation.blockAsOf).toLocaleString()} · $BYTES market cap* block {bytesSourceBlock?.toLocaleString() ?? '—'}{bytesMarketAsOf ? ` · ${new Date(bytesMarketAsOf).toLocaleString()}` : ''}</p>}
+      </div>
       <div className="ct-market-groups">
         {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group}</span><p>{group === 'S1' ? 'INNER CITY' : 'OUTER CITY'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
       </div>

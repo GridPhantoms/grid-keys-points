@@ -62,6 +62,19 @@ The calculator displays this live onchain-derived rate as a read-only current st
 
 Listings can change or disappear before a transaction confirms.
 
+### Proposed implied ecosystem valuation supply model
+
+Any future implied Neo Tokyo ecosystem valuation must account for both legacy and V2 custody. V2 Citizen migration locks the legacy Citizen NFT in the V2 Citizen contract; migrated Citizens do not mint their V2 components until disassembly. Therefore, a V2 component contract's `totalSupply()` is not the complete historical component count, and legacy components permanently held by a legacy Citizen contract must not be counted again beside the assembled Citizen.
+
+At one pinned Ethereum block, calculate economically distinct supply as:
+
+- **Active assembled Citizens:** `V2 Citizen totalSupply + legacy Citizen totalSupply - legacy Citizen balanceOf(V2 Citizen contract)`.
+- **Unassembled component supply:** `(legacy component totalSupply - legacy component balanceOf(legacy Citizen contract) - legacy component balanceOf(V2 component wrapper)) + (V2 component totalSupply - V2 component balanceOf(V2 Citizen contract))`.
+- S1 Identity legacy supply combines the original Identity and Bought Identity contracts because both migrate into the same V2 Identity collection.
+- Vaults remain optional, so Vault custody must be measured directly rather than inferred from the assembled Citizen count.
+
+The valuation must expose its pinned block, distinguish legacy and V2 custody in methodology details, and label the result as an **implied ecosystem value**, not a company market cap or realizable liquidation value.
+
 ## APY scenario
 
 Classification: **Projected**.

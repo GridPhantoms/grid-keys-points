@@ -25,6 +25,7 @@ const formatNumber = (value: number | null | undefined, digits = 2) => value == 
 const formatUsd = (value: number | null | undefined) => value == null || !Number.isFinite(value)
   ? '—'
   : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: value < 1 ? 4 : 0 });
+const S1_FLOOR_ORDER = ['s1-citizens', 's1-elite', 's1-identities', 's1-vaults', 's1-items', 's1-lands'];
 
 function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; title: string; detail: string }) {
   return <div className="ct-section-heading"><p>{eyebrow}</p><h2>{title}</h2><span>{detail}</span></div>;
@@ -125,7 +126,12 @@ export default function CitizenTerminal() {
   const annualRewardValue = rewardPerDay != null && activeBytesPrice != null ? rewardPerDay * 365 * activeBytesPrice : null;
   const apy = acquisitionValue && annualRewardValue != null ? annualRewardValue / acquisitionValue * 100 : null;
   const lockOptions = stakingSeason === 's1' ? Object.keys(S1_LOCK_MULTIPLIERS) : Object.keys(S2_LOCK_MULTIPLIERS);
-  const groupedFloors = market ? ['S1', 'S2'].map((group) => ({ group, rows: market.collections.filter((row) => row.season === group) })) : [];
+  const groupedFloors = market ? ['S1', 'S2'].map((group) => ({
+    group,
+    rows: market.collections
+      .filter((row) => row.season === group)
+      .sort((a, b) => group === 'S1' ? S1_FLOOR_ORDER.indexOf(a.key) - S1_FLOOR_ORDER.indexOf(b.key) : 0),
+  })) : [];
 
   return <main className="ct-main">
     <section className="ct-hero">

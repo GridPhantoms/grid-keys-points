@@ -50,7 +50,6 @@ export default function CitizenTerminal() {
   const [s1BytesStaked, setS1BytesStaked] = useState('1000');
   const [s2BytesStaked, setS2BytesStaked] = useState('200');
   const [s1HasVault, setS1HasVault] = useState<boolean | undefined>(undefined);
-  const [bytesPerPointDayOverride, setBytesPerPointDayOverride] = useState('');
   const [targetBytesPrice, setTargetBytesPrice] = useState('');
 
   useEffect(() => {
@@ -113,10 +112,8 @@ export default function CitizenTerminal() {
   const bytesOverCap = Number.isFinite(parsedBytes) && parsedBytes > bytesCap;
   const points = calculateStakingPoints({ season: stakingSeason, creditYield, vaultMultiplier, lockPeriod, bytesStaked: parsedBytes, hasVault: stakingSeason === 's1' ? s1HasVault : false });
   const liveRate = rewardRates?.pools.find((pool) => pool.pool === stakingSeason.toUpperCase())?.netBytesPerPointPerDay ?? null;
-  const usingOverride = bytesPerPointDayOverride.trim() !== '';
-  const parsedRate = usingOverride ? Number(bytesPerPointDayOverride) : liveRate;
-  const hasRate = parsedRate != null && Number.isFinite(parsedRate) && parsedRate >= 0;
-  const rewardPerDay = hasRate ? points.totalPoints * Number(parsedRate) : null;
+  const hasRate = liveRate != null && Number.isFinite(liveRate) && liveRate >= 0;
+  const rewardPerDay = hasRate ? points.totalPoints * liveRate : null;
   const activeBytesPrice = targetBytesPrice.trim() !== '' && Number.isFinite(Number(targetBytesPrice)) && Number(targetBytesPrice) >= 0
     ? Number(targetBytesPrice)
     : bytesPrice;
@@ -197,8 +194,12 @@ export default function CitizenTerminal() {
             <label><span>LOCK PERIOD</span><select value={lockPeriod} onChange={(event) => setActiveLockPeriod(event.target.value)}>{lockOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
             <label><span>BYTES STAKED <button className="ct-max-button" type="button" onClick={() => setActiveBytesStaked(String(bytesCap))}>MAX {bytesCap.toLocaleString()}</button></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
           </div>
-          <label className="ct-rate-field"><span>CURRENT BYTES / POINT / DAY <b>{usingOverride ? 'MANUAL OVERRIDE' : liveRate != null ? 'LIVE ONCHAIN' : 'UNAVAILABLE'}</b></span><input type="number" min="0" step="any" value={bytesPerPointDayOverride} onChange={(event) => setBytesPerPointDayOverride(event.target.value)} placeholder={liveRate != null ? String(liveRate) : 'Live rate unavailable'} /></label>
-          {rewardRates && !usingOverride && <p className="ct-rate-source">Calculated at Ethereum block {rewardRates.blockNumber.toLocaleString()} · {new Date(rewardRates.asOf).toLocaleString()} · Net of DAO tax</p>}
+          <div className="ct-live-rate-card">
+            <div><span>CURRENT REWARD RATE</span><b>{liveRate != null ? 'LIVE ONCHAIN' : 'UNAVAILABLE'}</b></div>
+            <strong>{formatNumber(liveRate, 8)}</strong>
+            <small>BYTES / POINT / DAY</small>
+          </div>
+          {rewardRates && <p className="ct-rate-source">Calculated at Ethereum block {rewardRates.blockNumber.toLocaleString()} · {new Date(rewardRates.asOf).toLocaleString()} · Net of DAO tax</p>}
           <div className="ct-speculator">
             <div><p>SPECULATOR MODE</p><span>Test the same return at any target BYTES price.</span></div>
             <label><span>TARGET BYTES PRICE</span><div><i>$</i><input type="number" min="0" step="any" value={targetBytesPrice} onChange={(event) => setTargetBytesPrice(event.target.value)} placeholder={bytesPrice != null ? String(bytesPrice) : '0.00'} /></div></label>

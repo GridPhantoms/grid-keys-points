@@ -48,6 +48,8 @@ A one-second contract interval is dailyized instead of reading the trailing 24 h
 
 The rate is a current snapshot estimate. Staking changes, withdrawals, reward-window configuration and DAO tax can change it.
 
+The calculator displays this live onchain-derived rate as a read-only current statistic. Users cannot override the rate; hypothetical controls are limited to the target BYTES price used by Speculator Mode.
+
 ## Market references
 
 - Collection floors: lowest executable listing returned by the current price-sorted OpenSea listing feed. The unauthenticated collection-statistics endpoint is not used because it returns unauthorized responses without an API key.

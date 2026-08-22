@@ -4,13 +4,15 @@
 
 | Metric | Class | Source | Unavailable state |
 |---|---|---|---|
-| S1 component token numbers, traits, rarity rank and rarity score | Observed | NeoTokyo.codes current Citizen RPC | Lookup fails closed |
+| S1 component token numbers, traits, trait-sum score, rarity ranking score and rarity rank | Observed | NeoTokyo.codes current Citizen RPC (`componentScore`, `rarityMonScore`, `rarityMonRank`) | Lookup fails closed |
 | S2 component token numbers | Observed | S2 Outer Citizen V2 component getters on Ethereum | Lookup fails closed |
 | Assembled S1/S2 metadata | Observed | Alchemy metadata for the V2 Citizen contract | Lookup fails closed |
 | S1 Elite status | Calculated | Current S1 `rarityMonRank <= 500` | Not classified without a current rank |
 | S2 OpenSea estimated rarity rank | Estimated | Current OpenSea item page / OpenRarity output | Explicitly says OpenSea estimate unavailable; never calculates a substitute |
 
 NeoTokyo.codes is an internal endpoint, so it is called server-side and cached. S2 component IDs use deterministic onchain getters. No client credential is exposed. OpenSea's S2 rank is kept in a distinct `estimatedRank` field with source URL and lookup timestamp. It is an OpenSea marketplace estimate, not a canonical official Neo Tokyo S2 rank. If OpenSea does not return a valid positive integer rank for the exact contract and token, the estimate remains explicitly unavailable. Citizen Terminal does not derive or invent a replacement score or rank.
+
+For S1 component cards, **Trait sum score** displays NeoTokyo.codes `componentScore`. **Rarity ranking score** displays its RarityMon-derived `rarityMonScore`, which accompanies the published component rarity rank. The score formulas are not recalculated or reinterpreted by Citizen Terminal.
 
 ## Staking points
 

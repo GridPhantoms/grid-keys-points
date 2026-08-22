@@ -140,7 +140,7 @@ export default function CitizenTerminal() {
     </section>
 
     <section className="ct-panel ct-lookup-panel">
-      <SectionHeading eyebrow="01 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number pulls the Citizen, its traits, component breakdown, rarity data and staking inputs." />
+      <SectionHeading eyebrow="01 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number reveals the Citizen, its traits, components, rarity and staking profile." />
       <form className="ct-lookup-form" onSubmit={performLookup}>
         <div className="ct-season-toggle" aria-label="Citizen season">
           {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" disabled={lookupLoading} className={lookupSeason === value ? 'active' : ''} onClick={() => { setLookupSeason(value); setTokenId(value === 's1' ? '937' : '739'); setLookup(null); setLookupError(''); }}>{value.toUpperCase()}</button>)}
@@ -171,8 +171,8 @@ export default function CitizenTerminal() {
         </div>
         <div className="ct-component-grid">
           {lookup.components.map((item) => <article key={item.label} className="ct-component-card">
-            <header><div><p>{item.label.toUpperCase()}</p><h4>{item.tokenId ? `#${item.tokenId}` : item.name}</h4></div>{item.rank && <span>#{item.rank.toLocaleString()}</span>}</header>
-            {(item.componentScore != null || item.rarityScore != null) && <div className="ct-component-scores"><span>Component {formatNumber(item.componentScore, 2)}</span><span>Rarity {formatNumber(item.rarityScore, 2)}</span></div>}
+            <header><div><p>{item.label.toUpperCase()}</p><h4>{item.tokenId ? `#${item.tokenId}` : item.name}</h4></div>{item.rank && <span>RANK #{item.rank.toLocaleString()}</span>}</header>
+            {(item.componentScore != null || item.rarityScore != null) && <div className="ct-component-scores"><span title="Neo Tokyo component trait total">Trait sum score {formatNumber(item.componentScore, 2)}</span><span title="RarityMon score used to place this component's rank">Rarity ranking score {formatNumber(item.rarityScore, 2)}</span></div>}
             <div className="ct-traits">{item.traits.map((trait) => <div key={`${item.label}-${trait.label}`}><span>{trait.label}</span><strong>{trait.value}</strong></div>)}</div>
           </article>)}
         </div>

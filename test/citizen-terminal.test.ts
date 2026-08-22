@@ -115,6 +115,11 @@ test('live valuation source covers nine distinct rows and pins every custody rea
   assert.ok((route.match(/blockTag: sourceBlock/g) ?? []).length >= 8);
   assert.match(route, /OpenSea collection offer aggregates/);
   assert.match(route, /totalCollections: marketCollections\.length/);
+
+  const ui = await readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8');
+  assert.ok(ui.indexOf('className="ct-market-groups"') < ui.indexOf('className="ct-valuation-card"'));
+  assert.match(ui, /https:\/\/nftpricefloor\.com\/brands/);
+  assert.match(ui, /created in response to inaccuracies identified/);
 });
 
 test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {

@@ -256,6 +256,9 @@ export default function CitizenTerminal() {
     <section className="ct-panel ct-market-panel">
       <SectionHeading eyebrow="03 / MARKET DASHBOARD" title="The Neo Tokyo market, mapped." detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
       {marketError && <p className="ct-error">{marketError}</p>}
+      <div className="ct-market-groups">
+        {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group}</span><p>{group === 'S1' ? 'INNER CITY' : 'OUTER CITY'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
+      </div>
       <div className="ct-valuation-card">
         <div className="ct-valuation-topline">
           <div><p>NEO TOKYO IMPLIED ECOSYSTEM VALUE</p><span>ESTIMATED · NFT COLLECTIONS + $BYTES</span></div>
@@ -291,10 +294,8 @@ export default function CitizenTerminal() {
           </tbody></table></div>
         </details>
         <p className="ct-valuation-caveat">Modeled reference value, not a company valuation or liquidation value. Floors use current executable asks; offers have limited depth. Elite Citizens are excluded because they are already part of S1 Citizens.</p>
+        <p className="ct-valuation-source"><strong>Why this exists.</strong> This first-party model was created in response to inaccuracies identified in Neo Tokyo&apos;s presentation on <a href="https://nftpricefloor.com/brands" target="_blank" rel="noreferrer">NFT Price Floor&apos;s NFT Brands tracker ↗</a>. It uses direct onchain supply and custody reads to avoid overlapping assembled Citizens, migrated assets and component collections.</p>
         {market?.valuation && <p className="ct-valuation-source">NFT supply pinned to Ethereum block <a href={`https://etherscan.io/block/${market.valuation.sourceBlock}`} target="_blank" rel="noreferrer">{market.valuation.sourceBlock.toLocaleString()} ↗</a> · {new Date(market.valuation.blockAsOf).toLocaleString()} · $BYTES market cap* block {bytesSourceBlock?.toLocaleString() ?? '—'}{bytesMarketAsOf ? ` · ${new Date(bytesMarketAsOf).toLocaleString()}` : ''}</p>}
-      </div>
-      <div className="ct-market-groups">
-        {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group}</span><p>{group === 'S1' ? 'INNER CITY' : 'OUTER CITY'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
       </div>
       {market?.asOf && <p className="ct-asof">Market snapshot {new Date(market.asOf).toLocaleString()} · Listings can change at any time</p>}
     </section>

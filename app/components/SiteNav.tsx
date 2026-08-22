@@ -10,6 +10,7 @@ export type SiteNavActive =
   | 'raffle'
   | 'mint-progress'
   | 'bytes'
+  | 'citizen'
   | 'engine';
 
 type SiteNavProps = {
@@ -23,6 +24,7 @@ const navItems: Array<{ href: string; label: string; active: SiteNavActive }> = 
   { href: '/raffle', label: 'Raffle Tracker', active: 'raffle' },
   { href: '/mint-progress', label: 'Mint Progress', active: 'mint-progress' },
   { href: '/bytes', label: '$BYTES Terminal', active: 'bytes' },
+  { href: '/citizen', label: 'Citizen Terminal', active: 'citizen' },
   { href: '/engine', label: 'Engine Room', active: 'engine' },
 ];
 

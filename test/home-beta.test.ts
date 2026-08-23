@@ -51,10 +51,14 @@ test('homepage beta explains the Citizen bridge and uses Great Digital Exodus lo
 });
 
 test('homepage beta gives Sakura a practical bounded agentic role', async () => {
-  const page = await readFile(pagePath, 'utf8');
-  assert.match(page, /GRID LABS AI \/\/ AGENTIC SUPPORT/);
-  assert.match(page, /scout public information, filter noise, research Keyholder questions and run bounded tool-assisted tasks/);
+  const [page, css] = await Promise.all([readFile(pagePath, 'utf8'), readFile(cssPath, 'utf8')]);
+  assert.match(page, /<span>GRID LABS AI<\/span><span>AGENTIC SUPPORT<\/span>/);
+  assert.match(page, /FOR THE WHOLE GRID/);
+  assert.match(page, /LP intelligence, maintains voting tabulations, prepares reward files for human approval/);
+  assert.match(page, /SUBSCRIBER ACCESS/);
+  assert.match(page, /Inside Discord, subscribers can access additional direct agentic support/);
   assert.match(page, /Human decisions, permissions and execution remain with Keyholders/);
+  assert.match(css, /\.hb-sakura-labels span \{[^}]*background: rgba\(2, 7, 9, \.9\)/);
 });
 
 test('homepage beta uses supplied lore imagery and remains responsive', async () => {
@@ -77,7 +81,7 @@ test('homepage beta closes with a clear Exodus mint path', async () => {
   const page = await readFile(pagePath, 'utf8');
   assert.match(page, /THE GREAT DIGITAL EXODUS CONTINUES/);
   assert.match(page, /Join the Rebellion\./);
-  assert.match(page, /MINT EXODUS KEY/);
+  assert.match(page, /MINT EXODUS KEYS<\/a>/);
   assert.match(page, /https:\/\/manifold\.xyz\/@gridphantoms\/id\/4067746032/);
   assert.match(page, /Key ownership does not guarantee rewards, distributions or financial return/);
 });

@@ -103,9 +103,12 @@ export default function GridHomeBeta() {
         <section className="hb-sakura" aria-labelledby="sakura-title">
           <div className="hb-sakura-art" role="img" aria-label="Sakura standing in a rain-soaked neon Grid street" data-image="/home-beta/sakura-ai-wide.webp" />
           <div className="hb-sakura-copy">
-            <p className="hb-eyebrow">GRID LABS AI // AGENTIC SUPPORT</p>
+            <div className="hb-sakura-labels"><span>GRID LABS AI</span><span>AGENTIC SUPPORT</span></div>
             <h2 id="sakura-title">The Grid learned to answer back.</h2>
-            <p>Grid Labs AI gives the collective an agentic operating layer. Sakura can scout public information, filter noise, research Keyholder questions and run bounded tool-assisted tasks that become useful reports, prompts and working artifacts.</p>
+            <div className="hb-ai-access">
+              <article><b>FOR THE WHOLE GRID</b><p>Sakura keeps first-party intelligence tools current, produces Keyholder reporting such as LP intelligence, maintains voting tabulations, prepares reward files for human approval, and helps operate riddles and raffles.</p></article>
+              <article><b>SUBSCRIBER ACCESS</b><p>Inside Discord, subscribers can access additional direct agentic support for deeper research, bounded agent runs, reusable prompts and working artifacts.</p></article>
+            </div>
             <div className="hb-ai-capabilities">
               <span><b>SCOUT</b>Find the signal</span>
               <span><b>FILTER</b>Remove the noise</span>
@@ -165,7 +168,7 @@ export default function GridHomeBeta() {
             <p className="hb-eyebrow">THE GREAT DIGITAL EXODUS CONTINUES</p>
             <h2 id="join-title">Join the Rebellion.</h2>
             <p>Mint an Exodus Key to become a Keyholder, enter the community and take your place in the Grid&apos;s governance and evolving utility network.</p>
-            <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noreferrer" className="hb-button hb-button-primary">MINT EXODUS KEY</a>
+            <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noreferrer" className="hb-button hb-button-primary">MINT EXODUS KEYS</a>
             <small>Key ownership does not guarantee rewards, distributions or financial return.</small>
           </div>
           <figure className="hb-join-art" role="img" aria-label="An Exodus Keycard suspended in a rain-soaked cyberpunk street" data-image="/home-beta/exodus-keycard.webp" />

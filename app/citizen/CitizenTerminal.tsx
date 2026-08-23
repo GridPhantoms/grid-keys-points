@@ -41,6 +41,14 @@ const formatUsd = (value: number | null | undefined) => value == null || !Number
 const formatCompactUsd = (value: number | null | undefined) => value == null || !Number.isFinite(value)
   ? '—'
   : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 }).format(value);
+const formatSnapshotAge = (value: number | null, now: number | null) => {
+  if (value == null || now == null) return 'connecting';
+  const minutes = Math.max(0, Math.floor((now - value) / 60_000));
+  if (minutes < 1) return 'less than 1 min ago';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+};
 const S1_FLOOR_ORDER = ['s1-citizens', 's1-elite', 's1-identities', 's1-vaults', 's1-items', 's1-lands'];
 
 function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; title: string; detail: string }) {
@@ -70,6 +78,13 @@ export default function CitizenTerminal() {
   const [s2BytesStaked, setS2BytesStaked] = useState('200');
   const [s1HasVault, setS1HasVault] = useState<boolean | undefined>(undefined);
   const [targetBytesPrice, setTargetBytesPrice] = useState('');
+  const [snapshotNow, setSnapshotNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const initial = window.setTimeout(() => setSnapshotNow(Date.now()), 0);
+    const timer = window.setInterval(() => setSnapshotNow(Date.now()), 60_000);
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -165,13 +180,34 @@ export default function CitizenTerminal() {
     ? impliedValuation.rows.map((calculated) => ({ ...market.valuation.rows.find((row) => row.key === calculated.key)!, ...calculated }))
     : [];
   const totalValueEth = impliedValuation?.totalUsd != null && market?.ethUsd ? impliedValuation.totalUsd / market.ethUsd : null;
+  const snapshotSourceValues = [
+    market?.sourceTimes?.listingsAsOf ?? market?.asOf,
+    market?.sourceTimes?.offersAsOf ?? market?.asOf,
+    market?.sourceTimes?.rankingsAsOf ?? market?.asOf,
+    market?.sourceTimes?.supplyAsOf ?? market?.valuation?.blockAsOf,
+    rewardRates?.asOf,
+    bytesMarketAsOf,
+  ];
+  const snapshotSourceTimes = snapshotSourceValues
+    .map((value) => value ? Date.parse(value) : Number.NaN)
+    .filter(Number.isFinite);
+  const latestSnapshotSource = snapshotSourceTimes.length ? Math.max(...snapshotSourceTimes) : null;
+  const oldestSnapshotSource = snapshotSourceTimes.length ? Math.min(...snapshotSourceTimes) : null;
 
   return <main className="ct-main">
-    <section className="ct-hero">
-      <div className="ct-kicker"><span /> NEO TOKYO MARKET INTELLIGENCE</div>
-      <h1>Citizen <em>Terminal</em></h1>
-      <p>Inspect the code. Price the yield. Read the market.</p>
-      <div className="ct-hero-badges"><span>Citizen intelligence</span><span>Live market references</span><span>Staking scenarios</span></div>
+    <section className="ct-hero" aria-labelledby="citizen-title">
+      <div className="ct-hero-title">
+        <div className="ct-kicker">NEO TOKYO MARKET INTELLIGENCE</div>
+        <h1 id="citizen-title">Citizen <em>Terminal</em></h1>
+        <p>Inspect the code. Price the yield. Read the market.</p>
+        <div className="ct-hero-badges"><span>Citizen intelligence</span><span>Live market references</span><span>Staking scenarios</span></div>
+      </div>
+      <div className="ct-snapshot-stamp" aria-label="Snapshot recency summary">
+        <strong>{snapshotSourceTimes.length ? 'MULTI-SOURCE SNAPSHOT' : 'CONNECTING TO SOURCES'}</strong>
+        <span>Latest source {formatSnapshotAge(latestSnapshotSource, snapshotNow)}</span>
+        <span>Oldest source {formatSnapshotAge(oldestSnapshotSource, snapshotNow)}</span>
+        <span>{snapshotSourceTimes.length} / 6 source classes · 5 min–1 hr refresh range</span>
+      </div>
     </section>
 
     <section className="ct-panel ct-lookup-panel">

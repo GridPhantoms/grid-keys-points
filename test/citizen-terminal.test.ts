@@ -155,6 +155,24 @@ test('Citizen market sources use independent conservative refresh tiers', async 
   assert.match(metricContract, /Current BYTES per point per day[\s\S]*1 hour/);
 });
 
+test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot summary', async () => {
+  const [ui, css] = await Promise.all([
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(ui, /<div className="ct-hero-title">/);
+  assert.match(ui, /<div className="ct-snapshot-stamp"/);
+  assert.match(ui, /MULTI-SOURCE SNAPSHOT/);
+  assert.match(ui, /Latest source/);
+  assert.match(ui, /Oldest source/);
+  assert.match(ui, /5 min–1 hr refresh range/);
+  assert.doesNotMatch(ui, /<div className="ct-kicker"><span \/>/);
+  assert.match(css, /\.ct-hero\{[^}]*grid-template-columns/);
+  assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
+  assert.match(css, /\.ct-snapshot-stamp\{/);
+});
+
 test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {
   const [page, footer] = await Promise.all([
     readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),

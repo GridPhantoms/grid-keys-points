@@ -27,6 +27,21 @@ const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
 
 const REWARD_HISTORY_THROUGH = COMPLETED_REWARD_HISTORY.at(-1)?.cycle ?? '';
 
+const REWARD_PROOFS = [
+  { cycle: 'July 2026', distributed: 'August 3, 2026', bytes: '1,178.8', transfers: 27, hash: '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd' },
+  { cycle: 'June 2026', distributed: 'July 13, 2026', bytes: '1,115.6', transfers: 28, hash: '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d' },
+  { cycle: 'May 2026', distributed: 'June 3, 2026', bytes: '2,050.8', transfers: 39, hash: '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7' },
+  { cycle: 'April 2026', distributed: 'May 8, 2026', bytes: '1,926', transfers: 48, hash: '0x7b95b4deb03f983eba105efdcb08cec4e58fb1189bfbbf02dbb633d16aee4573' },
+  { cycle: 'March 2026', distributed: 'April 9, 2026', bytes: '1,625', transfers: 33, hash: '0x908d318eca4005fb12d3cf91140322c5370a256cc58fe5bb66f7561edf5602c7' },
+  { cycle: 'February 2026', distributed: 'March 12, 2026', bytes: '1,998', transfers: 50, hash: '0x2e45a309833dabe4163941e1530ea3fa18a8eb8a8eb616914bbced25ae9e8d94' },
+  { cycle: 'January 2026', distributed: 'February 7, 2026', bytes: '2,442', transfers: 62, hash: '0x760a3b5e043bff9551994ec06da51ff1a19ee6318824c30fbe20a0e8ee819411' },
+  { cycle: 'December 2025', distributed: 'January 7, 2026', bytes: '3,476', transfers: 58, hash: '0xd870fe7d53f3c4eff2070a33e32615e876044347ae2d0eae02506446f618f5d8' },
+  { cycle: 'November 2025', distributed: 'December 3, 2025', bytes: '3,020', transfers: 58, hash: '0xa21fece7a8c8515e759e491303c2a544f30b9e0e57807febac072c07229b2d38' },
+  { cycle: 'October 2025', distributed: 'November 2, 2025', bytes: '2,216', transfers: 120, hash: '0x87264ae2abd230923efe3cc53236f5669040529c6a74c62b4672af0131871d21' },
+] as const;
+
+const [LATEST_REWARD_PROOF, ...EARLIER_REWARD_PROOFS] = REWARD_PROOFS;
+
 function formatUsd(value: number) {
   return value.toLocaleString('en-US', {
     style: 'currency',
@@ -358,9 +373,22 @@ export default function EngineRoom() {
               <p className="engine-metric-value">${airdropUSD.toFixed(0)}</p><p className="engine-metric-unit">USD AT CURRENT BYTES REFERENCE</p>
             </article>
           </div>
-          <a href="https://snowtrace.io/tx/0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd" target="_blank" rel="noopener noreferrer" className="engine-proof-link">
-            <span>VERIFIED DISTRIBUTION</span>July Grid Cycle potential Phantom Rewards ↗
+          <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
+            <span className="engine-proof-status">LATEST VERIFIED DISTRIBUTION</span>
+            <span className="engine-proof-copy"><strong>{LATEST_REWARD_PROOF.cycle} Grid Cycle potential Phantom Rewards</strong><small>{LATEST_REWARD_PROOF.distributed} · {LATEST_REWARD_PROOF.bytes} BYTES · {LATEST_REWARD_PROOF.transfers} transfers</small></span>
+            <b aria-hidden="true">↗</b>
           </a>
+          <details className="engine-proof-shelf">
+            <summary><span>HISTORICAL PROOF ARCHIVE</span><strong>VIEW 9 EARLIER PROOFS</strong><i aria-hidden="true">+</i></summary>
+            <div className="engine-proof-archive">
+              {EARLIER_REWARD_PROOFS.map((proof) => (
+                <a key={proof.hash} href={`https://snowtrace.io/tx/${proof.hash}`} target="_blank" rel="noopener noreferrer">
+                  <span><strong>{proof.cycle} Grid Cycle</strong><small>{proof.distributed}</small></span>
+                  <span><strong>{proof.bytes} BYTES</strong><small>{proof.transfers} transfers · Snowtrace ↗</small></span>
+                </a>
+              ))}
+            </div>
+          </details>
         </section>
 
         <section className="engine-section engine-panel engine-simulator" aria-labelledby="simulator-heading">
@@ -405,7 +433,7 @@ export default function EngineRoom() {
           </div>
           <div className="engine-vitals-grid">
             <article><span>TOTAL LIBERATED SLAVES</span><strong>{liberatedSlaves}</strong><small>SNAPSHOT HOLDERS</small></article>
-            <article><span>TOTAL VOTES CAST</span><strong>{totalVotesCast.toLocaleString()}</strong><small>ELIGIBLE DISTRIBUTION ROWS</small></article>
+            <article><span>TOTAL VOTES CAST</span><strong>{totalVotesCast.toLocaleString()}</strong><small>REWARD ENTRIES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><strong>{avgKeysPerPhantomCalc.toFixed(2)}</strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><strong className="engine-cyan">{exodusMintProgress.toFixed(2)}%</strong><small>OF 3,333 SUPPLY</small></article>
             <article><span>AVG. VOTER PARTICIPATION</span><strong className="engine-cyan">{voterParticipationRate.toFixed(1)}%</strong><small>ACROSS COMPLETED CYCLES</small></article>

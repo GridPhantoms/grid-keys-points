@@ -73,3 +73,33 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(css, /\.engine-source-note\{[^}]*color:#849197/);
   assert.match(css, /\.engine-vitals-grid small\{[^}]*color:#7c8a90/);
 });
+
+test('Engine Room exposes verified reward proofs and keeps supporting copy responsive', async () => {
+  const [ui, css] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/engine/engine.css'),
+  ]);
+
+  const proofHashes = [
+    '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd',
+    '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d',
+    '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7',
+    '0x7b95b4deb03f983eba105efdcb08cec4e58fb1189bfbbf02dbb633d16aee4573',
+    '0x908d318eca4005fb12d3cf91140322c5370a256cc58fe5bb66f7561edf5602c7',
+    '0x2e45a309833dabe4163941e1530ea3fa18a8eb8a8eb616914bbced25ae9e8d94',
+    '0x760a3b5e043bff9551994ec06da51ff1a19ee6318824c30fbe20a0e8ee819411',
+    '0xd870fe7d53f3c4eff2070a33e32615e876044347ae2d0eae02506446f618f5d8',
+    '0xa21fece7a8c8515e759e491303c2a544f30b9e0e57807febac072c07229b2d38',
+    '0x87264ae2abd230923efe3cc53236f5669040529c6a74c62b4672af0131871d21',
+  ];
+
+  proofHashes.forEach((hash) => assert.match(ui, new RegExp(hash)));
+  assert.match(ui, /<details className="engine-proof-shelf">/);
+  assert.match(ui, /VIEW 9 EARLIER PROOFS/);
+  assert.match(ui, /REWARD ENTRIES/);
+  assert.doesNotMatch(ui, /ELIGIBLE DISTRIBUTION ROWS/);
+  assert.match(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*max-width:none[^}]*white-space:nowrap/);
+  assert.match(css, /\.engine-proof-shelf\{/);
+  assert.match(css, /\.engine-proof-archive\{/);
+  assert.match(css, /\.engine-proof-archive>a:last-child:nth-child\(odd\)\{grid-column:1\/-1\}/);
+});

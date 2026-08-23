@@ -67,5 +67,9 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(css, /\.engine-disclaimer\{[^}]*font-size:10px[^}]*line-height:1\.65/);
   assert.match(css, /@media\(min-width:900px\)\{\.engine-disclaimer\{font-size:11px\}/);
   assert.match(css, /@media\(max-width:700px\)/);
+  assert.match(ui, /matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css, /\.engine-snapshot-stamp small\{[^}]*color:#7a8b91/);
+  assert.match(css, /\.engine-source-note\{[^}]*color:#849197/);
+  assert.match(css, /\.engine-vitals-grid small\{[^}]*color:#7c8a90/);
 });

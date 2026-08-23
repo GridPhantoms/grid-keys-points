@@ -75,6 +75,12 @@ function AnimatedNumber({
 
     const targetValue = Number.isFinite(value) ? Math.max(0, value) : 0;
 
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      hasAnimatedRef.current = true;
+      setAnimatedDisplay(targetValue);
+      return;
+    }
+
     if (targetValue <= 0) {
       hasAnimatedRef.current = true;
       setAnimatedDisplay(targetValue);

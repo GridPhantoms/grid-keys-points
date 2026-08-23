@@ -252,4 +252,8 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.match(css, /\.engine-metric-topline\{[^}]*display:flex[^}]*flex-direction:column[^}]*align-items:flex-start[^}]*gap:10px/);
   assert.match(css, /\.engine-metric-topline \.engine-evidence\{margin:0\}/);
   assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
+  assert.match(css, /\.engine-output-heading\{[^}]*margin-bottom:14px/);
+  assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
+  assert.match(ui, /DeBank portfolio, Neo Tokyo asset values and the veBLACK position\./);
+  assert.doesNotMatch(ui, /Neo Tokyo asset references/);
 });

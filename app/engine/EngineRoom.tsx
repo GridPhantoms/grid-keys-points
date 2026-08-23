@@ -567,7 +567,7 @@ export default function EngineRoom() {
             <article className="engine-metric engine-metric-primary">
               <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
-              <p className="engine-metric-note">DeBank portfolio, Neo Tokyo asset references and the veBLACK position.</p>
+              <p className="engine-metric-note">DeBank portfolio, Neo Tokyo asset values and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
               <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>

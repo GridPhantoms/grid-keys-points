@@ -120,7 +120,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(ui, /PAGE-LOAD SNAPSHOT/);
   assert.match(ui, /Reload to request updated source reads\./);
   assert.match(ui, /VAULT REFERENCES/);
-  assert.match(ui, /NEO HOLDINGS/);
+  assert.match(ui, /NEO TOKYO HOLDINGS/);
   assert.match(ui, /KEY SUPPLY/);
   assert.match(ui, /HOLDER SNAPSHOT/);
   assert.match(ui, /REWARD ARCHIVE/);

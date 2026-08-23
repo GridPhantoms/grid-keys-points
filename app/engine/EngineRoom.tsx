@@ -545,7 +545,7 @@ export default function EngineRoom() {
           <summary><span>VIEW SOURCE &amp; EVIDENCE DETAILS</span><i aria-hidden="true">+</i></summary>
           <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
             <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
-            <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
+            <SourceCard label="NEO TOKYO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
             <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
             <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
             <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />

@@ -196,7 +196,7 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(ui, /timeKind="OCCURRED"/);
   assert.match(ui, /ESTIMATED USD VALUE/);
   assert.match(ui, /Snapshot BYTES price:/);
-  assert.match(ui, /SNAPSHOT KEY HOLDERS/);
+  assert.match(ui, /LIBERATED SLAVES/);
   assert.match(ui, /AVG\. VOTER PARTICIPATION/);
   assert.match(ui, /VS CURRENT HOLDERS/);
 
@@ -238,4 +238,18 @@ test('Engine Room mobile copy stays compact and source details are optional', as
   assert.doesNotMatch(ui, /COMPLETED REWARDS PER KEY/);
   assert.doesNotMatch(ui, /TOTAL REWARD ENTRIES/);
   assert.doesNotMatch(ui, /AVG\. REWARD-RECIPIENT RATE/);
+});
+
+test('Engine Room evidence pills stand apart from titles and preserve rebellion lore', async () => {
+  const [ui, css] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/engine/engine.css'),
+  ]);
+
+  assert.match(ui, /<article><span>LIBERATED SLAVES<\/span><EvidenceBadge classification="Observed"/);
+  assert.match(ui, /<small>UNIQUE WALLETS<\/small>/);
+  assert.doesNotMatch(ui, /SNAPSHOT KEY HOLDERS/);
+  assert.match(css, /\.engine-metric-topline\{[^}]*display:flex[^}]*flex-direction:column[^}]*align-items:flex-start[^}]*gap:10px/);
+  assert.match(css, /\.engine-metric-topline \.engine-evidence\{margin:0\}/);
+  assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
 });

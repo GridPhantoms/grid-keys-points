@@ -656,7 +656,7 @@ export default function EngineRoom() {
             <p>A compact operational read on holders, reward participation, mint progress and time in the Grid.</p>
           </div>
           <div className="engine-vitals-grid">
-            <article><span>SNAPSHOT KEY HOLDERS</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
+            <article><span>LIBERATED SLAVES</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
             <article><span>TOTAL VOTES CAST</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>

@@ -69,7 +69,7 @@ export async function GET() {
       {
         minted: minted.size,
         source: 'alchemy_getAssetTransfers_zero_address_mints',
-        updatedAt: new Date().toISOString(),
+        readAt: new Date().toISOString(),
       },
       { headers: { 'cache-control': 'no-store' } },
     );

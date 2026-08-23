@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- standalone CommonJS operations script */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
 const ENV_PATH = path.join(ROOT, '.env.local');
 const OUTPUT_PATH = path.join(ROOT, 'public', 'holders-snapshot.csv');
+const META_PATH = path.join(ROOT, 'public', 'holders-snapshot.meta.json');
 
 const GENESIS_CONTRACT = '0xF26e168D053F6779f7172A1d0b0A6cD8d7446493';
 const EXODUS_CONTRACT = '0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa';
@@ -88,9 +90,12 @@ async function main() {
   }
 
   fs.writeFileSync(OUTPUT_PATH, csv);
+  const metadata = { capturedAt: new Date().toISOString() };
+  fs.writeFileSync(META_PATH, `${JSON.stringify(metadata, null, 2)}\n`);
 
   console.log(`Combined holders: ${wallets.length}`);
   console.log(`✅ Wrote ${path.relative(ROOT, OUTPUT_PATH)}`);
+  console.log(`✅ Wrote ${path.relative(ROOT, META_PATH)}`);
 }
 
 main().catch((err) => {

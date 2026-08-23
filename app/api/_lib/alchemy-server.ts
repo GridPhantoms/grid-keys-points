@@ -40,7 +40,8 @@ export type AlchemyOwnedNft = {
 };
 
 type AlchemyOwnedNftsResponse = {
-  ownedNfts?: AlchemyOwnedNft[];
+  ownedNfts?: unknown;
+  pageKey?: unknown;
 };
 
 export async function getNftsForOwner(
@@ -48,17 +49,30 @@ export async function getNftsForOwner(
   contractAddress: string,
   limit = 100,
 ) {
-  const url = new URL(
-    `/nft/v3/${encodeURIComponent(apiKey())}/getNFTsForOwner`,
-    ALCHEMY_ORIGIN,
-  );
-  url.searchParams.set('owner', owner);
-  url.searchParams.append('contractAddresses[]', contractAddress);
-  url.searchParams.set('withMetadata', 'false');
-  url.searchParams.set('limit', String(limit));
+  const ownedNfts: AlchemyOwnedNft[] = [];
+  let pageKey: string | undefined;
 
-  const data = await fetchJsonWithTimeout<AlchemyOwnedNftsResponse>(url);
-  return Array.isArray(data.ownedNfts) ? data.ownedNfts : [];
+  for (let page = 0; page < 100; page += 1) {
+    const url = new URL(
+      `/nft/v3/${encodeURIComponent(apiKey())}/getNFTsForOwner`,
+      ALCHEMY_ORIGIN,
+    );
+    url.searchParams.set('owner', owner);
+    url.searchParams.append('contractAddresses[]', contractAddress);
+    url.searchParams.set('withMetadata', 'false');
+    url.searchParams.set('limit', String(Math.min(Math.max(limit, 1), 100)));
+    if (pageKey) url.searchParams.set('pageKey', pageKey);
+
+    const data = await fetchJsonWithTimeout<AlchemyOwnedNftsResponse>(url);
+    if (!Array.isArray(data.ownedNfts)) throw new AlchemyServerError();
+    ownedNfts.push(...data.ownedNfts);
+
+    if (data.pageKey === undefined || data.pageKey === null || data.pageKey === '') return ownedNfts;
+    if (typeof data.pageKey !== 'string') throw new AlchemyServerError();
+    pageKey = data.pageKey;
+  }
+
+  throw new AlchemyServerError();
 }
 
 type AlchemyRpcResponse<T> = {

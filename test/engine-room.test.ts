@@ -124,8 +124,8 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(ui, /KEY SUPPLY/);
   assert.match(ui, /HOLDER SNAPSHOT/);
   assert.match(ui, /REWARD ARCHIVE/);
-  assert.match(ui, /2026-08-23T00:08:00Z/);
-  assert.match(ui, /2026-08-14T04:20:00Z/);
+  assert.match(ui, /vault-snapshot\.meta\.json/);
+  assert.match(ui, /holders-snapshot\.meta\.json/);
   assert.match(ui, /2026-08-03T02:10:34Z/);
   assert.doesNotMatch(ui, /const LAST_SNAPSHOT/);
 
@@ -142,9 +142,9 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(css, /\.engine-evidence-projected\{/);
 
   assert.match(neoRoute, /source: 'alchemy_nft_owner_lookup'/);
-  assert.match(neoRoute, /updatedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
   assert.match(exodusRoute, /source: 'alchemy_getAssetTransfers_zero_address_mints'/);
-  assert.match(exodusRoute, /updatedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);
 });
 
 test('Engine Room Phase 3 validates each source independently and fails metrics closed', async () => {
@@ -168,4 +168,51 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /isSourceUsable/);
   assert.doesNotMatch(ui, /return \{ s1: 0, s2: 0, items: 0 \}/);
   assert.doesNotMatch(ui, /Snapshot captured \{LAST_SNAPSHOT\}/);
+});
+
+test('Engine Room delayed-review follow-up keeps provenance and wording literal', async () => {
+  const [ui, neoRoute, exodusRoute, alchemy, generator, leaderboard, vaultMetaText, holderMetaText] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/api/neo-vault-counts/route.ts'),
+    read('../app/api/exodus-minted/route.ts'),
+    read('../app/api/_lib/alchemy-server.ts'),
+    read('../generate-holders-snapshot.js'),
+    read('../app/leaderboard/page.tsx'),
+    read('../public/vault-snapshot.meta.json'),
+    read('../public/holders-snapshot.meta.json'),
+  ]);
+
+  assert.deepEqual(JSON.parse(vaultMetaText), { capturedAt: '2026-08-23T00:08:00Z' });
+  assert.deepEqual(JSON.parse(holderMetaText), { capturedAt: '2026-08-14T04:20:00Z' });
+  assert.match(ui, /fetchJson\('\/vault-snapshot\.meta\.json'\)/);
+  assert.match(ui, /fetchJson\('\/holders-snapshot\.meta\.json'\)/);
+  assert.doesNotMatch(ui, /const VAULT_SNAPSHOT_AT|const HOLDER_SNAPSHOT_AT/);
+
+  assert.match(ui, /AVAILABLE ·/);
+  assert.match(ui, /PARTIAL ·/);
+  assert.match(ui, /UNAVAILABLE ·/);
+  assert.match(ui, /timeKind="CAPTURED"/);
+  assert.match(ui, /timeKind="CHECKED"/);
+  assert.match(ui, /timeKind="OCCURRED"/);
+  assert.match(ui, /CAPTURED REFERENCE VALUE/);
+  assert.match(ui, /Captured reference price:/);
+  assert.match(ui, /SNAPSHOT KEY HOLDERS/);
+  assert.match(ui, /AVG\. REWARD-RECIPIENT RATE/);
+  assert.match(ui, /VS CURRENT HOLDERS/);
+
+  assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 10);
+  assert.match(ui, /<time dateTime=\{proof\.occurredAt\}>/);
+
+  assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);
+  assert.doesNotMatch(neoRoute, /updatedAt:/);
+  assert.doesNotMatch(exodusRoute, /updatedAt:/);
+  assert.match(ui, /data\.readAt/);
+
+  assert.match(alchemy, /pageKey\?: unknown/);
+  assert.match(alchemy, /url\.searchParams\.set\('pageKey', pageKey\)/);
+  assert.match(alchemy, /if \(!Array\.isArray\(data\.ownedNfts\)\) throw new AlchemyServerError\(\)/);
+  assert.match(generator, /holders-snapshot\.meta\.json/);
+  assert.match(generator, /capturedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(leaderboard, /holders-snapshot\.meta\.json/);
 });

@@ -3,14 +3,17 @@
 import SiteNav from '../components/SiteNav';
 import { useState, useEffect } from 'react';
 
+type BytesLeaderboardEntry = { wallet: string; bytes: number };
+type KeyholderLeaderboardEntry = { wallet: string; totalKeys: number; genesisQty: number; exodusQty: number };
+
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState<'bytes' | 'points'>('bytes');
-  const [bytesLeaderboard, setBytesLeaderboard] = useState<any[]>([]);
-  const [keyholderLeaderboard, setKeyholderLeaderboard] = useState<any[]>([]);
+  const [bytesLeaderboard, setBytesLeaderboard] = useState<BytesLeaderboardEntry[]>([]);
+  const [keyholderLeaderboard, setKeyholderLeaderboard] = useState<KeyholderLeaderboardEntry[]>([]);
   const [loadingBytes, setLoadingBytes] = useState(true);
   const [loadingKeyholders, setLoadingKeyholders] = useState(false);
   const [errorKeyholders, setErrorKeyholders] = useState('');
-  const [lastSnapshot] = useState("August 14, 2026 04:20 UTC");
+  const [lastSnapshot, setLastSnapshot] = useState('Timestamp unavailable');
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string) => {
@@ -82,12 +85,27 @@ export default function Leaderboard() {
     setLoadingKeyholders(true);
     setErrorKeyholders('');
     setKeyholderLeaderboard([]);
+    setLastSnapshot('Timestamp unavailable');
 
     try {
-      const res = await fetch('/holders-snapshot.csv');
+      const [res, metaRes] = await Promise.all([
+        fetch('/holders-snapshot.csv'),
+        fetch('/holders-snapshot.meta.json'),
+      ]);
+      if (!res.ok) throw new Error('Holder snapshot unavailable');
       const text = await res.text();
 
-      const holders: any[] = [];
+      if (metaRes.ok) {
+        const metadata = await metaRes.json();
+        if (typeof metadata.capturedAt === 'string' && Number.isFinite(Date.parse(metadata.capturedAt))) {
+          setLastSnapshot(new Intl.DateTimeFormat('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+            hourCycle: 'h23', timeZone: 'UTC', timeZoneName: 'short',
+          }).format(new Date(metadata.capturedAt)));
+        }
+      }
+
+      const holders: KeyholderLeaderboardEntry[] = [];
 
       text.trim().split('\n').slice(1).forEach(line => {
         if (!line.trim()) return;

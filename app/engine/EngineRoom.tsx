@@ -32,8 +32,6 @@ type EngineSources = {
 
 const SOURCE_CLASS_COUNT = 5;
 const SOURCE_TIMEOUT_MS = 12_000;
-const VAULT_SNAPSHOT_AT = '2026-08-23T00:08:00Z';
-const HOLDER_SNAPSHOT_AT = '2026-08-14T04:20:00Z';
 const REWARD_ARCHIVE_AT = '2026-08-03T02:10:34Z';
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
@@ -86,16 +84,16 @@ const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
 const REWARD_HISTORY_THROUGH = COMPLETED_REWARD_HISTORY.at(-1)?.cycle ?? '';
 
 const REWARD_PROOFS = [
-  { cycle: 'July 2026', distributed: 'August 3, 2026', bytes: '1,178.8', transfers: 27, hash: '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd' },
-  { cycle: 'June 2026', distributed: 'July 13, 2026', bytes: '1,115.6', transfers: 28, hash: '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d' },
-  { cycle: 'May 2026', distributed: 'June 3, 2026', bytes: '2,050.8', transfers: 39, hash: '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7' },
-  { cycle: 'April 2026', distributed: 'May 8, 2026', bytes: '1,926', transfers: 48, hash: '0x7b95b4deb03f983eba105efdcb08cec4e58fb1189bfbbf02dbb633d16aee4573' },
-  { cycle: 'March 2026', distributed: 'April 9, 2026', bytes: '1,625', transfers: 33, hash: '0x908d318eca4005fb12d3cf91140322c5370a256cc58fe5bb66f7561edf5602c7' },
-  { cycle: 'February 2026', distributed: 'March 12, 2026', bytes: '1,998', transfers: 50, hash: '0x2e45a309833dabe4163941e1530ea3fa18a8eb8a8eb616914bbced25ae9e8d94' },
-  { cycle: 'January 2026', distributed: 'February 7, 2026', bytes: '2,442', transfers: 62, hash: '0x760a3b5e043bff9551994ec06da51ff1a19ee6318824c30fbe20a0e8ee819411' },
-  { cycle: 'December 2025', distributed: 'January 7, 2026', bytes: '3,476', transfers: 58, hash: '0xd870fe7d53f3c4eff2070a33e32615e876044347ae2d0eae02506446f618f5d8' },
-  { cycle: 'November 2025', distributed: 'December 3, 2025', bytes: '3,020', transfers: 58, hash: '0xa21fece7a8c8515e759e491303c2a544f30b9e0e57807febac072c07229b2d38' },
-  { cycle: 'October 2025', distributed: 'November 2, 2025', bytes: '2,216', transfers: 120, hash: '0x87264ae2abd230923efe3cc53236f5669040529c6a74c62b4672af0131871d21' },
+  { cycle: 'July 2026', distributed: 'August 3, 2026', occurredAt: '2026-08-03T02:10:34Z', bytes: '1,178.8', transfers: 27, hash: '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd' },
+  { cycle: 'June 2026', distributed: 'July 13, 2026', occurredAt: '2026-07-13T03:17:55Z', bytes: '1,115.6', transfers: 28, hash: '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d' },
+  { cycle: 'May 2026', distributed: 'June 3, 2026', occurredAt: '2026-06-03T22:28:39Z', bytes: '2,050.8', transfers: 39, hash: '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7' },
+  { cycle: 'April 2026', distributed: 'May 8, 2026', occurredAt: '2026-05-08T04:27:56Z', bytes: '1,926', transfers: 48, hash: '0x7b95b4deb03f983eba105efdcb08cec4e58fb1189bfbbf02dbb633d16aee4573' },
+  { cycle: 'March 2026', distributed: 'April 9, 2026', occurredAt: '2026-04-09T06:07:53Z', bytes: '1,625', transfers: 33, hash: '0x908d318eca4005fb12d3cf91140322c5370a256cc58fe5bb66f7561edf5602c7' },
+  { cycle: 'February 2026', distributed: 'March 12, 2026', occurredAt: '2026-03-12T01:12:07Z', bytes: '1,998', transfers: 50, hash: '0x2e45a309833dabe4163941e1530ea3fa18a8eb8a8eb616914bbced25ae9e8d94' },
+  { cycle: 'January 2026', distributed: 'February 7, 2026', occurredAt: '2026-02-07T03:38:08Z', bytes: '2,442', transfers: 62, hash: '0x760a3b5e043bff9551994ec06da51ff1a19ee6318824c30fbe20a0e8ee819411' },
+  { cycle: 'December 2025', distributed: 'January 7, 2026', occurredAt: '2026-01-07T05:33:41Z', bytes: '3,476', transfers: 58, hash: '0xd870fe7d53f3c4eff2070a33e32615e876044347ae2d0eae02506446f618f5d8' },
+  { cycle: 'November 2025', distributed: 'December 3, 2025', occurredAt: '2025-12-03T03:55:46Z', bytes: '3,020', transfers: 58, hash: '0xa21fece7a8c8515e759e491303c2a544f30b9e0e57807febac072c07229b2d38' },
+  { cycle: 'October 2025', distributed: 'November 2, 2025', occurredAt: '2025-11-02T20:28:13Z', bytes: '2,216', transfers: 120, hash: '0x87264ae2abd230923efe3cc53236f5669040529c6a74c62b4672af0131871d21' },
 ] as const;
 
 const [LATEST_REWARD_PROOF, ...EARLIER_REWARD_PROOFS] = REWARD_PROOFS;
@@ -114,6 +112,16 @@ function formatUtc(value: string) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  }).format(new Date(value));
+}
+
+function formatUtcTime(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
@@ -247,6 +255,10 @@ function isSourceUsable(status: SourceStatus) {
   return status === 'available' || status === 'stale';
 }
 
+function sourceStatusLabel(status: SourceStatus) {
+  return status.toUpperCase();
+}
+
 function EvidenceBadge({ classification }: { classification: EvidenceClass }) {
   return <small className={`engine-evidence engine-evidence-${classification.toLowerCase()}`}>{classification}</small>;
 }
@@ -260,10 +272,12 @@ function MetricState({ status, children }: { status: SourceStatus; children: Rea
 function SourceCard({
   label,
   mode,
+  timeKind,
   source,
 }: {
   label: string;
   mode: string;
+  timeKind: 'CAPTURED' | 'CHECKED' | 'OCCURRED';
   source: SourceResult<unknown>;
 }) {
   return (
@@ -271,10 +285,10 @@ function SourceCard({
       <span>{label}</span>
       <strong>
         {isSourceUsable(source.status) && source.asOf
-          ? <time dateTime={source.asOf}>{formatUtc(source.asOf)}</time>
+          ? <>{timeKind} <time dateTime={source.asOf}>{formatUtc(source.asOf)}</time></>
           : source.status === 'loading' ? 'LOADING…' : 'SOURCE UNAVAILABLE'}
       </strong>
-      <small>{mode}{source.status === 'stale' ? ' · STALE' : ''}</small>
+      <small>{sourceStatusLabel(source.status)} · {mode}</small>
     </article>
   );
 }
@@ -383,32 +397,40 @@ export default function EngineRoom() {
 
     const loadData = async () => {
       const [vault, neo, supply, holders, rewards] = await Promise.all([
-        loadSource('vault', async () => ({
-          data: parseVaultSnapshot(await fetchText('/vault-snapshot.csv')),
-          asOf: VAULT_SNAPSHOT_AT,
-        }), 48 * 60 * 60 * 1000),
+        loadSource('vault', async () => {
+          const [text, metadata] = await Promise.all([
+            fetchText('/vault-snapshot.csv'),
+            fetchJson('/vault-snapshot.meta.json'),
+          ]);
+          if (!isValidTimestamp(metadata.capturedAt)) throw new Error('Invalid vault capture metadata');
+          return { data: parseVaultSnapshot(text), asOf: metadata.capturedAt };
+        }, 48 * 60 * 60 * 1000),
         loadSource('neo', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
           const counts = [data.s1, data.s2, data.items];
-          if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !isValidTimestamp(data.updatedAt)) {
+          if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !isValidTimestamp(data.readAt)) {
             throw new Error('Invalid Neo holdings response');
           }
           return {
             data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items) },
-            asOf: data.updatedAt,
+            asOf: data.readAt,
           };
         }),
         loadSource('supply', async () => {
           const data = await fetchJson('/api/exodus-minted');
-          if (!Number.isInteger(data.minted) || Number(data.minted) < 0 || Number(data.minted) > TOTAL_EXODUS_SUPPLY || !isValidTimestamp(data.updatedAt)) {
+          if (!Number.isInteger(data.minted) || Number(data.minted) < 0 || Number(data.minted) > TOTAL_EXODUS_SUPPLY || !isValidTimestamp(data.readAt)) {
             throw new Error('Invalid Key supply response');
           }
-          return { data: { exodusMinted: Number(data.minted) }, asOf: data.updatedAt };
+          return { data: { exodusMinted: Number(data.minted) }, asOf: data.readAt };
         }),
-        loadSource('holders', async () => ({
-          data: parseHolderSnapshot(await fetchText('/holders-snapshot.csv')),
-          asOf: HOLDER_SNAPSHOT_AT,
-        }), 14 * 24 * 60 * 60 * 1000),
+        loadSource('holders', async () => {
+          const [text, metadata] = await Promise.all([
+            fetchText('/holders-snapshot.csv'),
+            fetchJson('/holders-snapshot.meta.json'),
+          ]);
+          if (!isValidTimestamp(metadata.capturedAt)) throw new Error('Invalid holder capture metadata');
+          return { data: parseHolderSnapshot(text), asOf: metadata.capturedAt };
+        }, 14 * 24 * 60 * 60 * 1000),
         loadSource('rewards', async () => ({
           data: parseRewardArchive(await Promise.all(AIRDROP_FILES.map((file) => fetchText(file)))),
           asOf: REWARD_ARCHIVE_AT,
@@ -448,6 +470,13 @@ export default function EngineRoom() {
   const statusTone = sourcesLoading
     ? 'is-loading'
     : loadedSourceCount === SOURCE_CLASS_COUNT && staleSourceCount === 0 ? 'is-complete' : loadedSourceCount > 0 ? 'is-partial' : 'is-unavailable';
+  const statusSummary = sourcesLoading
+    ? `LOADING · CHECKING ${SOURCE_CLASS_COUNT} SOURCE CLASSES`
+    : loadedSourceCount === 0
+      ? 'UNAVAILABLE · NO SOURCE CLASSES LOADED'
+      : loadedSourceCount === SOURCE_CLASS_COUNT && staleSourceCount === 0
+        ? `AVAILABLE · ${loadedSourceCount} / ${SOURCE_CLASS_COUNT} SOURCE CLASSES LOADED`
+        : `PARTIAL · ${loadedSourceCount} / ${SOURCE_CLASS_COUNT} SOURCE CLASSES LOADED${staleSourceCount ? ` · ${staleSourceCount} STALE` : ''}`;
 
   // Avg Keys per Phantom - calculated from independently captured sources
   const avgKeysPerPhantomCalc = liberatedSlaves > 0
@@ -506,18 +535,18 @@ export default function EngineRoom() {
           </div>
           <div className="engine-snapshot-stamp" aria-live="polite">
             <strong><i className={`engine-status-dot ${statusTone}`} aria-hidden="true" />MIXED-SOURCE STATUS</strong>
-            <span>{sourcesLoading ? 'LOADING SOURCE CLASSES' : `${loadedSourceCount} / ${SOURCE_CLASS_COUNT} SOURCE CLASSES LOADED${staleSourceCount ? ` · ${staleSourceCount} STALE` : ''}`}</span>
+            <span>{statusSummary}</span>
             <span>PAGE-LOAD SNAPSHOT · INDEPENDENT CAPTURE TIMES</span>
             <small>Reload to request updated source reads.</small>
           </div>
         </header>
 
         <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
-          <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" source={sources.vault} />
-          <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" source={sources.neo} />
-          <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" source={sources.supply} />
-          <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" source={sources.holders} />
-          <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" source={sources.rewards} />
+          <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
+          <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
+          <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
+          <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
+          <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />
         </div>
         <p className="engine-evidence-key" aria-label="Metric classification key">
           <span><b>Observed</b> direct source fact</span>
@@ -553,7 +582,7 @@ export default function EngineRoom() {
         <section className="engine-section engine-panel" aria-labelledby="rewards-heading">
           <div className="engine-section-head">
             <div><p className="engine-eyebrow">02 / PHANTOM REWARD HISTORY</p><h2 id="rewards-heading">Completed distributions, in context</h2></div>
-            <p>Historical discretionary distributions and their value at the current BYTES reference price.</p>
+            <p>Historical discretionary distributions and their estimated value at the captured BYTES reference price.</p>
           </div>
           <div className="engine-reward-grid">
             <article className="engine-metric">
@@ -561,13 +590,13 @@ export default function EngineRoom() {
               <p className="engine-metric-value"><MetricState status={rewardTotalStatus}>{totalPhantomRewards.toLocaleString('en-US', { maximumFractionDigits: 1 })}</MetricState></p><p className="engine-metric-unit">$BYTES DISTRIBUTED THROUGH {REWARD_HISTORY_THROUGH.toUpperCase()}</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>CURRENT REFERENCE VALUE</span><EvidenceBadge classification="Calculated" /></div>
-              <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">REWARD ARCHIVE × BYTES REFERENCE</p>
+              <div className="engine-metric-topline"><span>CAPTURED REFERENCE VALUE</span><EvidenceBadge classification="Estimated" /></div>
+              <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">REWARD ARCHIVE × CAPTURED BYTES REFERENCE</p>
             </article>
           </div>
           <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
             <span className="engine-proof-status">LATEST VERIFIED DISTRIBUTION</span>
-            <span className="engine-proof-copy"><strong>{LATEST_REWARD_PROOF.cycle} Grid Cycle potential Phantom Rewards</strong><small>{LATEST_REWARD_PROOF.distributed} · {LATEST_REWARD_PROOF.bytes} BYTES · {LATEST_REWARD_PROOF.transfers} transfers</small></span>
+            <span className="engine-proof-copy"><strong>{LATEST_REWARD_PROOF.cycle} Grid Cycle potential Phantom Rewards</strong><small><time dateTime={LATEST_REWARD_PROOF.occurredAt}>{LATEST_REWARD_PROOF.distributed} · {formatUtcTime(LATEST_REWARD_PROOF.occurredAt)}</time> · {LATEST_REWARD_PROOF.bytes} BYTES · {LATEST_REWARD_PROOF.transfers} transfers</small></span>
             <b aria-hidden="true">↗</b>
           </a>
           <details className="engine-proof-shelf">
@@ -575,7 +604,7 @@ export default function EngineRoom() {
             <div className="engine-proof-archive">
               {EARLIER_REWARD_PROOFS.map((proof) => (
                 <a key={proof.hash} href={`https://snowtrace.io/tx/${proof.hash}`} target="_blank" rel="noopener noreferrer">
-                  <span><strong>{proof.cycle} Grid Cycle</strong><small>{proof.distributed}</small></span>
+                  <span><strong>{proof.cycle} Grid Cycle</strong><small><time dateTime={proof.occurredAt}>{proof.distributed} · {formatUtcTime(proof.occurredAt)}</time></small></span>
                   <span><strong>{proof.bytes} BYTES</strong><small>{proof.transfers} transfers · Snowtrace ↗</small></span>
                 </a>
               ))}
@@ -605,7 +634,7 @@ export default function EngineRoom() {
                   <input id="reward-key-count" type="number" inputMode="numeric" min="1" step="1" value={rewardKeyCount} onChange={(event) => { const nextValue = event.target.value; if (nextValue === '' || /^\d+$/.test(nextValue)) setRewardKeyCount(nextValue); }} />
                 </label>
               </div>
-              <p className="engine-source-note">Current reference price: <MetricState status={sources.vault.status}>{formatUsd(snapshot.bytes_price_usd || 0)}</MetricState> per BYTES</p>
+              <p className="engine-source-note">Captured reference price: <MetricState status={sources.vault.status}>{formatUsd(snapshot.bytes_price_usd || 0)}</MetricState> per BYTES</p>
             </div>
             <div className="engine-output-panel" aria-live="polite">
               <div className="engine-output-grid">
@@ -624,11 +653,11 @@ export default function EngineRoom() {
             <p>A compact operational read on holders, reward participation, mint progress and time in the Grid.</p>
           </div>
           <div className="engine-vitals-grid">
-            <article><span>TOTAL LIBERATED SLAVES</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>SNAPSHOT HOLDERS</small></article>
+            <article><span>SNAPSHOT KEY HOLDERS</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
             <article><span>TOTAL REWARD ENTRIES</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
-            <article><span>AVG. REWARD PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>ACROSS COMPLETED CYCLES</small></article>
+            <article><span>AVG. REWARD-RECIPIENT RATE</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
             <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
           </div>
         </section>

@@ -32,7 +32,7 @@ export async function GET() {
       {
         ...counts,
         source: 'alchemy_nft_owner_lookup',
-        updatedAt: new Date().toISOString(),
+        readAt: new Date().toISOString(),
       },
       { headers: { 'cache-control': 'no-store' } },
     );

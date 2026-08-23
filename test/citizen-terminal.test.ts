@@ -146,6 +146,8 @@ test('Citizen market sources use independent conservative refresh tiers', async 
   assert.match(marketRoute, /rankingsAsOf: rankingSnapshot\.asOf/);
 
   assert.match(rewardRoute, /REWARD_RATE_REVALIDATE_SECONDS = 3_600/);
+  assert.match(rewardRoute, /cachedRewardRateSnapshot = unstable_cache/);
+  assert.match(rewardRoute, /\['citizen-reward-rate-v2'\]/);
   assert.match(rewardRoute, /s-maxage=\$\{REWARD_RATE_REVALIDATE_SECONDS\}/);
   assert.match(rewardRoute, /stale-while-revalidate=\$\{REWARD_RATE_REVALIDATE_SECONDS \* 4\}/);
   assert.match(ui, /Listings [\s\S]* Offers [\s\S]* Ranks/);

@@ -61,6 +61,18 @@ test('invalid and negative BYTES inputs contribute zero points', () => {
   assert.equal(calculateStakingPoints({ season: 's2', bytesStaked: -50 }).bytesPoints, 0);
 });
 
+test('S1 and S2 Citizen acquisition prices are independently editable with live-floor defaults', async () => {
+  const ui = await readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8');
+
+  assert.match(ui, /const \[s1CitizenPriceEth, setS1CitizenPriceEth\] = useState<string \| null>\(null\)/);
+  assert.match(ui, /const \[s2CitizenPriceEth, setS2CitizenPriceEth\] = useState<string \| null>\(null\)/);
+  assert.match(ui, /CITIZEN PRICE \(ETH\)/);
+  assert.match(ui, /CUSTOM PRICE/);
+  assert.match(ui, /USE LIVE FLOOR/);
+  assert.match(ui, /citizenPriceEth \* market\.ethUsd \+ points\.bytesStaked \* bytesPrice/);
+  assert.match(ui, /Historical ETH purchases use today&apos;s ETH\/USD/);
+});
+
 test('OpenSea estimated rank parser validates the requested item', () => {
   const contract = '0x4481507cc228FA19D203BD42110d679571f7912E';
   const html = '<script>{"itemByIdentifier":{"contractAddress":"0x4481507cc228fa19d203bd42110d679571f7912e","tokenId":"739","rarity":{"rank":680,"category":"RARE"}}}</script>';

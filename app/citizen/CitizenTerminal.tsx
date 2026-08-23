@@ -76,6 +76,8 @@ export default function CitizenTerminal() {
   const [s2LockPeriod, setS2LockPeriod] = useState('12 months');
   const [s1BytesStaked, setS1BytesStaked] = useState('1000');
   const [s2BytesStaked, setS2BytesStaked] = useState('200');
+  const [s1CitizenPriceEth, setS1CitizenPriceEth] = useState<string | null>(null);
+  const [s2CitizenPriceEth, setS2CitizenPriceEth] = useState<string | null>(null);
   const [s1HasVault, setS1HasVault] = useState<boolean | undefined>(undefined);
   const [targetBytesPrice, setTargetBytesPrice] = useState('');
   const [snapshotNow, setSnapshotNow] = useState<number | null>(null);
@@ -147,6 +149,15 @@ export default function CitizenTerminal() {
   const bytesStaked = stakingSeason === 's1' ? s1BytesStaked : s2BytesStaked;
   const setActiveLockPeriod = stakingSeason === 's1' ? setS1LockPeriod : setS2LockPeriod;
   const setActiveBytesStaked = stakingSeason === 's1' ? setS1BytesStaked : setS2BytesStaked;
+  const citizenFloor = market?.collections.find((row) => row.key === `${stakingSeason}-citizens`)?.floorEth ?? null;
+  const citizenPriceOverride = stakingSeason === 's1' ? s1CitizenPriceEth : s2CitizenPriceEth;
+  const setActiveCitizenPriceEth = stakingSeason === 's1' ? setS1CitizenPriceEth : setS2CitizenPriceEth;
+  const citizenPriceInput = citizenPriceOverride ?? (citizenFloor == null ? '' : String(citizenFloor));
+  const parsedCitizenPriceEth = Number(citizenPriceInput);
+  const citizenPriceEth = citizenPriceInput.trim() !== '' && Number.isFinite(parsedCitizenPriceEth) && parsedCitizenPriceEth >= 0
+    ? parsedCitizenPriceEth
+    : null;
+  const citizenPriceIsCustom = citizenPriceOverride !== null;
   const parsedBytes = Number(bytesStaked);
   const bytesCap = getStakingBytesCap(stakingSeason, stakingSeason === 's1' ? s1HasVault : false);
   const bytesOverCap = Number.isFinite(parsedBytes) && parsedBytes > bytesCap;
@@ -157,9 +168,8 @@ export default function CitizenTerminal() {
   const activeBytesPrice = targetBytesPrice.trim() !== '' && Number.isFinite(Number(targetBytesPrice)) && Number(targetBytesPrice) >= 0
     ? Number(targetBytesPrice)
     : bytesPrice;
-  const citizenFloor = market?.collections.find((row) => row.key === `${stakingSeason}-citizens`)?.floorEth ?? null;
-  const acquisitionValue = citizenFloor != null && market?.ethUsd != null && bytesPrice != null
-    ? citizenFloor * market.ethUsd + points.bytesStaked * bytesPrice
+  const acquisitionValue = citizenPriceEth != null && market?.ethUsd != null && bytesPrice != null
+    ? citizenPriceEth * market.ethUsd + points.bytesStaked * bytesPrice
     : null;
   const annualRewardValue = rewardPerDay != null && activeBytesPrice != null ? rewardPerDay * 365 * activeBytesPrice : null;
   const apy = acquisitionValue && annualRewardValue != null ? annualRewardValue / acquisitionValue * 100 : null;
@@ -265,6 +275,14 @@ export default function CitizenTerminal() {
             <label><span>LOCK PERIOD</span><select value={lockPeriod} onChange={(event) => setActiveLockPeriod(event.target.value)}>{lockOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
             <label><span>BYTES STAKED <button className="ct-max-button" type="button" onClick={() => setActiveBytesStaked(String(bytesCap))}>MAX {bytesCap.toLocaleString()}</button></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
           </div>
+          <div className="ct-citizen-price-control">
+            <label>
+              <span>CITIZEN PRICE (ETH) <b>{citizenPriceIsCustom ? 'CUSTOM PRICE' : 'LIVE FLOOR'}</b></span>
+              <div><i>Ξ</i><input type="number" min="0" step="any" value={citizenPriceInput} onChange={(event) => setActiveCitizenPriceEth(event.target.value)} /></div>
+              <small>Enter a specific listing price or the ETH price originally paid.</small>
+            </label>
+            <button type="button" disabled={citizenFloor == null || !citizenPriceIsCustom} onClick={() => setActiveCitizenPriceEth(null)}>USE LIVE FLOOR{citizenFloor == null ? '' : ` · ${formatNumber(citizenFloor, 4)} Ξ`}</button>
+          </div>
           <div className="ct-live-rate-card">
             <div><span>CURRENT REWARD RATE</span><b>{liveRate != null ? 'ONCHAIN SNAPSHOT' : 'UNAVAILABLE'}</b></div>
             <strong>{formatNumber(liveRate, 8)}</strong>
@@ -285,7 +303,7 @@ export default function CitizenTerminal() {
             <div><span>POSITION COST</span><strong>{formatUsd(acquisitionValue)}</strong></div>
             <div className="accent"><span>HYPOTHETICAL APY</span><strong>{apy == null ? '—' : `${formatNumber(apy, 1)}%`}</strong></div>
           </div>
-          <p className="ct-disclaimer">Illustrative only. Position cost uses the current Citizen floor and current BYTES spot price. Speculator Mode changes projected reward valuation, not acquisition cost. Excludes fees, taxes, slippage and future rate changes.</p>
+          <p className="ct-disclaimer">Illustrative only. Position cost uses the entered Citizen price plus staked BYTES at current spot prices. Historical ETH purchases use today&apos;s ETH/USD, not the exchange rate on the purchase date. Speculator Mode changes projected reward valuation, not acquisition cost. Excludes fees, taxes, slippage and future rate changes.</p>
         </div>
       </div>
     </section>

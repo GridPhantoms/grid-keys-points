@@ -112,7 +112,7 @@ export default function GridHomeBeta() {
             <div className="hb-ai-capabilities">
               <span><b>SCOUT</b>Find the signal</span>
               <span><b>FILTER</b>Remove the noise</span>
-              <span><b>BUILD</b>Turn insight into utility</span>
+              <span><b>BUILD</b>Insight → Utility</span>
             </div>
             <p className="hb-human-line">Human decisions, permissions and execution remain with Keyholders.</p>
           </div>

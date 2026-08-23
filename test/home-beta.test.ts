@@ -57,6 +57,8 @@ test('homepage beta gives Sakura a practical bounded agentic role', async () => 
   assert.match(page, /LP intelligence, maintains voting tabulations, prepares reward files for human approval/);
   assert.match(page, /SUBSCRIBER ACCESS/);
   assert.match(page, /Inside Discord, subscribers can access additional direct agentic support/);
+  assert.match(page, /<span><b>BUILD<\/b>Insight → Utility<\/span>/);
+  assert.doesNotMatch(page, /Turn insight into utility/);
   assert.match(page, /Human decisions, permissions and execution remain with Keyholders/);
   assert.match(css, /\.hb-sakura-labels span \{[^}]*background: rgba\(2, 7, 9, \.9\)/);
 });

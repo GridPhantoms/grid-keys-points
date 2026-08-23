@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
-const ENGINE_PAGE_PATH = path.join(process.cwd(), 'app', 'engine', 'page.tsx');
+const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
 const VEBLACK_BALANCE = 109840.99;
 
 const SOURCES = {
@@ -110,19 +110,11 @@ function formatValue(value, decimals) {
 }
 
 function formatUtcSnapshot(date = new Date()) {
-  const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
-  const day = date.toLocaleString('en-US', { day: 'numeric', timeZone: 'UTC' });
-  const year = date.toLocaleString('en-US', { year: 'numeric', timeZone: 'UTC' });
-  const hour = String(date.getUTCHours()).padStart(2, '0');
-  const minute = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${month} ${day}, ${year} ${hour}:${minute} UTC`;
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-function updateEngineSnapshotTime(snapshotTime) {
-  const source = fs.readFileSync(ENGINE_PAGE_PATH, 'utf8');
-  const next = source.replace(/const LAST_SNAPSHOT = "[^"]+";/, `const LAST_SNAPSHOT = "${snapshotTime}";`);
-  if (next === source) throw new Error('Could not update LAST_SNAPSHOT in app/engine/page.tsx');
-  fs.writeFileSync(ENGINE_PAGE_PATH, next);
+function updateVaultSnapshotMetadata(snapshotTime) {
+  fs.writeFileSync(VAULT_METADATA_PATH, `${JSON.stringify({ capturedAt: snapshotTime }, null, 2)}\n`);
 }
 
 async function collectValues(debankValue) {
@@ -185,10 +177,10 @@ async function main() {
 
   fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
   const snapshotTime = formatUtcSnapshot();
-  updateEngineSnapshotTime(snapshotTime);
+  updateVaultSnapshotMetadata(snapshotTime);
 
   console.log(`Updated ${path.relative(process.cwd(), VAULT_SNAPSHOT_PATH)}`);
-  console.log(`Updated Engine Room snapshot time to ${snapshotTime}`);
+  console.log(`Updated ${path.relative(process.cwd(), VAULT_METADATA_PATH)} capture time to ${snapshotTime}`);
   console.log(`black_price_usd=${formatValue(values.black_price_usd, 8)}`);
   console.log(`bytes_price_usd=${formatValue(values.bytes_price_usd, 8)}`);
   console.log(`neo_s1_floor_usd=${formatValue(values.neo_s1_floor_usd, 2)}`);

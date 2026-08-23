@@ -176,10 +176,10 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /projectedIssuanceShare/);
   assert.match(dashboard, /Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted/i);
   assert.match(dashboard, /<strong>so the current stream creates less new inventory for the market to absorb\.<\/strong>/i);
-  assert.match(dashboard, /CoinMarketCap&apos;s ranked market snapshot places the <strong>\$1 million market-cap line around rank 1,863<\/strong>/i);
+  assert.match(dashboard, /CoinMarketCap&apos;s ranked market snapshot places the <strong>\$1 million market-cap line around rank 1,917<\/strong>/i);
   assert.match(dashboard, /seven figures clears much of crypto&apos;s ranked long tail/i);
   assert.match(dashboard, /first-party onchain market cap still sits around/i);
-  assert.match(dashboard, /showed \$1\.00 million at ranks 1,861–1,863 and \$999,513 at rank 1,864/i);
+  assert.match(dashboard, /showed \$1\.00 million through rank 1,917 and \$993,544\.79 at rank 1,918 when checked on August 23, 2026/i);
   assert.match(dashboard, /much larger tracked-token count includes assets without ranked market caps, so it is not used as the denominator/i);
   assert.doesNotMatch(dashboard, /CoinGecko|roughly one in seven/i);
   assert.match(dashboard, /It is still here, still staked, and still economically meaningful/i);

@@ -162,8 +162,10 @@ test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot 
   ]);
 
   assert.match(ui, /<div className="ct-hero-title">/);
-  assert.match(ui, /<div className="ct-snapshot-stamp"/);
+  assert.match(ui, /ct-snapshot-stamp/);
   assert.match(ui, /MULTI-SOURCE SNAPSHOT/);
+  assert.match(ui, /ct-snapshot-stamp \$\{snapshotSourceTimes\.length === 6 \? 'is-complete' : ''\}/);
+  assert.match(ui, /<strong><i aria-hidden="true" \/>/);
   assert.match(ui, /Latest source/);
   assert.match(ui, /Oldest source/);
   assert.match(ui, /5 min–1 hr refresh range/);
@@ -171,6 +173,7 @@ test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot 
   assert.match(css, /\.ct-hero\{[^}]*grid-template-columns/);
   assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
   assert.match(css, /\.ct-snapshot-stamp\{/);
+  assert.match(css, /\.ct-snapshot-stamp\.is-complete i\{/);
 });
 
 test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {

@@ -202,8 +202,8 @@ export default function CitizenTerminal() {
         <p>Inspect the code. Price the yield. Read the market.</p>
         <div className="ct-hero-badges"><span>Citizen intelligence</span><span>Live market references</span><span>Staking scenarios</span></div>
       </div>
-      <div className="ct-snapshot-stamp" aria-label="Snapshot recency summary">
-        <strong>{snapshotSourceTimes.length ? 'MULTI-SOURCE SNAPSHOT' : 'CONNECTING TO SOURCES'}</strong>
+      <div className={`ct-snapshot-stamp ${snapshotSourceTimes.length === 6 ? 'is-complete' : ''}`} aria-label="Snapshot recency summary">
+        <strong><i aria-hidden="true" />{snapshotSourceTimes.length ? 'MULTI-SOURCE SNAPSHOT' : 'CONNECTING TO SOURCES'}</strong>
         <span>Latest source {formatSnapshotAge(latestSnapshotSource, snapshotNow)}</span>
         <span>Oldest source {formatSnapshotAge(oldestSnapshotSource, snapshotNow)}</span>
         <span>{snapshotSourceTimes.length} / 6 source classes · 5 min–1 hr refresh range</span>

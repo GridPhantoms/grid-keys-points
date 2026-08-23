@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const pagePath = new URL('../app/beta/grid-home-0823/page.tsx', import.meta.url);
@@ -11,8 +11,28 @@ test('homepage beta stays unlisted, noindex, and independent in its hero positio
   assert.match(page, /THE REBELLION IS ALREADY IN MOTION/);
   assert.match(page, /Hold the Keys\.<br \/>Read the Grid\.<br \/><em>Shape what comes next\.<\/em>/);
   assert.match(page, /an onchain collective of Keyholders building transparent tools/);
-  const hero = page.slice(page.indexOf('<section className="hb-hero">'), page.indexOf('<section className="hb-systems"'));
+  const hero = page.slice(page.indexOf('<section className="hb-hero">'), page.indexOf('<section className="hb-governance"'));
   assert.doesNotMatch(hero, /Neo Tokyo|Citizen ecosystem/);
+  assert.match(hero, /Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface/);
+});
+
+test('homepage beta makes voting central without guaranteeing rewards', async () => {
+  const page = await readFile(pagePath, 'utf8');
+  assert.match(page, /Voting is not ornament/);
+  assert.match(page, /Grid Cycles turn Keyholder participation into a visible governing rhythm/);
+  assert.match(page, /discretionary potential Phantom Rewards/);
+  assert.match(page, /No outcome or distribution is guaranteed/);
+  assert.doesNotMatch(page, /guaranteed rewards|guaranteed returns/i);
+});
+
+test('homepage beta orders systems as Engine Room, BYTES Terminal, Citizen Interlink', async () => {
+  const page = await readFile(pagePath, 'utf8');
+  const engine = page.indexOf("title: 'Engine Room'");
+  const bytes = page.indexOf("title: '$BYTES Terminal'");
+  const citizen = page.indexOf("title: 'Citizen Interlink'");
+  assert.ok(engine > -1 && engine < bytes && bytes < citizen);
+  assert.match(page, /Track Grid Phantoms' adopted utility token/);
+  assert.match(page, /Follow the Vault, vote participation, verified Phantom Reward distribution history/);
 });
 
 test('homepage beta explains the Citizen bridge and uses Great Digital Exodus lore', async () => {
@@ -22,15 +42,25 @@ test('homepage beta explains the Citizen bridge and uses Great Digital Exodus lo
   assert.match(page, /Great Digital Exodus/);
   assert.match(page, /builders inside the Neo Tokyo Citizen ecosystem/);
   assert.match(page, /Rather than mint another token, Grid Phantoms adopted a utility asset/);
-  assert.doesNotMatch(page, /guaranteed rewards|guaranteed returns/i);
-  assert.match(page, /potential Phantom Rewards/);
 });
 
-test('homepage beta links every working system and remains responsive', async () => {
+test('homepage beta gives Sakura a practical bounded agentic role', async () => {
+  const page = await readFile(pagePath, 'utf8');
+  assert.match(page, /GRID LABS AI \/\/ AGENTIC SUPPORT/);
+  assert.match(page, /scout public information, filter noise, research Keyholder questions and run bounded tool-assisted tasks/);
+  assert.match(page, /Human decisions, permissions and execution remain with Keyholders/);
+});
+
+test('homepage beta uses supplied lore imagery and remains responsive', async () => {
   const [page, css] = await Promise.all([readFile(pagePath, 'utf8'), readFile(cssPath, 'utf8')]);
+  const images = ['hero-vote.webp', 'governance-assembly.webp', 'vote-interface.webp', 'sakura-ai-wide.webp', 'grid-portal.webp', 'bytes-city.webp'];
+  for (const image of images) {
+    assert.match(page, new RegExp(image.replace('.', '\\.')));
+    await access(new URL(`../public/home-beta/${image}`, import.meta.url));
+  }
   for (const href of ['/bytes', '/citizen', '/engine', '/']) assert.match(page, new RegExp(`href: '${href}'|href="${href}"`));
   assert.match(page, /SiteNav active="home"/);
   assert.match(page, /<SiteFooter \/>/);
-  assert.match(css, /@media\(max-width:980px\)/);
-  assert.match(css, /@media\(max-width:620px\)/);
+  assert.match(css, /@media \(max-width: 980px\)/);
+  assert.match(css, /@media \(max-width: 700px\)/);
 });

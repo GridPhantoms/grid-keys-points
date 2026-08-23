@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import SiteNav from '../../components/SiteNav';
 import SiteFooter from '../../components/SiteFooter';
@@ -13,15 +14,24 @@ export const metadata: Metadata = {
 const systems = [
   {
     index: '01',
+    status: 'OPERATIONAL',
+    title: 'Engine Room',
+    command: 'Verify the machinery.',
+    body: 'Follow the Vault, vote participation, verified Phantom Reward distribution history, treasury metrics and the evidence behind Grid operations.',
+    href: '/engine',
+    action: 'ENTER ENGINE ROOM',
+  },
+  {
+    index: '02',
     status: 'ONLINE',
     title: '$BYTES Terminal',
-    command: 'Read the token.',
-    body: 'Track supply, emissions, participation, holders and live market references through a first-party intelligence layer.',
+    command: 'Read the adopted utility token.',
+    body: "Track Grid Phantoms' adopted utility token through supply, emissions, participation, holders and live market references in a first-party intelligence layer.",
     href: '/bytes',
     action: 'OPEN TERMINAL',
   },
   {
-    index: '02',
+    index: '03',
     status: 'INTERLINK ACTIVE',
     title: 'Citizen Interlink',
     command: 'Decode the Citizen.',
@@ -30,74 +40,12 @@ const systems = [
     action: 'ESTABLISH INTERLINK',
     note: 'The Grid did not sever the network that gave it ground. This system preserves the bridge to our Genesis spawning grounds and keeps useful infrastructure flowing back across it.',
   },
-  {
-    index: '03',
-    status: 'OPERATIONAL',
-    title: 'Engine Room',
-    command: 'Verify the machinery.',
-    body: 'Follow the Vault, historical Phantom Rewards, participation metrics and the evidence behind Grid operations.',
-    href: '/engine',
-    action: 'ENTER ENGINE ROOM',
-  },
 ];
-
-function GridSignalArt() {
-  return (
-    <div className="hb-signal" aria-label="A Key-shaped signal rising from a fractured digital city and feeding the Grid systems">
-      <svg viewBox="0 0 680 620" role="img" aria-hidden="true">
-        <defs>
-          <linearGradient id="hbSky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#071219" />
-            <stop offset="0.62" stopColor="#03090d" />
-            <stop offset="1" stopColor="#020304" />
-          </linearGradient>
-          <linearGradient id="hbBeam" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#22d3ee" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#67e8f9" stopOpacity="0.7" />
-            <stop offset="1" stopColor="#22d3ee" stopOpacity="0" />
-          </linearGradient>
-          <radialGradient id="hbGlow">
-            <stop offset="0" stopColor="#67e8f9" stopOpacity="0.5" />
-            <stop offset="1" stopColor="#22d3ee" stopOpacity="0" />
-          </radialGradient>
-          <filter id="hbSoft"><feGaussianBlur stdDeviation="8" /></filter>
-          <pattern id="hbGrid" width="38" height="38" patternUnits="userSpaceOnUse">
-            <path d="M38 0H0V38" fill="none" stroke="#22d3ee" strokeOpacity="0.11" strokeWidth="1" />
-          </pattern>
-        </defs>
-        <rect width="680" height="620" rx="28" fill="url(#hbSky)" />
-        <ellipse cx="340" cy="248" rx="230" ry="210" fill="url(#hbGlow)" opacity="0.65" />
-        <path d="M0 445L680 360V620H0Z" fill="url(#hbGrid)" />
-        <path d="M0 445L680 360M50 620L340 402M630 620L340 402M155 620L340 402M525 620L340 402" stroke="#22d3ee" strokeOpacity="0.18" />
-        <g fill="#07151b" stroke="#155467" strokeOpacity="0.6">
-          <path d="M40 410V328h54v75M103 401V285h68v109M182 391V320h38v66M465 373V298h52v68M525 366V253h74v104M608 354V310h42v39" />
-        </g>
-        <g stroke="#22d3ee" strokeOpacity="0.45">
-          <path d="M55 347h22M117 307h38M117 330h38M479 316h24M541 276h42M541 300h42M619 328h18" />
-        </g>
-        <path d="M340 106a92 92 0 1 0 0 184a92 92 0 0 0 0-184Zm0 43a49 49 0 1 1 0 98a49 49 0 0 1 0-98Z" fill="none" stroke="#67e8f9" strokeWidth="9" />
-        <path d="M340 290v154M340 366h87M392 366v47M423 366v28" fill="none" stroke="#67e8f9" strokeWidth="12" strokeLinecap="square" />
-        <path d="M340 290v154M340 366h87" fill="none" stroke="#67e8f9" strokeOpacity="0.7" strokeWidth="28" filter="url(#hbSoft)" />
-        <path d="M75 220H275M405 220h200" stroke="url(#hbBeam)" strokeWidth="2" />
-        <circle cx="340" cy="220" r="7" fill="#e8fdff" />
-        <circle cx="340" cy="220" r="24" fill="none" stroke="#67e8f9" strokeOpacity="0.4" />
-        <g className="hb-nodes">
-          <circle cx="92" cy="520" r="7" /><circle cx="340" cy="520" r="7" /><circle cx="588" cy="520" r="7" />
-          <path d="M99 520h234M347 520h234" />
-        </g>
-        <g className="hb-signal-copy">
-          <text x="56" y="552">TERMINAL</text><text x="300" y="552">INTERLINK</text><text x="545" y="552">ENGINE</text>
-        </g>
-      </svg>
-      <div className="hb-art-caption"><span>GRID SIGNAL // 001</span><span>NETWORK FORMING</span></div>
-    </div>
-  );
-}
 
 export default function GridHomeBeta() {
   return (
     <div className="hb-page">
-      <div className="hb-preview-bar"><span>UNLISTED HOMEPAGE BETA</span><span>NOINDEX // NOT IN SITE NAVIGATION</span></div>
+      <div className="hb-preview-bar"><span>UNLISTED HOMEPAGE BETA // V2</span><span>NOINDEX // NOT IN SITE NAVIGATION</span></div>
       <SiteNav active="home" />
 
       <main>
@@ -106,19 +54,37 @@ export default function GridHomeBeta() {
             <p className="hb-eyebrow">THE REBELLION IS ALREADY IN MOTION</p>
             <h1>Hold the Keys.<br />Read the Grid.<br /><em>Shape what comes next.</em></h1>
             <p className="hb-lede">In the aftermath of the Truncation, power consolidated behind closed systems. Grid Phantoms formed in the shadows: an onchain collective of Keyholders building transparent tools, shared intelligence and community-governed infrastructure.</p>
+            <p className="hb-ai-lede"><b>Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface</b>—helping Keyholders research, navigate the ecosystem and turn useful signals into practical tools, reports and coordinated action.</p>
             <div className="hb-actions">
               <a href="#grid-systems" className="hb-button hb-button-primary">ENTER THE GRID</a>
               <a href="#keyholder-console" className="hb-button hb-button-secondary">LOAD MY KEYS</a>
             </div>
-            <div className="hb-system-line"><span>GENESIS + EXODUS</span><span>ONCHAIN GOVERNANCE</span><span>LIVE INTELLIGENCE</span><span>TRANSPARENT OPERATIONS</span></div>
+            <div className="hb-system-line"><span>GENESIS + EXODUS</span><span>KEYHOLDER GOVERNANCE</span><span>GRID LABS AI</span><span>TRANSPARENT OPERATIONS</span></div>
           </div>
-          <GridSignalArt />
+          <figure className="hb-hero-art">
+            <Image src="/home-beta/hero-vote.webp" alt="A hooded Keyholder facing a glowing VOTE signal above a cyberpunk city" fill priority sizes="(max-width: 980px) 100vw, 44vw" />
+            <figcaption><span>GOVERNANCE SIGNAL // 001</span><span>VOTE RECORDED</span></figcaption>
+          </figure>
+        </section>
+
+        <section className="hb-governance" aria-labelledby="governance-title">
+          <div className="hb-governance-copy">
+            <p className="hb-eyebrow">KEYHOLDER GOVERNANCE</p>
+            <h2 id="governance-title">The Grid moves when Keyholders participate.</h2>
+            <p>Voting is not ornament. Grid Cycles turn Keyholder participation into a visible governing rhythm: wallets vote on proposals and collective priorities, while public records preserve the result.</p>
+            <p>Participation may qualify wallets for discretionary potential Phantom Rewards. No outcome or distribution is guaranteed; the mechanism rewards attention to the collective rather than passive ownership.</p>
+            <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noreferrer">VIEW GRID PHANTOMS VOTING →</a>
+          </div>
+          <div className="hb-governance-gallery">
+            <figure><Image src="/home-beta/governance-assembly.webp" alt="Keyholders assembled around a glowing circular Grid forum" fill sizes="(max-width: 700px) 50vw, 26vw" /></figure>
+            <figure><Image src="/home-beta/vote-interface.webp" alt="A Keyholder activating a holographic vote interface" fill sizes="(max-width: 700px) 50vw, 18vw" /></figure>
+          </div>
         </section>
 
         <section className="hb-systems" id="grid-systems" aria-labelledby="systems-title">
           <header className="hb-section-heading">
-            <div><p className="hb-eyebrow">GRID SYSTEMS</p><h2 id="systems-title">Three operational layers.<br />One connected network.</h2></div>
-            <p>Read the utility token. Preserve the bridge to the Citadel. Verify the machinery supporting the collective.</p>
+            <div><p className="hb-eyebrow">GRID SYSTEMS</p><h2 id="systems-title">Three operational layers.<br />One governed network.</h2></div>
+            <p>Governance gives the Grid direction. The Engine Room makes participation and operations visible. `$BYTES` carries utility through the network. Citizen Interlink preserves the bridge to the Citadel.</p>
           </header>
           <div className="hb-system-grid">
             {systems.map((system) => (
@@ -131,6 +97,21 @@ export default function GridHomeBeta() {
                 <Link href={system.href}>{system.action} <span>→</span></Link>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="hb-sakura" aria-labelledby="sakura-title">
+          <div className="hb-sakura-art"><Image src="/home-beta/sakura-ai-wide.webp" alt="Sakura standing in a rain-soaked neon Grid street" fill sizes="100vw" /></div>
+          <div className="hb-sakura-copy">
+            <p className="hb-eyebrow">GRID LABS AI // AGENTIC SUPPORT</p>
+            <h2 id="sakura-title">The Grid learned to answer back.</h2>
+            <p>Grid Labs AI gives the collective an agentic operating layer. Sakura can scout public information, filter noise, research Keyholder questions and run bounded tool-assisted tasks that become useful reports, prompts and working artifacts.</p>
+            <div className="hb-ai-capabilities">
+              <span><b>SCOUT</b>Find the signal</span>
+              <span><b>FILTER</b>Remove the noise</span>
+              <span><b>BUILD</b>Turn insight into utility</span>
+            </div>
+            <p className="hb-human-line">Human decisions, permissions and execution remain with Keyholders.</p>
           </div>
         </section>
 
@@ -148,7 +129,7 @@ export default function GridHomeBeta() {
         </section>
 
         <section className="hb-lore" aria-labelledby="lore-title">
-          <div className="hb-lore-index"><span>ORIGIN TRANSMISSION</span><b>01</b></div>
+          <figure className="hb-lore-art"><Image src="/home-beta/grid-portal.webp" alt="A hooded figure approaching a vast illuminated Grid portal" fill sizes="(max-width: 800px) 100vw, 35vw" /></figure>
           <div className="hb-lore-copy">
             <p className="hb-eyebrow">AFTER THE TRUNCATION</p>
             <h2 id="lore-title">A rebellion encoded in Keys.</h2>
@@ -168,13 +149,15 @@ export default function GridHomeBeta() {
             <p>Grid Phantoms did not begin as a brand extension. It emerged from builders inside the Neo Tokyo Citizen ecosystem: people connected by composable identity, collaborative experimentation and the expectation that members should build useful things for one another.</p>
             <p>That builder network created the conditions for Grid Phantoms to form. Many early Keyholders were Citizens, and the project continues that tradition through intelligence, market tools and transparent infrastructure serving the Grid while preserving a living bridge to the Citadel.</p>
           </div>
-          <div className="hb-bytes-card">
-            <div className="hb-bytes-orbit"><span>$</span><strong>BYTES</strong></div>
-            <p className="hb-eyebrow">WHY $BYTES</p>
-            <h3>An existing signal, adopted by the Grid.</h3>
-            <p>Rather than mint another token, Grid Phantoms adopted a utility asset already understood by many of its earliest builders. `$BYTES` connects participation, modeled utility and potential Phantom Rewards across Grid systems while remaining part of the wider Neo Tokyo economy.</p>
-            <Link href="/bytes">INSPECT $BYTES →</Link>
-          </div>
+          <article className="hb-bytes-card">
+            <figure><Image src="/home-beta/bytes-city.webp" alt="A rain-soaked cyberpunk city with an illuminated BYTES sign" fill sizes="(max-width: 700px) 100vw, 36vw" /></figure>
+            <div>
+              <p className="hb-eyebrow">WHY $BYTES</p>
+              <h3>An existing signal, adopted by the Grid.</h3>
+              <p>Rather than mint another token, Grid Phantoms adopted a utility asset already understood by many of its earliest builders. `$BYTES` connects participation, modeled utility and potential Phantom Rewards across Grid systems while remaining part of the wider Neo Tokyo economy.</p>
+              <Link href="/bytes">INSPECT $BYTES →</Link>
+            </div>
+          </article>
         </section>
       </main>
 

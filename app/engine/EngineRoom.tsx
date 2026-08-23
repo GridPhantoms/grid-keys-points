@@ -1,8 +1,66 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 
 type RewardKeyType = 'genesis' | 'exodus';
+type SourceStatus = 'loading' | 'available' | 'stale' | 'unavailable';
+type EvidenceClass = 'Observed' | 'Calculated' | 'Estimated' | 'Projected';
+
+type SourceResult<T> = {
+  status: SourceStatus;
+  data: T | null;
+  asOf: string | null;
+};
+
+type VaultSnapshot = Record<string, number>;
+type NeoHoldings = { s1: number; s2: number; items: number };
+type KeySupply = { exodusMinted: number };
+type HolderSnapshot = { holderCount: number };
+type RewardArchive = {
+  totalRewards: number;
+  totalEntries: number;
+  uniqueRecipientsByCycle: number[];
+};
+
+type EngineSources = {
+  vault: SourceResult<VaultSnapshot>;
+  neo: SourceResult<NeoHoldings>;
+  supply: SourceResult<KeySupply>;
+  holders: SourceResult<HolderSnapshot>;
+  rewards: SourceResult<RewardArchive>;
+};
+
+const SOURCE_CLASS_COUNT = 5;
+const SOURCE_TIMEOUT_MS = 12_000;
+const VAULT_SNAPSHOT_AT = '2026-08-23T00:08:00Z';
+const HOLDER_SNAPSHOT_AT = '2026-08-14T04:20:00Z';
+const REWARD_ARCHIVE_AT = '2026-08-03T02:10:34Z';
+const TOTAL_GENESIS_KEYS = 555;
+const TOTAL_EXODUS_SUPPLY = 3333;
+const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
+
+const AIRDROP_FILES = [
+  '/airdrops/2025-10Airdrop.csv',
+  '/airdrops/2025-11Airdrop.csv',
+  '/airdrops/2025-12Airdrop.csv',
+  '/airdrops/2026-01Airdrop.csv',
+  '/airdrops/2026-02Airdrop.csv',
+  '/airdrops/2026-03Airdrop.csv',
+  '/airdrops/2026-04Airdrop.csv',
+  '/airdrops/2026-05Airdrop.csv',
+  '/airdrops/2026-06Airdrop.csv',
+  '/airdrops/2026-07Airdrop.csv',
+] as const;
+
+const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: null, asOf: null });
+
+const INITIAL_SOURCES: EngineSources = {
+  vault: loadingSource<VaultSnapshot>(),
+  neo: loadingSource<NeoHoldings>(),
+  supply: loadingSource<KeySupply>(),
+  holders: loadingSource<HolderSnapshot>(),
+  rewards: loadingSource<RewardArchive>(),
+};
 
 const COMPLETED_REWARD_HISTORY = [
   { cycle: 'October 2025', genesis: 4, exodus: 0 },
@@ -49,6 +107,176 @@ function formatUsd(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: value > 0 && value < 1 ? 6 : 2,
   });
+}
+
+function formatUtc(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  }).format(new Date(value));
+}
+
+function isValidTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
+}
+
+async function fetchResponse(path: string) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), SOURCE_TIMEOUT_MS);
+  try {
+    return await fetch(path, { cache: 'no-store', signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function fetchText(path: string) {
+  const response = await fetchResponse(path);
+  if (!response.ok) throw new Error(`Unable to load ${path}`);
+  const text = await response.text();
+  if (!text.trim()) throw new Error(`Empty response from ${path}`);
+  return text;
+}
+
+async function fetchJson(path: string) {
+  const response = await fetchResponse(path);
+  if (!response.ok) throw new Error(`Unable to load ${path}`);
+  const data = await response.json();
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error(`Invalid JSON from ${path}`);
+  return data as Record<string, unknown>;
+}
+
+function parseVaultSnapshot(text: string): VaultSnapshot {
+  const lines = text.trim().split('\n');
+  if (lines[0]?.trim() !== 'stat,value') throw new Error('Invalid vault snapshot header');
+
+  const snapshot: VaultSnapshot = {};
+  for (const line of lines.slice(1)) {
+    const [key, rawValue] = line.split(',');
+    const value = Number(rawValue);
+    if (!key?.trim() || !Number.isFinite(value) || value < 0) throw new Error('Invalid vault snapshot row');
+    snapshot[key.trim()] = value;
+  }
+
+  const required = [
+    'debank_portfolio_usd',
+    'black_price_usd',
+    'veblack_balance',
+    'bytes_price_usd',
+    'neo_s1_floor_usd',
+    'neo_s2_floor_usd',
+    'neo_items_cache_floor_usd',
+  ];
+  if (required.some((key) => !Number.isFinite(snapshot[key]))) throw new Error('Incomplete vault snapshot');
+  return snapshot;
+}
+
+function parseHolderSnapshot(text: string): HolderSnapshot {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines[0]?.trim() !== 'wallet,genesis_qty,exodus_qty') throw new Error('Invalid holder snapshot header');
+
+  for (const line of lines.slice(1)) {
+    const [wallet, rawGenesis, rawExodus] = line.split(',');
+    const genesis = Number(rawGenesis);
+    const exodus = Number(rawExodus);
+    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet || '') || !Number.isInteger(genesis) || !Number.isInteger(exodus) || genesis < 0 || exodus < 0 || genesis + exodus < 1) {
+      throw new Error('Invalid holder snapshot row');
+    }
+  }
+
+  return { holderCount: lines.length - 1 };
+}
+
+function parseRewardArchive(texts: string[]): RewardArchive {
+  if (texts.length !== AIRDROP_FILES.length) throw new Error('Incomplete reward archive');
+  let totalRewards = 0;
+  let totalEntries = 0;
+  const uniqueRecipientsByCycle: number[] = [];
+
+  for (const text of texts) {
+    const recipients = new Set<string>();
+    const lines = text.trim().split('\n').filter(Boolean);
+    if (!lines.length) throw new Error('Empty reward archive file');
+
+    for (const line of lines) {
+      const [wallet, rawAmount] = line.split(',');
+      const amount = Number(rawAmount);
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet || '') || !Number.isFinite(amount) || amount <= 0) {
+        throw new Error('Invalid reward archive row');
+      }
+      totalRewards += amount;
+      totalEntries += 1;
+      recipients.add(wallet.toLowerCase());
+    }
+    uniqueRecipientsByCycle.push(recipients.size);
+  }
+
+  return { totalRewards, totalEntries, uniqueRecipientsByCycle };
+}
+
+async function loadSource<T>(
+  name: keyof EngineSources,
+  loader: () => Promise<{ data: T; asOf: string }>,
+  staleAfterMs?: number,
+): Promise<SourceResult<T>> {
+  try {
+    const result = await loader();
+    if (!isValidTimestamp(result.asOf)) throw new Error('Invalid source timestamp');
+    const status = staleAfterMs && Date.now() - Date.parse(result.asOf) > staleAfterMs ? 'stale' : 'available';
+    return { status, data: result.data, asOf: result.asOf };
+  } catch {
+    console.error(`Engine Room ${name} source unavailable`);
+    return { status: 'unavailable', data: null, asOf: null };
+  }
+}
+
+function combineSourceStatuses(...sources: Array<SourceResult<unknown>>): SourceStatus {
+  if (sources.some((source) => source.status === 'loading')) return 'loading';
+  if (sources.some((source) => source.status === 'unavailable')) return 'unavailable';
+  if (sources.some((source) => source.status === 'stale')) return 'stale';
+  return 'available';
+}
+
+function isSourceUsable(status: SourceStatus) {
+  return status === 'available' || status === 'stale';
+}
+
+function EvidenceBadge({ classification }: { classification: EvidenceClass }) {
+  return <small className={`engine-evidence engine-evidence-${classification.toLowerCase()}`}>{classification}</small>;
+}
+
+function MetricState({ status, children }: { status: SourceStatus; children: ReactNode }) {
+  if (status === 'available') return children;
+  if (status === 'stale') return <span className="engine-stale-value">{children}<small>STALE</small></span>;
+  return <span className={`engine-metric-state is-${status}`}>{status === 'loading' ? 'LOADING…' : 'UNAVAILABLE'}</span>;
+}
+
+function SourceCard({
+  label,
+  mode,
+  source,
+}: {
+  label: string;
+  mode: string;
+  source: SourceResult<unknown>;
+}) {
+  return (
+    <article className={`engine-source-card is-${source.status}`}>
+      <span>{label}</span>
+      <strong>
+        {isSourceUsable(source.status) && source.asOf
+          ? <time dateTime={source.asOf}>{formatUtc(source.asOf)}</time>
+          : source.status === 'loading' ? 'LOADING…' : 'SOURCE UNAVAILABLE'}
+      </strong>
+      <small>{mode}{source.status === 'stale' ? ' · STALE' : ''}</small>
+    </article>
+  );
 }
 
 function AnimatedNumber({ 
@@ -144,152 +372,102 @@ function AnimatedNumber({
 }
 
 export default function EngineRoom() {
-  const [snapshot, setSnapshot] = useState<Record<string, number>>({});
-  const [neoS1Count, setNeoS1Count] = useState(0);
-  const [neoS2Count, setNeoS2Count] = useState(0);
-  const [neoItemsCount, setNeoItemsCount] = useState(0);
-  const [liberatedSlaves, setLiberatedSlaves] = useState(0);
-  const [totalVotesCast, setTotalVotesCast] = useState(0);
-  const [totalPhantomRewards, setTotalPhantomRewards] = useState(0);
-  const [exodusMinted, setExodusMinted] = useState(0);
-  const [voterParticipationRate, setVoterParticipationRate] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [sources, setSources] = useState<EngineSources>(INITIAL_SOURCES);
   const [rewardKeyType, setRewardKeyType] = useState<RewardKeyType>('genesis');
   const [hypotheticalBytesPrice, setHypotheticalBytesPrice] = useState('');
   const [rewardKeyCount, setRewardKeyCount] = useState('1');
-
-  const TOTAL_GENESIS_KEYS = 555;
-  const TOTAL_EXODUS_SUPPLY = 3333;
-
-  const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
-  const LAST_SNAPSHOT = "August 23, 2026 00:08 UTC";
   const [currentTime] = useState(() => Date.now());
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadData = async () => {
-      const airdropFiles = [
-        '/airdrops/2025-12Airdrop.csv',
-        '/airdrops/2025-10Airdrop.csv',
-        '/airdrops/2026-01Airdrop.csv',
-        '/airdrops/2025-11Airdrop.csv',
-        '/airdrops/2026-02Airdrop.csv',
-        '/airdrops/2026-03Airdrop.csv',
-        '/airdrops/2026-04Airdrop.csv',
-        '/airdrops/2026-05Airdrop.csv',
-        '/airdrops/2026-06Airdrop.csv',
-        '/airdrops/2026-07Airdrop.csv'
-      ];
-
-      try {
-        const mintedPromise = fetch('/api/exodus-minted', { cache: 'no-store' }).then(async (res) => {
-          const data = await res.json();
-
-          if (!res.ok || typeof data.minted !== 'number') {
-            throw new Error(data.error || 'Unable to load Exodus minted count');
+      const [vault, neo, supply, holders, rewards] = await Promise.all([
+        loadSource('vault', async () => ({
+          data: parseVaultSnapshot(await fetchText('/vault-snapshot.csv')),
+          asOf: VAULT_SNAPSHOT_AT,
+        }), 48 * 60 * 60 * 1000),
+        loadSource('neo', async () => {
+          const data = await fetchJson('/api/neo-vault-counts');
+          const counts = [data.s1, data.s2, data.items];
+          if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !isValidTimestamp(data.updatedAt)) {
+            throw new Error('Invalid Neo holdings response');
           }
-
-          return data.minted;
-        });
-
-        const neoCountsPromise = (async () => {
-          try {
-            const response = await fetch('/api/neo-vault-counts', { cache: 'no-store' });
-            const data = await response.json();
-            const counts = [data.s1, data.s2, data.items];
-
-            if (
-              !response.ok
-              || counts.some((count) => !Number.isFinite(count) || count < 0)
-            ) {
-              throw new Error('Invalid vault holdings response');
-            }
-
-            return { s1: data.s1, s2: data.s2, items: data.items };
-          } catch {
-            console.error("Neo Tokyo vault holdings load failed");
-            return { s1: 0, s2: 0, items: 0 };
+          return {
+            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items) },
+            asOf: data.updatedAt,
+          };
+        }),
+        loadSource('supply', async () => {
+          const data = await fetchJson('/api/exodus-minted');
+          if (!Number.isInteger(data.minted) || Number(data.minted) < 0 || Number(data.minted) > TOTAL_EXODUS_SUPPLY || !isValidTimestamp(data.updatedAt)) {
+            throw new Error('Invalid Key supply response');
           }
-        })();
+          return { data: { exodusMinted: Number(data.minted) }, asOf: data.updatedAt };
+        }),
+        loadSource('holders', async () => ({
+          data: parseHolderSnapshot(await fetchText('/holders-snapshot.csv')),
+          asOf: HOLDER_SNAPSHOT_AT,
+        }), 14 * 24 * 60 * 60 * 1000),
+        loadSource('rewards', async () => ({
+          data: parseRewardArchive(await Promise.all(AIRDROP_FILES.map((file) => fetchText(file)))),
+          asOf: REWARD_ARCHIVE_AT,
+        })),
+      ]);
 
-        const [snapshotText, holdersText, airdropTexts, minted, neoCounts] = await Promise.all([
-          fetch('/vault-snapshot.csv').then((res) => res.text()),
-          fetch('/holders-snapshot.csv').then((res) => res.text()),
-          Promise.all(airdropFiles.map((file) => fetch(file).then((res) => res.text()))),
-          mintedPromise,
-          neoCountsPromise
-        ]);
-
-        const lines = snapshotText.trim().split('\n');
-        const newSnapshot: Record<string, number> = {};
-        lines.slice(1).forEach(line => {
-          const [key, value] = line.split(',');
-          if (key && value) newSnapshot[key.trim()] = parseFloat(value.trim());
-        });
-
-        const holderLines = holdersText.trim().split('\n').filter(l => l.trim());
-        const holderCount = holderLines.length - 1;
-
-        let totalRewards = 0;
-        let totalVotes = 0;
-        let totalRateSum = 0;
-        let airdropCount = 0;
-
-        airdropTexts.forEach((text) => {
-          const recipientSet = new Set<string>();
-
-          text.trim().split('\n').forEach(line => {
-            if (!line.trim()) return;
-            const [wallet, amtStr] = line.split(',');
-            if (wallet && amtStr) {
-              const amt = parseFloat(amtStr.trim());
-              if (amt > 0) {
-                totalRewards += amt;
-                totalVotes += 1;
-                recipientSet.add(wallet.trim().toLowerCase());
-              }
-            }
-          });
-
-          const uniqueInDrop = recipientSet.size;
-          const rate = holderCount > 0 ? (uniqueInDrop / holderCount) * 100 : 0;
-          totalRateSum += rate;
-          airdropCount++;
-        });
-
-        setSnapshot(newSnapshot);
-        setLiberatedSlaves(holderCount);
-        setTotalPhantomRewards(Math.round(totalRewards));
-        setTotalVotesCast(totalVotes);
-        setVoterParticipationRate(airdropCount > 0 ? totalRateSum / airdropCount : 0);
-        setExodusMinted(minted);
-        setNeoS1Count(neoCounts.s1);
-        setNeoS2Count(neoCounts.s2);
-        setNeoItemsCount(neoCounts.items);
-      } catch (err) {
-        console.error("Engine Room load error:", err);
-      } finally {
-        setLoading(false);
-      }
+      if (!cancelled) setSources({ vault, neo, supply, holders, rewards });
     };
 
     loadData();
+    return () => { cancelled = true; };
   }, []);
 
-  // Dynamic Total Keys (live Exodus minted count)
-  const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
+  const snapshot = sources.vault.data ?? {};
+  const neoHoldings = sources.neo.data;
+  const exodusMinted = sources.supply.data?.exodusMinted ?? 0;
+  const liberatedSlaves = sources.holders.data?.holderCount ?? 0;
+  const rewardArchive = sources.rewards.data;
+  const totalVotesCast = rewardArchive?.totalEntries ?? 0;
+  const totalPhantomRewards = rewardArchive?.totalRewards ?? 0;
 
-  // Avg Keys per Phantom - calculated live
-  const avgKeysPerPhantomCalc = liberatedSlaves > 0 
-    ? TOTAL_KEYS / liberatedSlaves 
+  // Dynamic Total Keys (on-demand Exodus minted count plus fixed Genesis supply)
+  const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
+  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.neo);
+  const totalKeysStatus = sources.supply.status;
+  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.neo, sources.supply);
+  const rewardTotalStatus = sources.rewards.status;
+  const rewardReferenceStatus = combineSourceStatuses(sources.rewards, sources.vault);
+  const holderStatus = sources.holders.status;
+  const averageKeysStatus = combineSourceStatuses(sources.holders, sources.supply);
+  const participationStatus = combineSourceStatuses(sources.holders, sources.rewards);
+
+  const sourceList = Object.values(sources);
+  const loadedSourceCount = sourceList.filter((source) => isSourceUsable(source.status)).length;
+  const staleSourceCount = sourceList.filter((source) => source.status === 'stale').length;
+  const sourcesLoading = sourceList.some((source) => source.status === 'loading');
+  const statusTone = sourcesLoading
+    ? 'is-loading'
+    : loadedSourceCount === SOURCE_CLASS_COUNT && staleSourceCount === 0 ? 'is-complete' : loadedSourceCount > 0 ? 'is-partial' : 'is-unavailable';
+
+  // Avg Keys per Phantom - calculated from independently captured sources
+  const avgKeysPerPhantomCalc = liberatedSlaves > 0
+    ? TOTAL_KEYS / liberatedSlaves
     : 0;
 
-  const exodusMintProgress = TOTAL_EXODUS_SUPPLY > 0 
-    ? (exodusMinted / TOTAL_EXODUS_SUPPLY) * 100 
+  const exodusMintProgress = TOTAL_EXODUS_SUPPLY > 0
+    ? (exodusMinted / TOTAL_EXODUS_SUPPLY) * 100
+    : 0;
+
+  const voterParticipationRate = liberatedSlaves > 0 && rewardArchive?.uniqueRecipientsByCycle.length
+    ? rewardArchive.uniqueRecipientsByCycle.reduce((sum, count) => sum + ((count / liberatedSlaves) * 100), 0) / rewardArchive.uniqueRecipientsByCycle.length
     : 0;
 
   const daysSinceGenesis = Math.floor((currentTime - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
 
-  const neoValue = 
+  const neoS1Count = neoHoldings?.s1 ?? 0;
+  const neoS2Count = neoHoldings?.s2 ?? 0;
+  const neoItemsCount = neoHoldings?.items ?? 0;
+  const neoValue =
     (neoS1Count * (snapshot.neo_s1_floor_usd || 0)) +
     (neoS2Count * (snapshot.neo_s2_floor_usd || 0)) +
     (neoItemsCount * (snapshot.neo_items_cache_floor_usd || 0));
@@ -326,13 +504,27 @@ export default function EngineRoom() {
               <span>VAULT INTELLIGENCE</span><span>REWARD HISTORY</span><span>REBELLION VITALS</span>
             </div>
           </div>
-          <div className="engine-snapshot-stamp">
-            <strong>VAULT SNAPSHOT</strong>
-            <span>Snapshot captured {LAST_SNAPSHOT}</span>
-            <span>Reward totals through {REWARD_HISTORY_THROUGH}</span>
-            <small>Reference inputs are independently sourced</small>
+          <div className="engine-snapshot-stamp" aria-live="polite">
+            <strong><i className={`engine-status-dot ${statusTone}`} aria-hidden="true" />MIXED-SOURCE STATUS</strong>
+            <span>{sourcesLoading ? 'LOADING SOURCE CLASSES' : `${loadedSourceCount} / ${SOURCE_CLASS_COUNT} SOURCE CLASSES LOADED${staleSourceCount ? ` · ${staleSourceCount} STALE` : ''}`}</span>
+            <span>PAGE-LOAD SNAPSHOT · INDEPENDENT CAPTURE TIMES</span>
+            <small>Reload to request updated source reads.</small>
           </div>
         </header>
+
+        <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
+          <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" source={sources.vault} />
+          <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" source={sources.neo} />
+          <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" source={sources.supply} />
+          <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" source={sources.holders} />
+          <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" source={sources.rewards} />
+        </div>
+        <p className="engine-evidence-key" aria-label="Metric classification key">
+          <span><b>Observed</b> direct source fact</span>
+          <span><b>Calculated</b> deterministic combination</span>
+          <span><b>Estimated</b> reference-based valuation</span>
+          <span><b>Projected</b> user-entered scenario</span>
+        </p>
 
         <section className="engine-section engine-panel" aria-labelledby="vault-heading">
           <div className="engine-section-head">
@@ -341,18 +533,18 @@ export default function EngineRoom() {
           </div>
           <div className="engine-vault-grid">
             <article className="engine-metric engine-metric-primary">
-              <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><small>REFERENCE VALUE</small></div>
-              <p className="engine-metric-value engine-cyan"><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={!loading} /></p>
+              <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
+              <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
               <p className="engine-metric-note">DeBank portfolio, Neo Tokyo asset references and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>TOTAL KEYS</span><small>CURRENT COUNT</small></div>
-              <p className="engine-metric-value"><AnimatedNumber value={TOTAL_KEYS} duration={1400} decimals={false} ready={!loading} /></p>
+              <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>
+              <p className="engine-metric-value"><MetricState status={totalKeysStatus}><AnimatedNumber value={TOTAL_KEYS} duration={1400} decimals={false} ready={isSourceUsable(totalKeysStatus)} /></MetricState></p>
               <p className="engine-metric-unit">GENESIS + MINTED EXODUS</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>VAULT VALUE PER KEY</span><small>DERIVED</small></div>
-              <p className="engine-metric-value"><AnimatedNumber value={vaultValuePerKey} prefix="$" duration={1600} decimals={true} ready={!loading} /></p>
+              <div className="engine-metric-topline"><span>VAULT VALUE PER KEY</span><EvidenceBadge classification="Estimated" /></div>
+              <p className="engine-metric-value"><MetricState status={vaultValuePerKeyStatus}><AnimatedNumber value={vaultValuePerKey} prefix="$" duration={1600} decimals={true} ready={isSourceUsable(vaultValuePerKeyStatus)} /></MetricState></p>
               <p className="engine-metric-unit">TOTAL VALUE / TOTAL KEYS</p>
             </article>
           </div>
@@ -365,12 +557,12 @@ export default function EngineRoom() {
           </div>
           <div className="engine-reward-grid">
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>COMPLETED PHANTOM REWARDS</span><small>THROUGH {REWARD_HISTORY_THROUGH.toUpperCase()}</small></div>
-              <p className="engine-metric-value">{totalPhantomRewards.toLocaleString()}</p><p className="engine-metric-unit">$BYTES DISTRIBUTED</p>
+              <div className="engine-metric-topline"><span>COMPLETED PHANTOM REWARDS</span><EvidenceBadge classification="Calculated" /></div>
+              <p className="engine-metric-value"><MetricState status={rewardTotalStatus}>{totalPhantomRewards.toLocaleString('en-US', { maximumFractionDigits: 1 })}</MetricState></p><p className="engine-metric-unit">$BYTES DISTRIBUTED THROUGH {REWARD_HISTORY_THROUGH.toUpperCase()}</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>CURRENT REFERENCE VALUE</span><small>PRICE-BASED</small></div>
-              <p className="engine-metric-value">${airdropUSD.toFixed(0)}</p><p className="engine-metric-unit">USD AT CURRENT BYTES REFERENCE</p>
+              <div className="engine-metric-topline"><span>CURRENT REFERENCE VALUE</span><EvidenceBadge classification="Calculated" /></div>
+              <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">REWARD ARCHIVE × BYTES REFERENCE</p>
             </article>
           </div>
           <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
@@ -413,14 +605,14 @@ export default function EngineRoom() {
                   <input id="reward-key-count" type="number" inputMode="numeric" min="1" step="1" value={rewardKeyCount} onChange={(event) => { const nextValue = event.target.value; if (nextValue === '' || /^\d+$/.test(nextValue)) setRewardKeyCount(nextValue); }} />
                 </label>
               </div>
-              <p className="engine-source-note">Current reference price: {snapshot.bytes_price_usd ? formatUsd(snapshot.bytes_price_usd) : 'Loading…'} per BYTES</p>
+              <p className="engine-source-note">Current reference price: <MetricState status={sources.vault.status}>{formatUsd(snapshot.bytes_price_usd || 0)}</MetricState> per BYTES</p>
             </div>
             <div className="engine-output-panel" aria-live="polite">
               <div className="engine-output-grid">
-                <div><span>COMPLETED REWARDS PER KEY</span><strong>{completedRewardsPerKey.toLocaleString()}</strong><small>BYTES</small></div>
-                <div><span>HYPOTHETICAL VALUE PER KEY</span><strong className="engine-violet">{hasHypotheticalPrice ? formatUsd(hypotheticalValuePerKey) : '—'}</strong><small>{hasHypotheticalPrice ? `AT $${hypotheticalBytesPrice} PER BYTES` : 'ENTER ANY BYTES PRICE'}</small></div>
+                <div><div className="engine-output-heading"><span>COMPLETED REWARDS PER KEY</span><EvidenceBadge classification="Calculated" /></div><strong>{completedRewardsPerKey.toLocaleString()}</strong><small>BYTES</small></div>
+                <div><div className="engine-output-heading"><span>HYPOTHETICAL VALUE PER KEY</span><EvidenceBadge classification="Projected" /></div><strong className="engine-violet">{hasHypotheticalPrice ? formatUsd(hypotheticalValuePerKey) : '—'}</strong><small>{hasHypotheticalPrice ? `AT $${hypotheticalBytesPrice} PER BYTES` : 'ENTER ANY BYTES PRICE'}</small></div>
               </div>
-              <div className="engine-output-total"><span>{`TOTAL ACROSS ${safeRewardKeyCount.toLocaleString()} ${safeRewardKeyCount === 1 ? 'KEY' : 'KEYS'}`}</span><strong>{hasHypotheticalPrice ? formatUsd(hypotheticalTotalValue) : '—'}</strong></div>
+              <div className="engine-output-total"><span>{`TOTAL ACROSS ${safeRewardKeyCount.toLocaleString()} ${safeRewardKeyCount === 1 ? 'KEY' : 'KEYS'}`}</span><EvidenceBadge classification="Projected" /><strong>{hasHypotheticalPrice ? formatUsd(hypotheticalTotalValue) : '—'}</strong></div>
             </div>
           </div>
           <p className="engine-disclaimer">Completed distributions through {REWARD_HISTORY_THROUGH} only. User-entered prices are hypothetical and are not forecasts. Phantom Rewards are discretionary and never guaranteed.</p>
@@ -429,15 +621,15 @@ export default function EngineRoom() {
         <section className="engine-section engine-panel" aria-labelledby="vitals-heading">
           <div className="engine-section-head">
             <div><p className="engine-eyebrow">04 / REBELLION VITALS</p><h2 id="vitals-heading">Participation and project activity</h2></div>
-            <p>A compact operational read on holders, voting, mint progress and time in the Grid.</p>
+            <p>A compact operational read on holders, reward participation, mint progress and time in the Grid.</p>
           </div>
           <div className="engine-vitals-grid">
-            <article><span>TOTAL LIBERATED SLAVES</span><strong>{liberatedSlaves}</strong><small>SNAPSHOT HOLDERS</small></article>
-            <article><span>TOTAL VOTES CAST</span><strong>{totalVotesCast.toLocaleString()}</strong><small>REWARD ENTRIES</small></article>
-            <article><span>AVG. KEYS PER PHANTOM</span><strong>{avgKeysPerPhantomCalc.toFixed(2)}</strong><small>KEYS / HOLDER</small></article>
-            <article><span>EXODUS MINT PROGRESS</span><strong className="engine-cyan">{exodusMintProgress.toFixed(2)}%</strong><small>OF 3,333 SUPPLY</small></article>
-            <article><span>AVG. VOTER PARTICIPATION</span><strong className="engine-cyan">{voterParticipationRate.toFixed(1)}%</strong><small>ACROSS COMPLETED CYCLES</small></article>
-            <article><span>DAYS SINCE GENESIS</span><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
+            <article><span>TOTAL LIBERATED SLAVES</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>SNAPSHOT HOLDERS</small></article>
+            <article><span>TOTAL REWARD ENTRIES</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
+            <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
+            <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
+            <article><span>AVG. REWARD PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>ACROSS COMPLETED CYCLES</small></article>
+            <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
           </div>
         </section>
       </div>

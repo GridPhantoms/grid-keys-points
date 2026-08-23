@@ -28,9 +28,14 @@ export async function GET() {
     );
 
     const counts = Object.fromEntries(entries) as Record<NeoCountName, number>;
-    return NextResponse.json(counts, {
-      headers: { 'cache-control': 'no-store' },
-    });
+    return NextResponse.json(
+      {
+        ...counts,
+        source: 'alchemy_nft_owner_lookup',
+        updatedAt: new Date().toISOString(),
+      },
+      { headers: { 'cache-control': 'no-store' } },
+    );
   } catch {
     console.error('Neo Tokyo vault holdings lookup failed');
     return NextResponse.json(

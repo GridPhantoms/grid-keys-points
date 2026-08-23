@@ -26,8 +26,8 @@ test('Engine Room uses the terminal-family hero and four-section hierarchy', asy
   assert.match(ui, /<span>Engine<\/span><em>Room<\/em>/);
   assert.match(ui, /Track the vault\. Verify the rewards\. Read the rebellion\./);
   assert.match(ui, /VAULT SNAPSHOT/);
-  assert.match(ui, /Snapshot captured \{LAST_SNAPSHOT\}/);
-  assert.doesNotMatch(ui, /FRESH|ONLINE|LIVE SNAPSHOT/);
+  assert.match(ui, /MIXED-SOURCE STATUS/);
+  assert.doesNotMatch(ui, /Snapshot captured \{LAST_SNAPSHOT\}|FRESH|ONLINE|LIVE SNAPSHOT/);
 
   const sections = [
     '01 / VAULT SNAPSHOT',
@@ -102,4 +102,70 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   assert.match(css, /\.engine-proof-shelf\{/);
   assert.match(css, /\.engine-proof-archive\{/);
   assert.match(css, /\.engine-proof-archive>a:last-child:nth-child\(odd\)\{grid-column:1\/-1\}/);
+});
+
+test('Engine Room Phase 3 exposes a closed evidence and mixed-source status contract', async () => {
+  const [ui, css, neoRoute, exodusRoute] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/engine/engine.css'),
+    read('../app/api/neo-vault-counts/route.ts'),
+    read('../app/api/exodus-minted/route.ts'),
+  ]);
+
+  assert.match(ui, /type SourceStatus = 'loading' \| 'available' \| 'stale' \| 'unavailable'/);
+  assert.match(ui, /type EvidenceClass = 'Observed' \| 'Calculated' \| 'Estimated' \| 'Projected'/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 5/);
+  assert.match(ui, /MIXED-SOURCE STATUS/);
+  assert.match(ui, /SOURCE CLASSES LOADED/);
+  assert.match(ui, /PAGE-LOAD SNAPSHOT/);
+  assert.match(ui, /Reload to request updated source reads\./);
+  assert.match(ui, /VAULT REFERENCES/);
+  assert.match(ui, /NEO HOLDINGS/);
+  assert.match(ui, /KEY SUPPLY/);
+  assert.match(ui, /HOLDER SNAPSHOT/);
+  assert.match(ui, /REWARD ARCHIVE/);
+  assert.match(ui, /2026-08-23T00:08:00Z/);
+  assert.match(ui, /2026-08-14T04:20:00Z/);
+  assert.match(ui, /2026-08-03T02:10:34Z/);
+  assert.doesNotMatch(ui, /const LAST_SNAPSHOT/);
+
+  for (const evidenceClass of ['Observed', 'Calculated', 'Estimated', 'Projected']) {
+    assert.match(ui, new RegExp(`classification="${evidenceClass}"`));
+  }
+
+  assert.match(css, /\.engine-source-ledger\{/);
+  assert.match(css, /\.engine-source-card\.is-stale\{/);
+  assert.match(css, /\.engine-source-card\.is-unavailable\{/);
+  assert.match(css, /\.engine-status-dot\.is-partial\{/);
+  assert.match(css, /\.engine-metric-state\{/);
+  assert.match(css, /\.engine-evidence\{/);
+  assert.match(css, /\.engine-evidence-projected\{/);
+
+  assert.match(neoRoute, /source: 'alchemy_nft_owner_lookup'/);
+  assert.match(neoRoute, /updatedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(exodusRoute, /source: 'alchemy_getAssetTransfers_zero_address_mints'/);
+  assert.match(exodusRoute, /updatedAt: new Date\(\)\.toISOString\(\)/);
+});
+
+test('Engine Room Phase 3 validates each source independently and fails metrics closed', async () => {
+  const ui = await read('../app/engine/EngineRoom.tsx');
+
+  assert.match(ui, /Promise\.all\(\[/);
+  assert.match(ui, /const SOURCE_TIMEOUT_MS = 12_000/);
+  assert.match(ui, /new AbortController\(\)/);
+  assert.match(ui, /controller\.abort\(\)/);
+  assert.match(ui, /loadSource\('vault'/);
+  assert.match(ui, /loadSource\('neo'/);
+  assert.match(ui, /loadSource\('supply'/);
+  assert.match(ui, /loadSource\('holders'/);
+  assert.match(ui, /loadSource\('rewards'/);
+  assert.match(ui, /if \(!response\.ok\) throw new Error/);
+  assert.match(ui, /LOADING…/);
+  assert.match(ui, /STALE/);
+  assert.match(ui, /UNAVAILABLE/);
+  assert.match(ui, /combineSourceStatuses/);
+  assert.match(ui, /staleAfterMs/);
+  assert.match(ui, /isSourceUsable/);
+  assert.doesNotMatch(ui, /return \{ s1: 0, s2: 0, items: 0 \}/);
+  assert.doesNotMatch(ui, /Snapshot captured \{LAST_SNAPSHOT\}/);
 });

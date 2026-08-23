@@ -140,3 +140,13 @@ test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {
     '© 2026 Grid Phantoms Ltd. All rights reserved.',
   ]) assert.ok(footer.includes(expected));
 });
+
+test('both Citizen seasons use the cached first-party image route', async () => {
+  const lookupRoute = await readFile(new URL('../app/api/citizen-terminal/lookup/route.ts', import.meta.url), 'utf8');
+  const imageRoute = await readFile(new URL('../app/api/citizen-terminal/image/route.ts', import.meta.url), 'utf8');
+
+  assert.match(lookupRoute, /image\?season=s1&tokenId=/);
+  assert.match(lookupRoute, /image\?season=s2&tokenId=/);
+  assert.match(imageRoute, /CITIZEN_CONTRACTS\[season\]/);
+  assert.match(imageRoute, /s-maxage=604800/);
+});

@@ -17,7 +17,9 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 }
 
 export async function GET(request: NextRequest) {
+  const season = request.nextUrl.searchParams.get('season') ?? 's2';
   const tokenId = request.nextUrl.searchParams.get('tokenId')?.trim() ?? '';
+  if (season !== 's1' && season !== 's2') return NextResponse.json({ error: 'Invalid Citizen season.' }, { status: 400 });
   if (!/^\d{1,8}$/.test(tokenId)) return NextResponse.json({ error: 'Invalid Citizen number.' }, { status: 400 });
 
   const apiKey = process.env.ALCHEMY_API_KEY;
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const params = new URLSearchParams({
-      contractAddress: CITIZEN_CONTRACTS.s2,
+      contractAddress: CITIZEN_CONTRACTS[season],
       tokenId,
       refreshCache: 'false',
     });
@@ -73,6 +75,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Outer Citizen image unavailable.' }, { status: 502 });
+    return NextResponse.json({ error: 'Citizen image unavailable.' }, { status: 502 });
   }
 }

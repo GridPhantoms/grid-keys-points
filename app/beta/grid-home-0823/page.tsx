@@ -62,7 +62,7 @@ export default function GridHomeBeta() {
             <div className="hb-system-line"><span>GENESIS + EXODUS</span><span>KEYHOLDER GOVERNANCE</span><span>GRID LABS AI</span><span>TRANSPARENT OPERATIONS</span></div>
           </div>
           <figure className="hb-hero-art">
-            <Image src="/home-beta/hero-vote.webp" alt="A hooded Keyholder facing a glowing VOTE signal above a cyberpunk city" fill priority sizes="(max-width: 980px) 100vw, 44vw" />
+            <Image unoptimized src="/home-beta/hero-vote.webp" alt="A hooded Keyholder facing a glowing VOTE signal above a cyberpunk city" fill priority sizes="(max-width: 980px) 100vw, 44vw" />
             <figcaption><span>GOVERNANCE SIGNAL // 001</span><span>VOTE RECORDED</span></figcaption>
           </figure>
         </section>
@@ -76,8 +76,8 @@ export default function GridHomeBeta() {
             <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noreferrer">VIEW GRID PHANTOMS VOTING →</a>
           </div>
           <div className="hb-governance-gallery">
-            <figure><Image src="/home-beta/governance-assembly.webp" alt="Keyholders assembled around a glowing circular Grid forum" fill sizes="(max-width: 700px) 50vw, 26vw" /></figure>
-            <figure><Image src="/home-beta/vote-interface.webp" alt="A Keyholder activating a holographic vote interface" fill sizes="(max-width: 700px) 50vw, 18vw" /></figure>
+            <figure><Image unoptimized src="/home-beta/governance-assembly.webp" alt="Keyholders assembled around a glowing circular Grid forum" fill sizes="(max-width: 700px) 50vw, 26vw" /></figure>
+            <figure><Image unoptimized src="/home-beta/vote-interface.webp" alt="A Keyholder activating a holographic vote interface" fill sizes="(max-width: 700px) 50vw, 18vw" /></figure>
           </div>
         </section>
 
@@ -101,7 +101,7 @@ export default function GridHomeBeta() {
         </section>
 
         <section className="hb-sakura" aria-labelledby="sakura-title">
-          <div className="hb-sakura-art"><Image src="/home-beta/sakura-ai-wide.webp" alt="Sakura standing in a rain-soaked neon Grid street" fill sizes="100vw" /></div>
+          <div className="hb-sakura-art"><Image unoptimized src="/home-beta/sakura-ai-wide.webp" alt="Sakura standing in a rain-soaked neon Grid street" fill sizes="100vw" /></div>
           <div className="hb-sakura-copy">
             <p className="hb-eyebrow">GRID LABS AI // AGENTIC SUPPORT</p>
             <h2 id="sakura-title">The Grid learned to answer back.</h2>
@@ -129,7 +129,7 @@ export default function GridHomeBeta() {
         </section>
 
         <section className="hb-lore" aria-labelledby="lore-title">
-          <figure className="hb-lore-art"><Image src="/home-beta/grid-portal.webp" alt="A hooded figure approaching a vast illuminated Grid portal" fill sizes="(max-width: 800px) 100vw, 35vw" /></figure>
+          <figure className="hb-lore-art"><Image unoptimized src="/home-beta/grid-portal.webp" alt="A hooded figure approaching a vast illuminated Grid portal" fill sizes="(max-width: 800px) 100vw, 35vw" /></figure>
           <div className="hb-lore-copy">
             <p className="hb-eyebrow">AFTER THE TRUNCATION</p>
             <h2 id="lore-title">A rebellion encoded in Keys.</h2>
@@ -150,7 +150,7 @@ export default function GridHomeBeta() {
             <p>That builder network created the conditions for Grid Phantoms to form. Many early Keyholders were Citizens, and the project continues that tradition through intelligence, market tools and transparent infrastructure serving the Grid while preserving a living bridge to the Citadel.</p>
           </div>
           <article className="hb-bytes-card">
-            <figure><Image src="/home-beta/bytes-city.webp" alt="A rain-soaked cyberpunk city with an illuminated BYTES sign" fill sizes="(max-width: 700px) 100vw, 36vw" /></figure>
+            <figure><Image unoptimized src="/home-beta/bytes-city.webp" alt="A rain-soaked cyberpunk city with an illuminated BYTES sign" fill sizes="(max-width: 700px) 100vw, 36vw" /></figure>
             <div>
               <p className="hb-eyebrow">WHY $BYTES</p>
               <h3>An existing signal, adopted by the Grid.</h3>

@@ -101,7 +101,7 @@ export default function GridHomeBeta() {
         </section>
 
         <section className="hb-sakura" aria-labelledby="sakura-title">
-          <div className="hb-sakura-art"><Image unoptimized loading="eager" src="/home-beta/sakura-ai-wide.webp" alt="Sakura standing in a rain-soaked neon Grid street" fill sizes="100vw" /></div>
+          <div className="hb-sakura-art" role="img" aria-label="Sakura standing in a rain-soaked neon Grid street" data-image="/home-beta/sakura-ai-wide.webp" />
           <div className="hb-sakura-copy">
             <p className="hb-eyebrow">GRID LABS AI // AGENTIC SUPPORT</p>
             <h2 id="sakura-title">The Grid learned to answer back.</h2>

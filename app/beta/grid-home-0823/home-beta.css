@@ -269,8 +269,7 @@
   background: #030608;
 }
 
-.hb-sakura-art { position: absolute; inset: 0; }
-.hb-sakura-art img { object-fit: cover; object-position: center; }
+.hb-sakura-art { position: absolute; inset: 0; background: #030608 url('/home-beta/sakura-ai-wide.webp') center / cover no-repeat; }
 .hb-sakura-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(2, 3, 4, .98) 0%, rgba(2, 3, 4, .9) 38%, rgba(2, 3, 4, .22) 72%, rgba(2, 3, 4, .06)); }
 .hb-sakura-copy { width: min(620px, 58%); padding: 60px; position: relative; z-index: 2; }
 .hb-sakura-copy > p:not(.hb-eyebrow):not(.hb-human-line) { color: #9aaeb3; font-size: 16px; line-height: 1.7; }
@@ -361,7 +360,7 @@
   .hb-section-heading { gap: 22px; }
   .hb-system-card { min-height: 430px; padding: 22px; }
   .hb-sakura { min-height: 720px; align-items: flex-end; margin-bottom: 80px; }
-  .hb-sakura-art img { object-position: 68% center; }
+  .hb-sakura-art { background-position: 68% center; }
   .hb-sakura-art::after { background: linear-gradient(0deg, rgba(2, 3, 4, .98) 0%, rgba(2, 3, 4, .9) 45%, rgba(2, 3, 4, .05) 78%); }
   .hb-sakura-copy { width: 100%; padding: 28px 22px; }
   .hb-ai-capabilities { grid-template-columns: 1fr; }

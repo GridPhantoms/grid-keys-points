@@ -34,7 +34,7 @@ const systems = [
     index: '03',
     status: 'INTERLINK ACTIVE',
     title: 'Citizen Interlink',
-    command: 'Decode the Citizen.',
+    command: 'Decode the Citizens.',
     body: 'A living bridge to the Citadel: inspect assembled Citizens, component rarity, market references and staking economics.',
     href: '/citizen',
     action: 'ESTABLISH INTERLINK',
@@ -54,14 +54,14 @@ export default function GridHomeBeta() {
             <p className="hb-eyebrow">THE REBELLION IS ALREADY IN MOTION</p>
             <h1>Hold the Keys.<br />Read the Grid.<br /><em>Shape what comes next.</em></h1>
             <p className="hb-lede">In the aftermath of the Truncation, power consolidated behind closed systems. Grid Phantoms formed in the shadows: an onchain collective of Keyholders building transparent tools, shared intelligence and community-governed infrastructure.</p>
-            <p className="hb-ai-lede"><b>Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface</b>—helping Keyholders research, navigate the ecosystem and turn useful signals into practical tools, reports and coordinated action.</p>
+            <p className="hb-ai-lede"><b>Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface.</b> She helps Keyholders research, navigate the ecosystem and turn useful signals into practical tools, reports and coordinated action.</p>
             <div className="hb-actions">
-              <a href="#grid-systems" className="hb-button hb-button-primary">ENTER THE GRID</a>
+              <a href="#governance-signal" className="hb-button hb-button-primary">ENTER THE GRID</a>
               <a href="#keyholder-console" className="hb-button hb-button-secondary">LOAD MY KEYS</a>
             </div>
             <div className="hb-system-line"><span>GENESIS + EXODUS</span><span>KEYHOLDER GOVERNANCE</span><span>GRID LABS AI</span><span>TRANSPARENT OPERATIONS</span></div>
           </div>
-          <figure className="hb-hero-art">
+          <figure className="hb-hero-art" id="governance-signal">
             <Image unoptimized src="/home-beta/hero-vote.webp" alt="A hooded Keyholder facing a glowing VOTE signal above a cyberpunk city" fill priority sizes="(max-width: 980px) 100vw, 44vw" />
             <figcaption><span>GOVERNANCE SIGNAL // 001</span><span>VOTE RECORDED</span></figcaption>
           </figure>
@@ -84,7 +84,7 @@ export default function GridHomeBeta() {
         <section className="hb-systems" id="grid-systems" aria-labelledby="systems-title">
           <header className="hb-section-heading">
             <div><p className="hb-eyebrow">GRID SYSTEMS</p><h2 id="systems-title">Three operational layers.<br />One governed network.</h2></div>
-            <p>Governance gives the Grid direction. The Engine Room makes participation and operations visible. `$BYTES` carries utility through the network. Citizen Interlink preserves the bridge to the Citadel.</p>
+            <p>Governance gives the Grid direction. The Engine Room makes participation and operations visible. $BYTES carries utility through the network. Citizen Interlink preserves the bridge to the Citadel.</p>
           </header>
           <div className="hb-system-grid">
             {systems.map((system) => (
@@ -147,17 +147,28 @@ export default function GridHomeBeta() {
             <p className="hb-eyebrow">BUILT FROM BUILDER CULTURE</p>
             <h2 id="provenance-title">The network behind the network.</h2>
             <p>Grid Phantoms did not begin as a brand extension. It emerged from builders inside the Neo Tokyo Citizen ecosystem: people connected by composable identity, collaborative experimentation and the expectation that members should build useful things for one another.</p>
-            <p>That builder network created the conditions for Grid Phantoms to form. Many early Keyholders were Citizens, and the project continues that tradition through intelligence, market tools and transparent infrastructure serving the Grid while preserving a living bridge to the Citadel.</p>
+            <p>That builder network created the conditions for Grid Phantoms to form. Many early Keyholders are Citizens, and the project continues that tradition through intelligence, market tools and transparent infrastructure serving the Grid while preserving a living bridge to the Citadel.</p>
           </div>
           <article className="hb-bytes-card">
             <figure><Image unoptimized src="/home-beta/bytes-city.webp" alt="A rain-soaked cyberpunk city with an illuminated BYTES sign" fill sizes="(max-width: 700px) 100vw, 36vw" /></figure>
             <div>
               <p className="hb-eyebrow">WHY $BYTES</p>
               <h3>An existing signal, adopted by the Grid.</h3>
-              <p>Rather than mint another token, Grid Phantoms adopted a utility asset already understood by many of its earliest builders. `$BYTES` connects participation, modeled utility and potential Phantom Rewards across Grid systems while remaining part of the wider Neo Tokyo economy.</p>
+              <p>Rather than mint another token, Grid Phantoms adopted a utility asset already understood by many of its earliest builders. $BYTES connects participation, modeled utility and potential Phantom Rewards across Grid systems while remaining part of the wider Neo Tokyo economy.</p>
               <Link href="/bytes">INSPECT $BYTES →</Link>
             </div>
           </article>
+        </section>
+
+        <section className="hb-join" aria-labelledby="join-title">
+          <div className="hb-join-copy">
+            <p className="hb-eyebrow">THE GREAT DIGITAL EXODUS CONTINUES</p>
+            <h2 id="join-title">Join the Rebellion.</h2>
+            <p>Mint an Exodus Key to become a Keyholder, enter the community and take your place in the Grid&apos;s governance and evolving utility network.</p>
+            <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noreferrer" className="hb-button hb-button-primary">MINT EXODUS KEY</a>
+            <small>Key ownership does not guarantee rewards, distributions or financial return.</small>
+          </div>
+          <figure className="hb-join-art" role="img" aria-label="An Exodus Keycard suspended in a rain-soaked cyberpunk street" data-image="/home-beta/exodus-keycard.webp" />
         </section>
       </main>
 

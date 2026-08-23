@@ -171,18 +171,21 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
 });
 
 test('Engine Room delayed-review follow-up keeps provenance and wording literal', async () => {
-  const [ui, neoRoute, exodusRoute, alchemy, generator, leaderboard, vaultMetaText, holderMetaText] = await Promise.all([
+  const [ui, neoRoute, exodusRoute, alchemy, holderGenerator, vaultGenerator, leaderboard, vaultMetaText, holderMetaText] = await Promise.all([
     read('../app/engine/EngineRoom.tsx'),
     read('../app/api/neo-vault-counts/route.ts'),
     read('../app/api/exodus-minted/route.ts'),
     read('../app/api/_lib/alchemy-server.ts'),
     read('../generate-holders-snapshot.js'),
+    read('../generate-vault-snapshot.js'),
     read('../app/leaderboard/page.tsx'),
     read('../public/vault-snapshot.meta.json'),
     read('../public/holders-snapshot.meta.json'),
   ]);
 
-  assert.deepEqual(JSON.parse(vaultMetaText), { capturedAt: '2026-08-23T00:08:00Z' });
+  const vaultMetadata = JSON.parse(vaultMetaText);
+  assert.deepEqual(Object.keys(vaultMetadata), ['capturedAt']);
+  assert.match(vaultMetadata.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   assert.deepEqual(JSON.parse(holderMetaText), { capturedAt: '2026-08-14T04:20:00Z' });
   assert.match(ui, /fetchJson\('\/vault-snapshot\.meta\.json'\)/);
   assert.match(ui, /fetchJson\('\/holders-snapshot\.meta\.json'\)/);
@@ -212,8 +215,11 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(alchemy, /pageKey\?: unknown/);
   assert.match(alchemy, /url\.searchParams\.set\('pageKey', pageKey\)/);
   assert.match(alchemy, /if \(!Array\.isArray\(data\.ownedNfts\)\) throw new AlchemyServerError\(\)/);
-  assert.match(generator, /holders-snapshot\.meta\.json/);
-  assert.match(generator, /capturedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(holderGenerator, /holders-snapshot\.meta\.json/);
+  assert.match(holderGenerator, /capturedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(vaultGenerator, /vault-snapshot\.meta\.json/);
+  assert.match(vaultGenerator, /updateVaultSnapshotMetadata\(snapshotTime\)/);
+  assert.doesNotMatch(vaultGenerator, /LAST_SNAPSHOT|app\/engine\/page\.tsx/);
   assert.match(leaderboard, /holders-snapshot\.meta\.json/);
 });
 

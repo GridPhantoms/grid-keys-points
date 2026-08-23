@@ -174,6 +174,9 @@ test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot 
   assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
   assert.match(css, /\.ct-snapshot-stamp\{/);
   assert.match(css, /\.ct-snapshot-stamp\.is-complete i\{/);
+  assert.match(css, /\.ct-valuation-caveat\{[^}]*font-size:10px/);
+  assert.match(css, /\.ct-valuation-source\{[^}]*font-size:9px/);
+  assert.match(css, /@media\(min-width:900px\)\{\.ct-valuation-caveat\{font-size:11px\}\.ct-valuation-source\{font-size:10px\}/);
 });
 
 test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {

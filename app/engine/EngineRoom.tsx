@@ -541,19 +541,22 @@ export default function EngineRoom() {
           </div>
         </header>
 
-        <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
-          <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
-          <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
-          <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
-          <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
-          <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />
-        </div>
-        <p className="engine-evidence-key" aria-label="Metric classification key">
-          <span><b>Observed</b> direct source fact</span>
-          <span><b>Calculated</b> deterministic combination</span>
-          <span><b>Estimated</b> reference-based valuation</span>
-          <span><b>Projected</b> user-entered scenario</span>
-        </p>
+        <details className="engine-source-details">
+          <summary><span>VIEW SOURCE &amp; EVIDENCE DETAILS</span><i aria-hidden="true">+</i></summary>
+          <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
+            <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
+            <SourceCard label="NEO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
+            <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
+            <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
+            <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />
+          </div>
+          <p className="engine-evidence-key" aria-label="Metric classification key">
+            <span><b>Observed</b> direct source fact</span>
+            <span><b>Calculated</b> deterministic combination</span>
+            <span><b>Estimated</b> reference-based valuation</span>
+            <span><b>Projected</b> user-entered scenario</span>
+          </p>
+        </details>
 
         <section className="engine-section engine-panel" aria-labelledby="vault-heading">
           <div className="engine-section-head">
@@ -572,7 +575,7 @@ export default function EngineRoom() {
               <p className="engine-metric-unit">GENESIS + MINTED EXODUS</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>VAULT VALUE PER KEY</span><EvidenceBadge classification="Estimated" /></div>
+              <div className="engine-metric-topline"><span>VALUE PER KEY</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value"><MetricState status={vaultValuePerKeyStatus}><AnimatedNumber value={vaultValuePerKey} prefix="$" duration={1600} decimals={true} ready={isSourceUsable(vaultValuePerKeyStatus)} /></MetricState></p>
               <p className="engine-metric-unit">TOTAL VALUE / TOTAL KEYS</p>
             </article>
@@ -582,16 +585,16 @@ export default function EngineRoom() {
         <section className="engine-section engine-panel" aria-labelledby="rewards-heading">
           <div className="engine-section-head">
             <div><p className="engine-eyebrow">02 / PHANTOM REWARD HISTORY</p><h2 id="rewards-heading">Completed distributions, in context</h2></div>
-            <p>Historical discretionary distributions and their estimated value at the captured BYTES reference price.</p>
+            <p>Historical discretionary distributions and their estimated USD value using the BYTES price in the vault snapshot.</p>
           </div>
           <div className="engine-reward-grid">
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>COMPLETED PHANTOM REWARDS</span><EvidenceBadge classification="Calculated" /></div>
+              <div className="engine-metric-topline"><span>REWARDS DISTRIBUTED</span><EvidenceBadge classification="Calculated" /></div>
               <p className="engine-metric-value"><MetricState status={rewardTotalStatus}>{totalPhantomRewards.toLocaleString('en-US', { maximumFractionDigits: 1 })}</MetricState></p><p className="engine-metric-unit">$BYTES DISTRIBUTED THROUGH {REWARD_HISTORY_THROUGH.toUpperCase()}</p>
             </article>
             <article className="engine-metric">
-              <div className="engine-metric-topline"><span>CAPTURED REFERENCE VALUE</span><EvidenceBadge classification="Estimated" /></div>
-              <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">REWARD ARCHIVE × CAPTURED BYTES REFERENCE</p>
+              <div className="engine-metric-topline"><span>ESTIMATED USD VALUE</span><EvidenceBadge classification="Estimated" /></div>
+              <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">TOTAL BYTES × SNAPSHOT PRICE</p>
             </article>
           </div>
           <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
@@ -634,12 +637,12 @@ export default function EngineRoom() {
                   <input id="reward-key-count" type="number" inputMode="numeric" min="1" step="1" value={rewardKeyCount} onChange={(event) => { const nextValue = event.target.value; if (nextValue === '' || /^\d+$/.test(nextValue)) setRewardKeyCount(nextValue); }} />
                 </label>
               </div>
-              <p className="engine-source-note">Captured reference price: <MetricState status={sources.vault.status}>{formatUsd(snapshot.bytes_price_usd || 0)}</MetricState> per BYTES</p>
+              <p className="engine-source-note">Snapshot BYTES price: <MetricState status={sources.vault.status}>{formatUsd(snapshot.bytes_price_usd || 0)}</MetricState></p>
             </div>
             <div className="engine-output-panel" aria-live="polite">
               <div className="engine-output-grid">
-                <div><div className="engine-output-heading"><span>COMPLETED REWARDS PER KEY</span><EvidenceBadge classification="Calculated" /></div><strong>{completedRewardsPerKey.toLocaleString()}</strong><small>BYTES</small></div>
-                <div><div className="engine-output-heading"><span>HYPOTHETICAL VALUE PER KEY</span><EvidenceBadge classification="Projected" /></div><strong className="engine-violet">{hasHypotheticalPrice ? formatUsd(hypotheticalValuePerKey) : '—'}</strong><small>{hasHypotheticalPrice ? `AT $${hypotheticalBytesPrice} PER BYTES` : 'ENTER ANY BYTES PRICE'}</small></div>
+                <div><div className="engine-output-heading"><span>REWARDS PER KEY</span><EvidenceBadge classification="Calculated" /></div><strong>{completedRewardsPerKey.toLocaleString()}</strong><small>BYTES</small></div>
+                <div><div className="engine-output-heading"><span>VALUE PER KEY</span><EvidenceBadge classification="Projected" /></div><strong className="engine-violet">{hasHypotheticalPrice ? formatUsd(hypotheticalValuePerKey) : '—'}</strong><small>{hasHypotheticalPrice ? `AT $${hypotheticalBytesPrice} PER BYTES` : 'ENTER ANY BYTES PRICE'}</small></div>
               </div>
               <div className="engine-output-total"><span>{`TOTAL ACROSS ${safeRewardKeyCount.toLocaleString()} ${safeRewardKeyCount === 1 ? 'KEY' : 'KEYS'}`}</span><EvidenceBadge classification="Projected" /><strong>{hasHypotheticalPrice ? formatUsd(hypotheticalTotalValue) : '—'}</strong></div>
             </div>
@@ -654,10 +657,10 @@ export default function EngineRoom() {
           </div>
           <div className="engine-vitals-grid">
             <article><span>SNAPSHOT KEY HOLDERS</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
-            <article><span>TOTAL REWARD ENTRIES</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
+            <article><span>TOTAL VOTES CAST</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
-            <article><span>AVG. REWARD-RECIPIENT RATE</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
+            <article><span>AVG. VOTER PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
             <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
           </div>
         </section>

@@ -96,7 +96,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   proofHashes.forEach((hash) => assert.match(ui, new RegExp(hash)));
   assert.match(ui, /<details className="engine-proof-shelf">/);
   assert.match(ui, /VIEW 9 EARLIER PROOFS/);
-  assert.match(ui, /REWARD ENTRIES/);
+  assert.match(ui, /TOTAL VOTES CAST/);
   assert.doesNotMatch(ui, /ELIGIBLE DISTRIBUTION ROWS/);
   assert.match(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*max-width:none[^}]*white-space:nowrap/);
   assert.match(css, /\.engine-proof-shelf\{/);
@@ -194,10 +194,10 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(ui, /timeKind="CAPTURED"/);
   assert.match(ui, /timeKind="CHECKED"/);
   assert.match(ui, /timeKind="OCCURRED"/);
-  assert.match(ui, /CAPTURED REFERENCE VALUE/);
-  assert.match(ui, /Captured reference price:/);
+  assert.match(ui, /ESTIMATED USD VALUE/);
+  assert.match(ui, /Snapshot BYTES price:/);
   assert.match(ui, /SNAPSHOT KEY HOLDERS/);
-  assert.match(ui, /AVG\. REWARD-RECIPIENT RATE/);
+  assert.match(ui, /AVG\. VOTER PARTICIPATION/);
   assert.match(ui, /VS CURRENT HOLDERS/);
 
   assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 10);
@@ -215,4 +215,27 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(generator, /holders-snapshot\.meta\.json/);
   assert.match(generator, /capturedAt: new Date\(\)\.toISOString\(\)/);
   assert.match(leaderboard, /holders-snapshot\.meta\.json/);
+});
+
+test('Engine Room mobile copy stays compact and source details are optional', async () => {
+  const ui = await read('../app/engine/EngineRoom.tsx');
+
+  assert.match(ui, /<details className="engine-source-details">/);
+  assert.match(ui, /VIEW SOURCE &amp; EVIDENCE DETAILS/);
+  assert.match(ui, /<span>VALUE PER KEY<\/span><EvidenceBadge classification="Estimated"/);
+  assert.match(ui, /<span>REWARDS DISTRIBUTED<\/span><EvidenceBadge classification="Calculated"/);
+  assert.match(ui, /<span>ESTIMATED USD VALUE<\/span><EvidenceBadge classification="Estimated"/);
+  assert.match(ui, /TOTAL BYTES × SNAPSHOT PRICE/);
+  assert.match(ui, /<span>REWARDS PER KEY<\/span><EvidenceBadge classification="Calculated"/);
+  assert.match(ui, /<span>VALUE PER KEY<\/span><EvidenceBadge classification="Projected"/);
+  assert.match(ui, /<span>TOTAL VOTES CAST<\/span>/);
+  assert.match(ui, /<span>AVG\. VOTER PARTICIPATION<\/span>/);
+
+  assert.doesNotMatch(ui, /VAULT VALUE PER KEY/);
+  assert.doesNotMatch(ui, /COMPLETED PHANTOM REWARDS/);
+  assert.doesNotMatch(ui, /CAPTURED REFERENCE VALUE/);
+  assert.doesNotMatch(ui, /HYPOTHETICAL VALUE PER KEY/);
+  assert.doesNotMatch(ui, /COMPLETED REWARDS PER KEY/);
+  assert.doesNotMatch(ui, /TOTAL REWARD ENTRIES/);
+  assert.doesNotMatch(ui, /AVG\. REWARD-RECIPIENT RATE/);
 });

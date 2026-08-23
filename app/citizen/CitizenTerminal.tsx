@@ -257,7 +257,7 @@ export default function CitizenTerminal() {
       <SectionHeading eyebrow="03 / MARKET DASHBOARD" title="The Neo Tokyo market, mapped." detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
       {marketError && <p className="ct-error">{marketError}</p>}
       <div className="ct-market-groups">
-        {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group}</span><p>{group === 'S1' ? 'INNER CITY' : 'OUTER CITY'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
+        {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group}</span><p>{group === 'S1' ? 'NEO TOKYO CITY' : 'OUTERLANDS'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
       </div>
       <div className="ct-valuation-card">
         <div className="ct-valuation-topline">

@@ -127,6 +127,32 @@ test('live valuation source covers nine distinct rows and pins every custody rea
   assert.doesNotMatch(ui, /INNER CITY|OUTER CITY/);
 });
 
+test('Citizen market sources use independent conservative refresh tiers', async () => {
+  const [marketRoute, rewardRoute, ui, metricContract] = await Promise.all([
+    readFile(new URL('../app/api/citizen-terminal/market/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/citizen-terminal/reward-rate/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/citizen-terminal-metric-contract.md', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(marketRoute, /LISTINGS_REVALIDATE_SECONDS = 300/);
+  assert.match(marketRoute, /OFFERS_REVALIDATE_SECONDS = 900/);
+  assert.match(marketRoute, /RANKINGS_REVALIDATE_SECONDS = 3_600/);
+  assert.match(marketRoute, /SUPPLY_REVALIDATE_SECONDS = 3_600/);
+  assert.match(marketRoute, /s-maxage=300, stale-while-revalidate=900/);
+  assert.match(marketRoute, /sourceTimes: \{/);
+  assert.match(marketRoute, /listingsAsOf: listingSnapshot\.asOf/);
+  assert.match(marketRoute, /offersAsOf: offerSnapshot\.asOf/);
+  assert.match(marketRoute, /rankingsAsOf: rankingSnapshot\.asOf/);
+
+  assert.match(rewardRoute, /REWARD_RATE_REVALIDATE_SECONDS = 3_600/);
+  assert.match(rewardRoute, /s-maxage=\$\{REWARD_RATE_REVALIDATE_SECONDS\}/);
+  assert.match(rewardRoute, /stale-while-revalidate=\$\{REWARD_RATE_REVALIDATE_SECONDS \* 4\}/);
+  assert.match(ui, /Listings [\s\S]* Offers [\s\S]* Ranks/);
+  assert.match(metricContract, /Floors and Elite listing scan.*5 minutes/);
+  assert.match(metricContract, /Current BYTES per point per day[\s\S]*1 hour/);
+});
+
 test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {
   const [page, footer] = await Promise.all([
     readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),

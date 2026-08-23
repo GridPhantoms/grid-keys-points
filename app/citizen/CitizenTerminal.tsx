@@ -17,6 +17,7 @@ type EliteListing = { tokenId: string; name: string; imageUrl: string | null; ra
 type ValuationRow = { key: string; season: 'S1' | 'S2'; label: string; url: string; supply: number | null; supplyBreakdown: { legacyExternal: number; v2External?: number; v2Active?: number; economicallyDistinct: number } | null; floorEth: number | null; offerEth: number | null; offerQuantity: number | null; offerCount: number | null };
 type Market = {
   asOf: string; ethUsd: number | null; collections: CollectionFloor[]; s1ListingCount: number | string; eliteListings: EliteListing[]; notes: string[];
+  sourceTimes?: { listingsAsOf: string; offersAsOf: string; rankingsAsOf: string; supplyAsOf: string };
   valuation: { classification: 'estimated'; sourceBlock: number; sourceBlockHash: string; blockAsOf: string; totalCollections: number; rows: ValuationRow[]; methodology: string };
 };
 type BytesMetrics = {
@@ -229,7 +230,7 @@ export default function CitizenTerminal() {
             <label><span>BYTES STAKED <button className="ct-max-button" type="button" onClick={() => setActiveBytesStaked(String(bytesCap))}>MAX {bytesCap.toLocaleString()}</button></span><input className={bytesOverCap ? 'invalid' : ''} type="number" min="0" max={bytesCap} step="1" value={bytesStaked} onChange={(event) => setActiveBytesStaked(event.target.value)} onBlur={() => { if (bytesOverCap) setActiveBytesStaked(String(bytesCap)); }} />{bytesOverCap && <small className="ct-input-error">Protocol maximum is {bytesCap.toLocaleString()} BYTES. Calculations are capped automatically.</small>}{stakingSeason === 's1' && s1HasVault === false && <small className="ct-field-note">Vaultless S1 detected. The no-vault cap applies.</small>}</label>
           </div>
           <div className="ct-live-rate-card">
-            <div><span>CURRENT REWARD RATE</span><b>{liveRate != null ? 'LIVE ONCHAIN' : 'UNAVAILABLE'}</b></div>
+            <div><span>CURRENT REWARD RATE</span><b>{liveRate != null ? 'ONCHAIN SNAPSHOT' : 'UNAVAILABLE'}</b></div>
             <strong>{formatNumber(liveRate, 8)}</strong>
             <small>BYTES / POINT / DAY</small>
           </div>
@@ -297,7 +298,7 @@ export default function CitizenTerminal() {
         <p className="ct-valuation-source"><strong>Why this exists.</strong> This first-party model was created in response to inaccuracies identified in Neo Tokyo&apos;s presentation on <a href="https://nftpricefloor.com/brands" target="_blank" rel="noreferrer">NFT Price Floor&apos;s NFT Brands tracker ↗</a>. It uses direct onchain supply and custody reads to avoid overlapping assembled Citizens, migrated assets and component collections.</p>
         {market?.valuation && <p className="ct-valuation-source">NFT supply pinned to Ethereum block <a href={`https://etherscan.io/block/${market.valuation.sourceBlock}`} target="_blank" rel="noreferrer">{market.valuation.sourceBlock.toLocaleString()} ↗</a> · {new Date(market.valuation.blockAsOf).toLocaleString()} · $BYTES market cap* block {bytesSourceBlock?.toLocaleString() ?? '—'}{bytesMarketAsOf ? ` · ${new Date(bytesMarketAsOf).toLocaleString()}` : ''}</p>}
       </div>
-      {market?.asOf && <p className="ct-asof">Market snapshot {new Date(market.asOf).toLocaleString()} · Listings can change at any time</p>}
+      {market?.asOf && <p className="ct-asof">Listings {new Date(market.sourceTimes?.listingsAsOf ?? market.asOf).toLocaleString()} · Offers {new Date(market.sourceTimes?.offersAsOf ?? market.asOf).toLocaleString()} · Ranks {new Date(market.sourceTimes?.rankingsAsOf ?? market.asOf).toLocaleString()} · Listings can change at any time</p>}
     </section>
 
     <section className="ct-panel">

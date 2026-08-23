@@ -12,6 +12,8 @@ const CONTRACT_POINT_SCALE = BigInt(100);
 const SECONDS_PER_DAY = BigInt(86_400);
 const BPS = BigInt(10_000);
 const REQUEST_TIMEOUT_MS = 10_000;
+const REWARD_RATE_REVALIDATE_SECONDS = 3_600;
+const REWARD_RATE_CACHE_CONTROL = `public, s-maxage=${REWARD_RATE_REVALIDATE_SECONDS}, stale-while-revalidate=${REWARD_RATE_REVALIDATE_SECONDS * 4}`;
 
 type PoolNumber = 0 | 1;
 
@@ -92,7 +94,7 @@ export async function GET() {
         'Rate is a current snapshot and changes with pool points, emissions, or DAO tax.',
       ],
       pools,
-    }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=180' } });
+    }, { headers: { 'Cache-Control': REWARD_RATE_CACHE_CONTROL } });
   } catch {
     console.error('Citizen Terminal reward-rate derivation failed.');
     return NextResponse.json({ error: 'Current staking reward rate is temporarily unavailable.' }, { status: 503 });

@@ -1,4 +1,5 @@
 import { Contract, JsonRpcProvider } from 'ethers';
+import { unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { CITIZEN_COLLECTIONS } from '@/lib/citizen-terminal';
 import { calculateCitizenSupply, calculateComponentSupply, NEO_TOKYO_SUPPLY_CONFIG } from '@/lib/citizen-valuation';
@@ -9,6 +10,11 @@ export const dynamic = 'force-dynamic';
 const OPEN_SEA_UA = 'Mozilla/5.0 (compatible; GridPhantomsCitizenTerminal/1.0)';
 const OPEN_SEA_ITEMS_HASH = '33a4c321d0c7bc7775c92efcf80e2ae3738322e8427401448eaecd4d09b90454';
 const ERC721_SUPPLY_ABI = ['function totalSupply() view returns (uint256)', 'function balanceOf(address) view returns (uint256)'];
+const LISTINGS_REVALIDATE_SECONDS = 300;
+const OFFERS_REVALIDATE_SECONDS = 900;
+const RANKINGS_REVALIDATE_SECONDS = 3_600;
+const SUPPLY_REVALIDATE_SECONDS = 3_600;
+const MARKET_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900';
 
 function splitSetCookies(value: string) {
   return value.split(/,(?=\s*[^;,=]+=[^;,]+)/g).map((cookie) => cookie.trim());
@@ -153,16 +159,44 @@ async function supplySnapshot() {
   };
 }
 
+const cachedListingSnapshot = unstable_cache(async () => {
+  const rows = await Promise.all(CITIZEN_COLLECTIONS.map(async (collection) => ({
+    collection,
+    listings: await openSeaListings(collection.slug, collection.key === 's1-citizens' ? 50 : 20),
+  })));
+  return { asOf: new Date().toISOString(), rows };
+}, ['citizen-market-listings-v2'], { revalidate: LISTINGS_REVALIDATE_SECONDS });
+
+const cachedOfferSnapshot = unstable_cache(async () => {
+  const settled = await Promise.allSettled(CITIZEN_COLLECTIONS.map((collection) => openSeaTopCollectionOffer(collection.slug)));
+  if (settled.every((result) => result.status === 'rejected')) throw new Error('OpenSea offer snapshot unavailable');
+  const rows = CITIZEN_COLLECTIONS.map((collection, index) => ({
+    key: collection.key,
+    offer: settled[index].status === 'fulfilled' ? settled[index].value : null,
+  }));
+  return { asOf: new Date().toISOString(), rows };
+}, ['citizen-market-offers-v2'], { revalidate: OFFERS_REVALIDATE_SECONDS });
+
+const cachedRankingSnapshot = unstable_cache(async () => {
+  const rows = await s1Rankings();
+  return { asOf: new Date().toISOString(), rows };
+}, ['citizen-market-s1-rankings-v2'], { revalidate: RANKINGS_REVALIDATE_SECONDS });
+
+const cachedSupplySnapshot = unstable_cache(async () => ({
+  ...(await supplySnapshot()),
+  capturedAt: new Date().toISOString(),
+}), ['citizen-market-supply-v2'], { revalidate: SUPPLY_REVALIDATE_SECONDS });
+
 export async function GET() {
   try {
-    const [listingRows, offerSettled, listings, rankings, supplies] = await Promise.all([
-      Promise.all(CITIZEN_COLLECTIONS.map(async (collection) => ({ collection, listings: await openSeaListings(collection.slug, 20) }))),
-      Promise.allSettled(CITIZEN_COLLECTIONS.map((collection) => openSeaTopCollectionOffer(collection.slug))),
-      openSeaListings('neotokyo-citizens', 50), s1Rankings(), supplySnapshot(),
+    const [listingSnapshot, offerSnapshot, rankingSnapshot, supplies] = await Promise.all([
+      cachedListingSnapshot(), cachedOfferSnapshot(), cachedRankingSnapshot(), cachedSupplySnapshot(),
     ]);
-    const offers = new Map(CITIZEN_COLLECTIONS.map((collection, index) => [collection.key, offerSettled[index].status === 'fulfilled' ? offerSettled[index].value : null]));
+    const listingRows = listingSnapshot.rows;
+    const listings = listingRows.find(({ collection }) => collection.key === 's1-citizens')?.listings ?? [];
+    const offers = new Map(offerSnapshot.rows.map(({ key, offer }) => [key, offer]));
     const supplyByKey = new Map(supplies.rows.map((row) => [row.key, row]));
-    const ranks = new Map(rankings.map((row) => [row.tokenId, row]));
+    const ranks = new Map(rankingSnapshot.rows.map((row) => [row.tokenId, row]));
     const activeListings = listings.filter((item) => item.tokenId && item.bestListing?.pricePerItem?.token?.unit != null);
     const eliteListings = activeListings.map((item) => {
       const rank = ranks.get(item.tokenId!);
@@ -195,7 +229,13 @@ export async function GET() {
     const ethUsd = listingEthUsd ?? (firstOffer ? Number(firstOffer.topOfferUsd) / Number(firstOffer.topOfferEth) : null);
 
     return NextResponse.json({
-      asOf: new Date().toISOString(), ethUsd,
+      asOf: listingSnapshot.asOf, ethUsd,
+      sourceTimes: {
+        listingsAsOf: listingSnapshot.asOf,
+        offersAsOf: offerSnapshot.asOf,
+        rankingsAsOf: rankingSnapshot.asOf,
+        supplyAsOf: supplies.capturedAt,
+      },
       collections: [
         ...marketCollections,
         { key: 's1-elite', season: 'S1', label: 'Elite Citizens', slug: 'neotokyo-citizens', contract: '0xB9951B43802dCF3ef5b14567cb17adF367ed1c0F', floorEth: eliteListings[0]?.priceEth ?? null, floorSymbol: 'ETH', owners: null, sales24h: null, url: 'https://opensea.io/collection/neotokyo-citizens' },
@@ -213,7 +253,7 @@ export async function GET() {
         'Floor and offer data are live OpenSea references and can change before a transaction confirms.',
       ],
       sources: ['OpenSea current listing feed', 'OpenSea collection offer aggregates', 'Ethereum legacy and V2 Citizen/component contracts', 'NeoTokyo.codes Citizen rankings'],
-    }, { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } });
+    }, { headers: { 'Cache-Control': MARKET_CACHE_CONTROL } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Citizen market data failed';
     return NextResponse.json({ error: message }, { status: 502 });

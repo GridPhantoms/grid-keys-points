@@ -50,6 +50,8 @@ A one-second contract interval is dailyized instead of reading the trailing 24 h
 
 The rate is a current snapshot estimate. Staking changes, withdrawals, reward-window configuration and DAO tax can change it.
 
+Refresh target: **1 hour**. The response remains pinned to one Ethereum block and publishes that block and timestamp. The hourly cache reduces unnecessary RPC reads while preserving an adequate informational rate for the calculator.
+
 The calculator displays this live onchain-derived rate as a read-only current statistic. Users cannot override the rate; hypothetical controls are limited to the target BYTES price used by Speculator Mode.
 
 ## Market references
@@ -58,7 +60,11 @@ The calculator displays this live onchain-derived rate as a read-only current st
 - Elite floor: lowest current listed S1 in the scanned listing set whose current NeoTokyo.codes rank is 500 or better.
 - Elite table: current listed S1s joined to the current rank feed.
 - No executable listing: display `No Listings`, never a stale sale-derived floor.
-- Market timestamp: API response generation time.
+- Floors and Elite listing scan: cached independently for **5 minutes**.
+- Collection offers: cached independently for **15 minutes**.
+- NeoTokyo.codes S1 ranking table: cached independently for **1 hour**.
+- Valuation supply and custody: calculated at one pinned Ethereum block and cached independently for **1 hour**.
+- Market source timestamps: listing, offer and ranking acquisition times are returned separately. Supply retains its own pinned block time. The `$BYTES` market-cap input retains its separate first-party block and timestamp.
 
 Listings can change or disappear before a transaction confirms.
 

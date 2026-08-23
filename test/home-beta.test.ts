@@ -75,6 +75,7 @@ test('homepage beta uses supplied lore imagery and remains responsive', async ()
   assert.match(page, /<SiteFooter \/>/);
   assert.match(css, /@media \(max-width: 980px\)/);
   assert.match(css, /@media \(max-width: 700px\)/);
+  assert.match(css, /\.hb-hero-art \{[^}]*background: #071015 url\('\/home-beta\/hero-vote\.webp'\) 50% 50% \/ cover no-repeat/);
   assert.match(css, /grid-template-columns: \.82fr 1\.18fr/);
   assert.match(css, /object-position: 18% center/);
 });

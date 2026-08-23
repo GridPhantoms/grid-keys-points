@@ -133,7 +133,7 @@
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(34, 211, 238, .24);
-  background: #071015;
+  background: #071015 url('/home-beta/hero-vote.webp') 50% 50% / cover no-repeat;
   box-shadow: 0 40px 100px rgba(0, 0, 0, .55);
   scroll-margin-top: 110px;
 }

@@ -123,6 +123,7 @@ test('live valuation source covers nine distinct rows and pins every custody rea
   assert.match(ui, /useState\('3099'\)/);
   assert.match(ui, /value === 's1' \? '3099' : '1033'/);
   assert.match(ui, /group === 'S1' \? 'NEO TOKYO CITY' : 'OUTERLANDS'/);
+  assert.match(ui, /<span>\{group\} FLOORS<\/span>/);
   assert.doesNotMatch(ui, /INNER CITY|OUTER CITY/);
 });
 

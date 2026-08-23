@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const pagePath = new URL('../app/beta/grid-home-0823/page.tsx', import.meta.url);
+const betaPath = new URL('../app/beta/grid-home-0823/page.tsx', import.meta.url);
+const pagePath = new URL('../app/components/GridHome.tsx', import.meta.url);
 const cssPath = new URL('../app/beta/grid-home-0823/home-beta.css', import.meta.url);
 
 test('homepage beta stays unlisted, noindex, and independent in its hero positioning', async () => {
-  const page = await readFile(pagePath, 'utf8');
-  assert.match(page, /robots: \{ index: false, follow: false, nocache: true \}/);
+  const [beta, page] = await Promise.all([readFile(betaPath, 'utf8'), readFile(pagePath, 'utf8')]);
+  assert.match(beta, /robots: \{ index: false, follow: false, nocache: true \}/);
+  assert.match(beta, /<GridHome beta \/>/);
   assert.match(page, /THE REBELLION IS ALREADY IN MOTION/);
   assert.match(page, /Hold the Keys\.<br \/>Read the Grid\.<br \/><em>Shape what comes next\.<\/em>/);
   assert.match(page, /an onchain collective of Keyholders building transparent tools/);
@@ -71,7 +73,7 @@ test('homepage beta uses supplied lore imagery and remains responsive', async ()
     assert.match(page, new RegExp(image.replace('.', '\\.')));
     await access(new URL(`../public/home-beta/${image}`, import.meta.url));
   }
-  for (const href of ['/bytes', '/citizen', '/engine', '/']) assert.match(page, new RegExp(`href: '${href}'|href="${href}"`));
+  for (const href of ['/bytes', '/citizen', '/engine']) assert.match(page, new RegExp(`href: '${href}'|href="${href}"`));
   assert.match(page, /SiteNav active="home"/);
   assert.match(page, /<SiteFooter \/>/);
   assert.match(css, /@media \(max-width: 980px\)/);

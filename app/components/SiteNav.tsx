@@ -23,9 +23,9 @@ const navItems: Array<{ href: string; label: string; active: SiteNavActive }> = 
   { href: '/trait-charts', label: 'Trait Charts', active: 'trait-charts' },
   { href: '/raffle', label: 'Raffle Tracker', active: 'raffle' },
   { href: '/mint-progress', label: 'Mint Progress', active: 'mint-progress' },
+  { href: '/engine', label: 'Engine Room', active: 'engine' },
   { href: '/bytes', label: '$BYTES Terminal', active: 'bytes' },
   { href: '/citizen', label: 'Citizen Interlink', active: 'citizen' },
-  { href: '/engine', label: 'Engine Room', active: 'engine' },
 ];
 
 const linkClassName = (isActive: boolean) =>

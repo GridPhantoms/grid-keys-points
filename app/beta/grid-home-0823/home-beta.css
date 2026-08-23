@@ -113,6 +113,7 @@
 .hb-button-primary:hover { background: #a5f3fc; }
 .hb-button-secondary { border-color: #263940; color: #dcebed; }
 .hb-button-secondary:hover { border-color: #67e8f9; color: #67e8f9; }
+.hb-enter-mobile { display: none; }
 
 .hb-system-line {
   display: flex;
@@ -149,6 +150,7 @@
   align-items: center;
   gap: clamp(48px, 7vw, 92px);
   border-top: 1px solid #102026;
+  scroll-margin-top: 78px;
 }
 
 .hb-governance h2,
@@ -194,6 +196,8 @@
   border: 1px solid #17313a;
 }
 
+.hb-governance-gallery figure:first-child { background: #04090b url('/home-beta/governance-assembly.webp') center / cover no-repeat; }
+.hb-governance-gallery figure:nth-child(2) { background: #04090b url('/home-beta/vote-interface.webp') center / cover no-repeat; }
 .hb-governance-gallery figure:nth-child(2) { margin: 62px 0 -32px; }
 .hb-governance-gallery img { object-fit: cover; }
 
@@ -405,6 +409,8 @@
 }
 
 @media (max-width: 700px) {
+  .hb-enter-desktop { display: none; }
+  .hb-enter-mobile { display: inline-flex; }
   .hb-preview-bar { height: 38px; padding: 0 12px; font-size: 7px; }
   .hb-preview-bar span:last-child { display: none; }
   .hb-page main { width: min(100% - 28px, 1240px); }
@@ -420,6 +426,7 @@
   .hb-governance h2, .hb-section-heading h2, .hb-sakura h2, .hb-console h2, .hb-lore h2, .hb-provenance h2 { font-size: 38px; }
   .hb-governance-gallery { min-height: 470px; grid-template-columns: .82fr 1.18fr; gap: 8px; }
   .hb-governance-gallery figure:nth-child(2) { margin: 40px 0 -18px; }
+  .hb-governance-gallery figure:nth-child(2) { background-position: 18% center; }
   .hb-governance-gallery figure:nth-child(2) img { object-position: 18% center; }
   .hb-systems { padding: 76px 0 82px; }
   .hb-section-heading { gap: 22px; }

@@ -56,7 +56,8 @@ export default function GridHomeBeta() {
             <p className="hb-lede">In the aftermath of the Truncation, power consolidated behind closed systems. Grid Phantoms formed in the shadows: an onchain collective of Keyholders building transparent tools, shared intelligence and community-governed infrastructure.</p>
             <p className="hb-ai-lede"><b>Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface.</b> She helps Keyholders research, navigate the ecosystem and turn useful signals into practical tools, reports and coordinated action.</p>
             <div className="hb-actions">
-              <a href="#governance-signal" className="hb-button hb-button-primary">ENTER THE GRID</a>
+              <a href="#keyholder-governance" className="hb-button hb-button-primary hb-enter-desktop">ENTER THE GRID</a>
+              <a href="#governance-signal" className="hb-button hb-button-primary hb-enter-mobile">ENTER THE GRID</a>
               <a href="#keyholder-console" className="hb-button hb-button-secondary">LOAD MY KEYS</a>
             </div>
             <div className="hb-system-line"><span>GENESIS + EXODUS</span><span>KEYHOLDER GOVERNANCE</span><span>GRID LABS AI</span><span>TRANSPARENT OPERATIONS</span></div>
@@ -67,7 +68,7 @@ export default function GridHomeBeta() {
           </figure>
         </section>
 
-        <section className="hb-governance" aria-labelledby="governance-title">
+        <section className="hb-governance" id="keyholder-governance" aria-labelledby="governance-title">
           <div className="hb-governance-copy">
             <p className="hb-eyebrow">KEYHOLDER GOVERNANCE</p>
             <h2 id="governance-title">The Grid moves when Keyholders participate.</h2>

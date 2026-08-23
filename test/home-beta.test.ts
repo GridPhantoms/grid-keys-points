@@ -14,7 +14,8 @@ test('homepage beta stays unlisted, noindex, and independent in its hero positio
   const hero = page.slice(page.indexOf('<section className="hb-hero">'), page.indexOf('<section className="hb-governance"'));
   assert.doesNotMatch(hero, /Neo Tokyo|Citizen ecosystem/);
   assert.match(hero, /Through Grid Labs AI, Sakura extends that mission as the Grid&apos;s agentic interface/);
-  assert.match(hero, /href="#governance-signal"/);
+  assert.match(hero, /href="#keyholder-governance"[^>]*hb-enter-desktop/);
+  assert.match(hero, /href="#governance-signal"[^>]*hb-enter-mobile/);
   assert.match(hero, /id="governance-signal"/);
   assert.doesNotMatch(hero, /interface<\/b>—helping/);
 });
@@ -75,7 +76,12 @@ test('homepage beta uses supplied lore imagery and remains responsive', async ()
   assert.match(page, /<SiteFooter \/>/);
   assert.match(css, /@media \(max-width: 980px\)/);
   assert.match(css, /@media \(max-width: 700px\)/);
+  assert.match(css, /\.hb-enter-mobile \{ display: none; \}/);
+  assert.match(css, /\.hb-enter-desktop \{ display: none; \}/);
+  assert.match(css, /\.hb-enter-mobile \{ display: inline-flex; \}/);
   assert.match(css, /\.hb-hero-art \{[^}]*background: #071015 url\('\/home-beta\/hero-vote\.webp'\) 50% 50% \/ cover no-repeat/);
+  assert.match(css, /\.hb-governance-gallery figure:first-child \{[^}]*governance-assembly\.webp/);
+  assert.match(css, /\.hb-governance-gallery figure:nth-child\(2\) \{[^}]*vote-interface\.webp/);
   assert.match(css, /grid-template-columns: \.82fr 1\.18fr/);
   assert.match(css, /object-position: 18% center/);
 });

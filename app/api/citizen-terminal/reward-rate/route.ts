@@ -107,7 +107,7 @@ export async function GET() {
   try {
     return NextResponse.json(await cachedRewardRateSnapshot(), { headers: { 'Cache-Control': REWARD_RATE_CACHE_CONTROL } });
   } catch {
-    console.error('Citizen Terminal reward-rate derivation failed.');
+    console.error('Citizen Interlink reward-rate derivation failed.');
     return NextResponse.json({ error: 'Current staking reward rate is temporarily unavailable.' }, { status: 503 });
   }
 }

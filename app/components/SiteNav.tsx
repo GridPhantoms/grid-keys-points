@@ -24,7 +24,7 @@ const navItems: Array<{ href: string; label: string; active: SiteNavActive }> = 
   { href: '/raffle', label: 'Raffle Tracker', active: 'raffle' },
   { href: '/mint-progress', label: 'Mint Progress', active: 'mint-progress' },
   { href: '/bytes', label: '$BYTES Terminal', active: 'bytes' },
-  { href: '/citizen', label: 'Citizen Terminal', active: 'citizen' },
+  { href: '/citizen', label: 'Citizen Interlink', active: 'citizen' },
   { href: '/engine', label: 'Engine Room', active: 'engine' },
 ];
 

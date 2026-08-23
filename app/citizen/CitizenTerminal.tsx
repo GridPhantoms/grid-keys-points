@@ -208,13 +208,13 @@ export default function CitizenTerminal() {
     <section className="ct-hero" aria-labelledby="citizen-title">
       <div className="ct-hero-title">
         <div className="ct-kicker">NEO TOKYO MARKET INTELLIGENCE</div>
-        <h1 id="citizen-title">Citizen <em>Terminal</em></h1>
+        <h1 id="citizen-title">Citizen <em>Interlink</em></h1>
         <p>Inspect the code. Price the yield. Read the market.</p>
         <div className="ct-hero-badges"><span>Citizen intelligence</span><span>Live market references</span><span>Staking scenarios</span></div>
       </div>
       <div className={`ct-snapshot-stamp ${snapshotSourceTimes.length === 6 ? 'is-complete' : ''}`} aria-label="Snapshot recency summary">
-        <strong><i aria-hidden="true" />{snapshotSourceTimes.length ? 'MULTI-SOURCE SNAPSHOT' : 'CONNECTING TO SOURCES'}</strong>
-        <span>Latest source {formatSnapshotAge(latestSnapshotSource, snapshotNow)}</span>
+        <strong><i aria-hidden="true" />{snapshotSourceTimes.length ? 'INTERLINK ACTIVE' : 'CONNECTING TO SOURCES'}</strong>
+        <span>Latest source interlinked {formatSnapshotAge(latestSnapshotSource, snapshotNow)}</span>
         <span>Oldest source {formatSnapshotAge(oldestSnapshotSource, snapshotNow)}</span>
         <span>{snapshotSourceTimes.length} / 6 source classes · 5 min–1 hr refresh range</span>
       </div>

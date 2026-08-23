@@ -5,7 +5,7 @@ import CitizenTerminal from './CitizenTerminal';
 import './citizen.css';
 
 export const metadata: Metadata = {
-  title: 'Citizen Terminal | Neo Tokyo Market Intelligence',
+  title: 'Citizen Interlink | Neo Tokyo Market Intelligence',
   description: 'Citizen lookup, staking scenarios, component floors and Elite S1 listings for Neo Tokyo.',
 };
 

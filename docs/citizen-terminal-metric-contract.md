@@ -1,4 +1,4 @@
-# Citizen Terminal metric contract
+# Citizen Interlink metric contract
 
 ## Citizen lookup
 
@@ -10,9 +10,9 @@
 | S1 Elite status | Calculated | Current S1 `rarityMonRank <= 500` | Not classified without a current rank |
 | S2 OpenSea estimated rarity rank | Estimated | Current OpenSea item page / OpenRarity output | Explicitly says OpenSea estimate unavailable; never calculates a substitute |
 
-NeoTokyo.codes is an internal endpoint, so it is called server-side and cached. S2 component IDs use deterministic onchain getters. No client credential is exposed. OpenSea's S2 rank is kept in a distinct `estimatedRank` field with source URL and lookup timestamp. It is an OpenSea marketplace estimate, not a canonical official Neo Tokyo S2 rank. If OpenSea does not return a valid positive integer rank for the exact contract and token, the estimate remains explicitly unavailable. Citizen Terminal does not derive or invent a replacement score or rank.
+NeoTokyo.codes is an internal endpoint, so it is called server-side and cached. S2 component IDs use deterministic onchain getters. No client credential is exposed. OpenSea's S2 rank is kept in a distinct `estimatedRank` field with source URL and lookup timestamp. It is an OpenSea marketplace estimate, not a canonical official Neo Tokyo S2 rank. If OpenSea does not return a valid positive integer rank for the exact contract and token, the estimate remains explicitly unavailable. Citizen Interlink does not derive or invent a replacement score or rank.
 
-For S1 component cards, **Trait sum score** displays NeoTokyo.codes `componentScore`. **Rarity ranking score** displays its RarityMon-derived `rarityMonScore`, which accompanies the published component rarity rank. The score formulas are not recalculated or reinterpreted by Citizen Terminal.
+For S1 component cards, **Trait sum score** displays NeoTokyo.codes `componentScore`. **Rarity ranking score** displays its RarityMon-derived `rarityMonScore`, which accompanies the published component rarity rank. The score formulas are not recalculated or reinterpreted by Citizen Interlink.
 
 ## Staking points
 
@@ -86,9 +86,9 @@ The valuation exposes its pinned block, distinguishes legacy and V2 custody in c
 Classification: **Projected**.
 
 ```text
-position cost = current Citizen floor in USD + entered BYTES × current BYTES spot price
+position cost = entered Citizen ETH price × current ETH/USD + entered BYTES × current BYTES spot price
 annual reward value = current net BYTES/day × 365 × selected reward-valuation price
 hypothetical APY = annual reward value ÷ position cost × 100
 ```
 
-With Speculator Mode off, the selected reward-valuation price is current BYTES spot. With it on, only the projected reward valuation uses the target BYTES price; acquisition cost remains based on current spot. The projection excludes gas, marketplace fees, taxes, slippage, liquidity, rate changes and floor movement. It is informational and not financial advice.
+The Citizen ETH price defaults to the current executable Citizen floor for the selected season and can be replaced with a specific listing or historical purchase price. Historical ETH prices are converted using current ETH/USD, not the exchange rate at purchase. With Speculator Mode off, the selected reward-valuation price is current BYTES spot. With it on, only the projected reward valuation uses the target BYTES price; acquisition cost remains based on current spot. The projection excludes gas, marketplace fees, taxes, slippage, liquidity, rate changes and floor movement. It is informational and not financial advice.

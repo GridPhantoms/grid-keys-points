@@ -168,19 +168,28 @@ test('Citizen market sources use independent conservative refresh tiers', async 
 });
 
 test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot summary', async () => {
-  const [ui, css] = await Promise.all([
+  const [ui, css, page, nav] = await Promise.all([
     readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(ui, /<div className="ct-hero-title">/);
+  assert.match(ui, /<h1 id="citizen-title">Citizen <em>Interlink<\/em><\/h1>/);
+  assert.match(ui, /Inspect the code\. Price the yield\. Read the market\./);
   assert.match(ui, /ct-snapshot-stamp/);
-  assert.match(ui, /MULTI-SOURCE SNAPSHOT/);
+  assert.match(ui, /INTERLINK ACTIVE/);
   assert.match(ui, /ct-snapshot-stamp \$\{snapshotSourceTimes\.length === 6 \? 'is-complete' : ''\}/);
   assert.match(ui, /<strong><i aria-hidden="true" \/>/);
-  assert.match(ui, /Latest source/);
+  assert.match(ui, /Latest source interlinked/);
   assert.match(ui, /Oldest source/);
   assert.match(ui, /5 min–1 hr refresh range/);
+  assert.match(page, /title: 'Citizen Interlink \| Neo Tokyo Market Intelligence'/);
+  assert.match(nav, /href: '\/citizen', label: 'Citizen Interlink'/);
+  assert.doesNotMatch(ui, /Citizen <em>Terminal<\/em>|MULTI-SOURCE SNAPSHOT/);
+  assert.doesNotMatch(page, /Citizen Terminal/);
+  assert.doesNotMatch(nav, /label: 'Citizen Terminal'/);
   assert.doesNotMatch(ui, /<div className="ct-kicker"><span \/>/);
   assert.match(css, /\.ct-hero\{[^}]*grid-template-columns/);
   assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
@@ -193,7 +202,7 @@ test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot 
   assert.match(css, /@media\(min-width:900px\)\{\.ct-valuation-caveat,.ct-disclaimer\{font-size:11px\}\.ct-valuation-source,.ct-asof\{font-size:10px\}/);
 });
 
-test('Citizen Terminal uses the universal Grid Phantoms footer', async () => {
+test('Citizen Interlink uses the universal Grid Phantoms footer', async () => {
   const [page, footer] = await Promise.all([
     readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/SiteFooter.tsx', import.meta.url), 'utf8'),

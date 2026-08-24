@@ -132,9 +132,12 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /of the steady scenario.{0,80}total remaining issuance is projected to be emitted within the next 365 days/i);
   assert.doesNotMatch(dashboard, /className="bytes-lede"/);
   assert.match(dashboard, /<strong>The Premise\.<\/strong> A first-party view of \$BYTES emissions, decay, supply, staking, holders, and valuation, separated by evidence class and backed by visible provenance\./);
-  assert.match(dashboard, /<strong>Staying Power\.<\/strong> Born in 2021\. Still held across 8,808 wallets, with 35\.5% staked and a market cap well above \$1 million\. \$BYTES is the ticker\./);
+  assert.match(dashboard, /<strong>Staying Power\.<\/strong> Born in 2021\./);
+  assert.match(dashboard, /integerFormatter\.format\(crossChainUniqueHolderCount\.value\)/);
+  assert.match(dashboard, /formatPercentage\(stakingPercentage\)/);
+  assert.doesNotMatch(dashboard, /Still held across 8,808 wallets|with 35\.5% staked/);
   const premiseIndex = dashboard.indexOf('<div className="bytes-notice"><strong>The Premise.</strong>');
-  const stayingPowerIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Staying Power.</strong>');
+  const stayingPowerIndex = dashboard.indexOf('<strong>Staying Power.</strong>');
   const observedFirstIndex = dashboard.indexOf('<div className="bytes-notice"><strong>Observed First.</strong>');
   const headlineStatsIndex = dashboard.indexOf('<section className="bytes-stats bytes-headline-stats"');
   assert.ok(premiseIndex >= 0 && stayingPowerIndex > premiseIndex && observedFirstIndex > stayingPowerIndex && headlineStatsIndex > observedFirstIndex);

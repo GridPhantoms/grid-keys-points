@@ -386,7 +386,7 @@ export default function BytesDashboard() {
       </section>
 
       <div className="bytes-notice"><strong>The Premise.</strong> A first-party view of $BYTES emissions, decay, supply, staking, holders, and valuation, separated by evidence class and backed by visible provenance.</div>
-      <div className="bytes-notice"><strong>Staying Power.</strong> Born in 2021. Still held across 8,808 wallets, with 35.5% staked and a market cap well above $1 million. $BYTES is the ticker.</div>
+      <div className="bytes-notice" aria-live="polite"><strong>Staying Power.</strong> Born in 2021. {crossChainUniqueHolderCount?.availability === 'available' && typeof crossChainUniqueHolderCount.value === 'number' && stakingPercentage !== null ? <>Still held across <strong>{integerFormatter.format(crossChainUniqueHolderCount.value)}</strong> wallets, with <strong>{formatPercentage(stakingPercentage)}</strong> staked and a market cap well above $1 million. $BYTES is the ticker.</> : metricsDone ? <>Live holder and staking totals are temporarily unavailable. Its market cap remains well above $1 million. $BYTES is the ticker.</> : <>Loading live holder and staking totals. Its market cap remains well above $1 million. $BYTES is the ticker.</>}</div>
       <div className="bytes-notice"><strong>Observed First.</strong> Headline emissions come from configured staking-contract windows. Calculated and projected values remain visibly separate.</div>
 
       {allLoading ? <div className="bytes-loading" role="status" aria-live="polite">Loading live metrics and emissions history…</div> : null}

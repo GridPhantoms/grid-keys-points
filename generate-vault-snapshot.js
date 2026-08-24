@@ -12,6 +12,12 @@ const SOURCES = {
   ethUsd: 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640',
 };
 
+const FALLBACK_SOURCES = {
+  black: 'https://api.geckoterminal.com/api/v2/networks/avax/pools/0x0d9fd6dd9b1ff55fb0a9bb0e5f1b6a2d65b741a3',
+  bytes: 'https://api.geckoterminal.com/api/v2/networks/eth/pools/0xfeb09c7e130a4b87b27ebd648ec485657b688b34',
+  ethUsd: 'https://api.coinbase.com/v2/prices/ETH-USD/spot',
+};
+
 const OPENSEA_COLLECTIONS = {
   neo_s1_floor_usd: 'neotokyo-citizens',
   neo_s2_floor_usd: 'neotokyo-outer-citizens',
@@ -41,19 +47,59 @@ function parseNumber(value, label) {
   return parsed;
 }
 
+const FETCH_MAX_ATTEMPTS = 3;
+const FETCH_TIMEOUT_MS = 10_000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, label, headers) {
+  let lastError;
+  for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      if (res.ok) return res;
+
+      const body = (await res.text()).slice(0, 500);
+      const error = new Error(`${label} HTTP ${res.status}: ${body}`);
+      const retryable = res.status === 429 || res.status >= 500;
+      if (!retryable) {
+        error.retryable = false;
+        throw error;
+      }
+      if (attempt === FETCH_MAX_ATTEMPTS) throw error;
+      lastError = error;
+    } catch (error) {
+      lastError = error;
+      if (error?.retryable === false || attempt === FETCH_MAX_ATTEMPTS) throw error;
+    }
+
+    console.warn(`${label} attempt ${attempt} failed; retrying.`);
+    await sleep(500 * 2 ** (attempt - 1));
+  }
+
+  throw new Error(
+    `${label} failed after ${FETCH_MAX_ATTEMPTS} attempts: ${lastError?.message || lastError}`
+  );
+}
+
 async function fetchJson(url, label) {
-  const res = await fetch(url, {
-    headers: { accept: 'application/json', 'user-agent': 'GridPhantomsVaultSnapshot/1.0' },
+  const res = await fetchWithRetry(url, label, {
+    accept: 'application/json',
+    'user-agent': 'GridPhantomsVaultSnapshot/1.0',
   });
-  if (!res.ok) throw new Error(`${label} HTTP ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
 async function fetchText(url, label) {
-  const res = await fetch(url, {
-    headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': 'Mozilla/5.0 GridPhantomsVaultSnapshot/1.0' },
+  const res = await fetchWithRetry(url, label, {
+    accept: 'text/html,application/xhtml+xml',
+    'user-agent': 'Mozilla/5.0 GridPhantomsVaultSnapshot/1.0',
   });
-  if (!res.ok) throw new Error(`${label} HTTP ${res.status}: ${await res.text()}`);
   return res.text();
 }
 
@@ -64,6 +110,33 @@ async function getDexScreenerPrice(url, label) {
     throw new Error(`${label} missing usable pair.priceUsd`);
   }
   return price;
+}
+
+async function getGeckoTerminalBasePrice(url, label) {
+  const json = await fetchJson(url, label);
+  const price = Number.parseFloat(json?.data?.attributes?.base_token_price_usd);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error(`${label} missing usable data.attributes.base_token_price_usd`);
+  }
+  return price;
+}
+
+async function getCoinbaseEthPrice(url, label) {
+  const json = await fetchJson(url, label);
+  const price = Number.parseFloat(json?.data?.amount);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error(`${label} missing usable data.amount`);
+  }
+  return price;
+}
+
+async function getPriceWithFallback(primaryUrl, primaryLabel, fallbackLabel, fallbackFetch) {
+  try {
+    return await getDexScreenerPrice(primaryUrl, primaryLabel);
+  } catch (error) {
+    console.warn(`${primaryLabel} unavailable; using ${fallbackLabel}.`);
+    return fallbackFetch();
+  }
 }
 
 async function getOpenSeaFloorEth(slug) {
@@ -119,11 +192,29 @@ function updateVaultSnapshotMetadata(snapshotTime) {
 }
 
 async function collectValues(debankValue) {
-  const [blackPrice, bytesPrice, ethUsd] = await Promise.all([
-    getDexScreenerPrice(SOURCES.black, 'BLACK DexScreener price'),
-    getDexScreenerPrice(SOURCES.bytes, 'BYTES DexScreener price'),
-    getDexScreenerPrice(SOURCES.ethUsd, 'ETH/USD DexScreener price'),
-  ]);
+  // Avoid bursty parallel requests to DexScreener. Its public endpoint can
+  // intermittently return 5xx responses or stall when several pair lookups
+  // arrive together from the same client.
+  const blackPrice = await getPriceWithFallback(
+    SOURCES.black,
+    'BLACK DexScreener price',
+    'BLACK GeckoTerminal price',
+    () => getGeckoTerminalBasePrice(FALLBACK_SOURCES.black, 'BLACK GeckoTerminal price')
+  );
+  await sleep(250);
+  const bytesPrice = await getPriceWithFallback(
+    SOURCES.bytes,
+    'BYTES DexScreener price',
+    'BYTES GeckoTerminal price',
+    () => getGeckoTerminalBasePrice(FALLBACK_SOURCES.bytes, 'BYTES GeckoTerminal price')
+  );
+  await sleep(250);
+  const ethUsd = await getPriceWithFallback(
+    SOURCES.ethUsd,
+    'ETH/USD DexScreener price',
+    'Coinbase ETH/USD spot',
+    () => getCoinbaseEthPrice(FALLBACK_SOURCES.ethUsd, 'Coinbase ETH/USD spot')
+  );
 
   const floorEntries = await Promise.all(
     Object.entries(OPENSEA_COLLECTIONS).map(async ([key, slug]) => {

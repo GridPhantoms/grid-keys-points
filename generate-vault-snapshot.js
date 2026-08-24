@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- standalone Node generator uses CommonJS */
 const fs = require('fs');
 const path = require('path');
 
@@ -71,7 +72,7 @@ async function getOpenSeaFloorEth(slug) {
     const stats = await fetchJson(statsUrl, `OpenSea stats ${slug}`);
     const floor = Number.parseFloat(stats?.total?.floor_price);
     if (Number.isFinite(floor) && floor > 0) return floor;
-  } catch (err) {
+  } catch {
     console.warn(`OpenSea stats unavailable for ${slug}; falling back to collection page.`);
   }
 

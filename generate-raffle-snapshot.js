@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- standalone Node generator uses CommonJS */
 const fs = require('fs');
 const path = require('path');
 

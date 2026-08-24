@@ -6,6 +6,7 @@ const routeUrl = new URL('../app/api/bytes-metrics/route.ts', import.meta.url);
 const dashboardUrl = new URL('../app/bytes/BytesDashboard.tsx', import.meta.url);
 const dashboardCssUrl = new URL('../app/bytes/bytes.css', import.meta.url);
 const pageUrl = new URL('../app/bytes/page.tsx', import.meta.url);
+const footerUrl = new URL('../app/components/SiteFooter.tsx', import.meta.url);
 const contractUrl = new URL('../docs/bytes-terminal-metric-contract.md', import.meta.url);
 const participantGeneratorUrl = new URL('../scripts/generate-bytes-staking-participants.mjs', import.meta.url);
 const holderGeneratorUrl = new URL('../scripts/generate-bytes-holder-snapshot.mjs', import.meta.url);
@@ -76,7 +77,12 @@ test('holder refresh validates chain-local ledgers before calculating the cross-
 });
 
 test('BYTES page includes the universal Grid Phantoms footer', async () => {
-  const page = await readFile(pageUrl, 'utf8');
+  const [page, footer] = await Promise.all([
+    readFile(pageUrl, 'utf8'),
+    readFile(footerUrl, 'utf8'),
+  ]);
+  assert.match(page, /import SiteFooter/);
+  assert.match(page, /<SiteFooter \/>/);
   for (const expected of [
     'https://discord.gg/gridphantoms',
     'https://x.com/GridPhantoms',
@@ -84,7 +90,7 @@ test('BYTES page includes the universal Grid Phantoms footer', async () => {
     'https://snapshot.box/#/s:gridphantoms.eth',
     'https://manifold.xyz/@gridphantoms/id/4067746032',
     '© 2026 Grid Phantoms Ltd. All rights reserved.',
-  ]) assert.match(page, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  ]) assert.match(footer, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
 test('dashboard and metric contract use corrected valuation and reference-model language', async () => {

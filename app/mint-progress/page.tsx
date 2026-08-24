@@ -1,13 +1,15 @@
 'use client';
 
 import SiteNav from '../components/SiteNav';
+import SiteFooter from '../components/SiteFooter';
 import { useState, useEffect } from 'react';
 
 const TOTAL_EXODUS_SUPPLY = 3333;
 
 export default function MintProgress() {
-  const [exodusMinted, setExodusMinted] = useState<number>(0);
+  const [exodusMinted, setExodusMinted] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mintError, setMintError] = useState('');
 
   useEffect(() => {
     const fetchExodusCount = async () => {
@@ -22,6 +24,8 @@ export default function MintProgress() {
         setExodusMinted(data.minted);
       } catch (err) {
         console.error(err);
+        setExodusMinted(null);
+        setMintError('Mint count is temporarily unavailable. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -30,7 +34,9 @@ export default function MintProgress() {
     fetchExodusCount();
   }, []);
 
-  const progress = Math.min((exodusMinted / TOTAL_EXODUS_SUPPLY) * 100, 100);
+  const progress = exodusMinted === null
+    ? null
+    : Math.min((exodusMinted / TOTAL_EXODUS_SUPPLY) * 100, 100);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -72,6 +78,8 @@ export default function MintProgress() {
               <div className="text-right font-mono">
                 {loading ? (
                   <span className="text-zinc-400">Loading...</span>
+                ) : mintError ? (
+                  <span className="text-red-400">Unavailable</span>
                 ) : (
                   <>
                     <span className="text-cyan-400">{exodusMinted}</span>
@@ -84,12 +92,14 @@ export default function MintProgress() {
             <div className="h-6 bg-zinc-900 rounded-2xl overflow-hidden w-full">
               <div 
                 className="h-full bg-gradient-to-r from-cyan-400 to-cyan-300 transition-all duration-1000"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${progress ?? 0}%` }}
               />
             </div>
 
+            {mintError && <p className="mt-5 text-center text-red-400" role="alert">{mintError}</p>}
+
             <div className="flex justify-between text-sm mt-4 text-zinc-400">
-              <div>{loading ? '—' : `${progress.toFixed(2)}% minted`}</div>
+              <div>{progress === null ? '—' : `${progress.toFixed(2)}% minted`}</div>
               <div>
                 {exodusMinted !== null ? `${TOTAL_EXODUS_SUPPLY - exodusMinted} remaining` : '—'}
               </div>
@@ -109,22 +119,7 @@ export default function MintProgress() {
         </div>
       </div>
 
-      <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
-            <div className="flex flex-wrap gap-8 text-sm justify-center md:justify-start">
-              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
-              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
-              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
-              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot</a>
-              <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
-            </div>
-            <div className="text-xs text-zinc-500 text-center md:text-right">
-              © 2026 Grid Phantoms Ltd. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

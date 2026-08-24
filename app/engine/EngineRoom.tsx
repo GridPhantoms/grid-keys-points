@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { PHANTOM_REWARD_ARCHIVE_AT, PHANTOM_REWARD_FILES } from '@/lib/phantom-reward-files';
 
 type RewardKeyType = 'genesis' | 'exodus';
 type SourceStatus = 'loading' | 'available' | 'stale' | 'unavailable';
@@ -32,23 +33,11 @@ type EngineSources = {
 
 const SOURCE_CLASS_COUNT = 5;
 const SOURCE_TIMEOUT_MS = 12_000;
-const REWARD_ARCHIVE_AT = '2026-08-03T02:10:34Z';
+
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
 const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
 
-const AIRDROP_FILES = [
-  '/airdrops/2025-10Airdrop.csv',
-  '/airdrops/2025-11Airdrop.csv',
-  '/airdrops/2025-12Airdrop.csv',
-  '/airdrops/2026-01Airdrop.csv',
-  '/airdrops/2026-02Airdrop.csv',
-  '/airdrops/2026-03Airdrop.csv',
-  '/airdrops/2026-04Airdrop.csv',
-  '/airdrops/2026-05Airdrop.csv',
-  '/airdrops/2026-06Airdrop.csv',
-  '/airdrops/2026-07Airdrop.csv',
-] as const;
 
 const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: null, asOf: null });
 
@@ -202,7 +191,7 @@ function parseHolderSnapshot(text: string): HolderSnapshot {
 }
 
 function parseRewardArchive(texts: string[]): RewardArchive {
-  if (texts.length !== AIRDROP_FILES.length) throw new Error('Incomplete reward archive');
+  if (texts.length !== PHANTOM_REWARD_FILES.length) throw new Error('Incomplete reward archive');
   let totalRewards = 0;
   let totalEntries = 0;
   const uniqueRecipientsByCycle: number[] = [];
@@ -432,8 +421,8 @@ export default function EngineRoom() {
           return { data: parseHolderSnapshot(text), asOf: metadata.capturedAt };
         }, 14 * 24 * 60 * 60 * 1000),
         loadSource('rewards', async () => ({
-          data: parseRewardArchive(await Promise.all(AIRDROP_FILES.map((file) => fetchText(file)))),
-          asOf: REWARD_ARCHIVE_AT,
+          data: parseRewardArchive(await Promise.all(PHANTOM_REWARD_FILES.map((file) => fetchText(file)))),
+          asOf: PHANTOM_REWARD_ARCHIVE_AT,
         })),
       ]);
 

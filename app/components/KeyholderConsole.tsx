@@ -3,6 +3,8 @@
 /* eslint-disable @next/next/no-img-element -- role icons and shared season art retain the existing direct sources */
 
 import { useState, useEffect } from 'react';
+import { PHANTOM_REWARD_FILES } from '@/lib/phantom-reward-files';
+import { KEY_TRAIT_POINTS } from '@/lib/key-trait-points';
 
 const GENESIS_CONTRACT = "0xF26e168D053F6779f7172A1d0b0A6cD8d7446493".toLowerCase();
 const EXODUS_CONTRACT = "0xddF1d5f3A79ccbA74e284fD5b9Ee0FAdDB8993aa".toLowerCase();
@@ -17,6 +19,7 @@ type KeyData = {
   collection: 'Genesis Keys' | 'Exodus Keys';
   image: string;
   points: number;
+  traitsAvailable: boolean;
   topTrait: string;
   topTraitPoints: number;
 };
@@ -25,6 +28,9 @@ type WalletNft = {
   tokenId: string | number;
   contract?: { address?: string };
 };
+
+type SupportDataState = 'loading' | 'available' | 'unavailable';
+type LookupErrorKind = 'validation' | 'service' | 'empty' | null;
 
 function setCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax; Max-Age=315360000`;
@@ -46,65 +52,13 @@ export default function KeyholderConsole() {
   const [keys, setKeys] = useState<KeyData[]>([]);
   const [phantomRewards, setPhantomRewards] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [errorKind, setErrorKind] = useState<LookupErrorKind>(null);
   const [traitLookup, setTraitLookup] = useState<Record<string, string[]>>({});
   const [rewardsLookup, setRewardsLookup] = useState<Record<string, number>>({});
+  const [traitDataState, setTraitDataState] = useState<SupportDataState>('loading');
+  const [rewardDataState, setRewardDataState] = useState<SupportDataState>('loading');
   const [sortMode, setSortMode] = useState<'key' | 'points'>('key');
 
-  const pointsMap: Record<string, number> = {
-    "Grid Dominion - Whispering Strike": 200,
-    "Grid Dominion - Steady Barrage": 400,
-    "Grid Dominion - Ambush Onslaught": 600,
-    "Grid Dominion - Intense Blitz": 800,
-    "Grid Dominion - Phantom Conquest": 1000,
-    "Cloaking Power - Quiet Shadow": 200,
-    "Cloaking Power - Fading Mist": 400,
-    "Cloaking Power - Stealth Barrier": 600,
-    "Cloaking Power - Deep Camouflage": 800,
-    "Cloaking Power - Phantom Invisibility": 1000,
-    "Code Stratagem - Emerging Tactic": 200,
-    "Code Stratagem - Partial Scheme": 400,
-    "Code Stratagem - Intact Blueprint": 600,
-    "Code Stratagem - Masterful Hack": 800,
-    "Code Stratagem - Phantom Stratagem": 1000,
-    "Veil Assault - Subtle Slash": 200,
-    "Veil Assault - Surgical Strike": 400,
-    "Veil Assault - Fierce Breach": 600,
-    "Veil Assault - Radiant Charge": 800,
-    "Veil Assault - Phantom Overthrow": 1000,
-    "Pulse Fortitude - Silent Endurance": 200,
-    "Pulse Fortitude - Iron Constitution": 400,
-    "Pulse Fortitude - Resonant Stamina": 600,
-    "Pulse Fortitude - Radiant Tenacity": 800,
-    "Pulse Fortitude - Phantom Command": 1000,
-    "Reward Modulation - Genesis": 1000,
-
-    "Aerial Domain - Silent Drift": 100,
-    "Aerial Domain - Shadow Split": 200,
-    "Aerial Domain - Fading Horizon": 300,
-    "Aerial Domain - Veil Shatter": 400,
-    "Aerial Domain - Exodus Flight": 500,
-    "Grid Speed - Chrome Blitz": 100,
-    "Grid Speed - Holo Sprint": 200,
-    "Grid Speed - Flux Burst": 300,
-    "Grid Speed - Ghost Overdrive": 400,
-    "Grid Speed - Exodus Warp": 500,
-    "Exodus Sovereignty - Silent Ascendancy": 100,
-    "Exodus Sovereignty - Umbral Rule": 200,
-    "Exodus Sovereignty - Spectral Decree": 300,
-    "Exodus Sovereignty - Shadow Insurrection": 400,
-    "Exodus Sovereignty - Exodus Dominion": 500,
-    "Veiled Power - Veil Rend": 100,
-    "Veiled Power - Oblivion Strike": 200,
-    "Veiled Power - Grid Surge": 300,
-    "Veiled Power - Eternal Edict": 400,
-    "Veiled Power - Exodus Sprawl": 500,
-    "Phantom Weapon - Echo Dagger": 100,
-    "Phantom Weapon - Ghostwire Rifle": 200,
-    "Phantom Weapon - Reaper Katanas": 300,
-    "Phantom Weapon - Nebula Cannon": 400,
-    "Phantom Weapon - Quantum Raygun": 500,
-    "Reward Modulation - Exodus": 500,
-  };
 
   // Load traits CSVs
   useEffect(() => {
@@ -114,6 +68,8 @@ export default function KeyholderConsole() {
           fetch('/genesis-traits.csv'),
           fetch('/exodus-traits.csv')
         ]);
+
+        if (!genesisRes.ok || !exodusRes.ok) throw new Error('Trait data unavailable');
 
         const genesisText = await genesisRes.text();
         const exodusText = await exodusRes.text();
@@ -152,9 +108,12 @@ export default function KeyholderConsole() {
           lookup[`Exodus-${tokenId}`] = traits;
         });
 
+        if (Object.keys(lookup).length === 0) throw new Error('Trait data is empty');
         setTraitLookup(lookup);
+        setTraitDataState('available');
       } catch (e) {
         console.error("Failed to load traits CSVs:", e);
+        setTraitDataState('unavailable');
       }
     };
 
@@ -165,23 +124,11 @@ export default function KeyholderConsole() {
   useEffect(() => {
     const loadAirdrops = async () => {
       try {
-        const files = [
-          '/airdrops/2025-12Airdrop.csv',
-          '/airdrops/2025-10Airdrop.csv',
-          '/airdrops/2026-01Airdrop.csv',
-          '/airdrops/2025-11Airdrop.csv',
-          '/airdrops/2026-02Airdrop.csv',
-          '/airdrops/2026-03Airdrop.csv',
-          '/airdrops/2026-04Airdrop.csv',
-          '/airdrops/2026-05Airdrop.csv',
-          '/airdrops/2026-06Airdrop.csv',
-          '/airdrops/2026-07Airdrop.csv'
-        ];
-
         const lookup: Record<string, number> = {};
 
-        for (const file of files) {
+        for (const file of PHANTOM_REWARD_FILES) {
           const res = await fetch(file);
+          if (!res.ok) throw new Error(`Reward history unavailable: ${file}`);
           const text = await res.text();
           const lines = text.trim().split('\n');
 
@@ -191,13 +138,16 @@ export default function KeyholderConsole() {
             if (!wallet || !amountStr) return;
             const normalized = wallet.trim().toLowerCase();
             const amount = parseFloat(amountStr.trim());
+            if (!Number.isFinite(amount)) throw new Error(`Invalid reward history: ${file}`);
             lookup[normalized] = (lookup[normalized] || 0) + amount;
           });
         }
 
         setRewardsLookup(lookup);
+        setRewardDataState('available');
       } catch (e) {
         console.error("Failed to load airdrop CSVs:", e);
+        setRewardDataState('unavailable');
       }
     };
 
@@ -224,14 +174,14 @@ export default function KeyholderConsole() {
 
     traits.forEach(trait => {
       if (trait === "Genesis" || trait === "Exodus") {
-        const points = pointsMap[`Reward Modulation - ${trait}`] || 0;
+        const points = KEY_TRAIT_POINTS[`Reward Modulation - ${trait}`] || 0;
         total += points;
         return;
       }
-      let points = pointsMap[trait] || 0;
+      let points = KEY_TRAIT_POINTS[trait] || 0;
       if (points === 0) {
-        const match = Object.keys(pointsMap).find(k => k.endsWith(` - ${trait}`));
-        if (match) points = pointsMap[match];
+        const match = Object.keys(KEY_TRAIT_POINTS).find(k => k.endsWith(` - ${trait}`));
+        if (match) points = KEY_TRAIT_POINTS[match];
       }
       total += points;
       if (points > highestPoints) {
@@ -247,8 +197,15 @@ export default function KeyholderConsole() {
   const handleLoad = async () => {
     if (!address) return;
 
+    if (traitDataState === 'loading') {
+      setErrorKind('service');
+      setError('Trait data is still loading. Please try again in a moment.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setErrorKind(null);
     setKeys([]);
     setPhantomRewards(null);
 
@@ -278,16 +235,17 @@ export default function KeyholderConsole() {
 
         const lookupKey = `${isGenesis ? "Genesis" : "Exodus"}-${tokenId}`;
         const traits = traitLookup[lookupKey];
-
-        if (!traits || traits.length === 0) return;
-
-        const { points, topTrait, topTraitPoints } = calculatePointsAndTopTrait(traits);
+        const traitsAvailable = Boolean(traits?.length);
+        const { points, topTrait, topTraitPoints } = traitsAvailable
+          ? calculatePointsAndTopTrait(traits ?? [])
+          : { points: 0, topTrait: 'Trait data unavailable', topTraitPoints: 0 };
 
         processedKeys.push({
           tokenId,
           collection: isGenesis ? "Genesis Keys" : "Exodus Keys",
           image: isGenesis ? GENESIS_IMAGE : EXODUS_IMAGE,
           points,
+          traitsAvailable,
           topTrait,
           topTraitPoints
         });
@@ -297,21 +255,21 @@ export default function KeyholderConsole() {
 
       if (processedKeys.length > 0) {
         const normalizedWallet = address.toLowerCase();
-        const rewards = rewardsLookup[normalizedWallet] || 0;
-        setPhantomRewards(rewards);
+        setPhantomRewards(
+          rewardDataState === 'available' ? (rewardsLookup[normalizedWallet] ?? 0) : null,
+        );
 
         if (rememberWallet) setCookie(WALLET_COOKIE_NAME, address);
       } else {
-        setError("No Keys found in this wallet.\n\nMint Exodus Keys here.");
+        setErrorKind('empty');
+        setError("No Keys found in this wallet.");
       }
 
     } catch (err: unknown) {
       console.error("Wallet Key load failed");
-      setError(
-        err instanceof Error && err.message === "Enter a valid Ethereum wallet address."
-          ? err.message
-          : "Unable to load wallet Keys right now. Please try again.",
-      );
+      const isValidation = err instanceof Error && err.message === "Enter a valid Ethereum wallet address.";
+      setErrorKind(isValidation ? 'validation' : 'service');
+      setError(isValidation ? err.message : "Unable to load wallet Keys right now. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -322,6 +280,7 @@ export default function KeyholderConsole() {
     setKeys([]);
     setPhantomRewards(null);
     setError('');
+    setErrorKind(null);
     deleteCookie(WALLET_COOKIE_NAME);
     setRememberWallet(false);
   };
@@ -337,6 +296,7 @@ export default function KeyholderConsole() {
   const sortedExodus = getSortedKeys(keys.filter(k => k.collection === 'Exodus Keys'));
 
   const totalPoints = keys.reduce((sum, k) => sum + (k.points || 0), 0);
+  const hasIncompleteTraits = keys.some((key) => !key.traitsAvailable);
   const totalGenesis = sortedGenesis.length;
   const totalExodus = sortedExodus.length;
   const totalKeys = keys.length;
@@ -350,9 +310,10 @@ export default function KeyholderConsole() {
           <p>Inspect Genesis and Exodus Keys, Trait Points, unlocked roles and Lifetime Phantom Rewards. No wallet connection, signature or transaction required.</p>
         </header>
         <div className="kh-console-form">
-          <label className="block text-xs text-zinc-500 mb-2">WALLET ADDRESS</label>
+          <label htmlFor="wallet-address" className="block text-xs text-zinc-500 mb-2">WALLET ADDRESS</label>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
+              id="wallet-address"
               type="text"
               inputMode="text"
               autoComplete="off"
@@ -361,14 +322,14 @@ export default function KeyholderConsole() {
               spellCheck="false"
               style={{ fontSize: '16px' }}
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              onChange={(e) => { setAddress(e.target.value); setError(''); setErrorKind(null); }}
               className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 text-sm font-mono focus:border-cyan-500 focus:outline-none"
               placeholder="0x..."
             />
             <button
               type="button"
               onClick={handleLoad}
-              disabled={loading || !address}
+              disabled={loading || !address || traitDataState === 'loading' || rewardDataState === 'loading'}
               className="bg-cyan-500 hover:bg-cyan-600 px-8 py-4 rounded-xl font-medium text-sm disabled:bg-zinc-700 transition-colors whitespace-nowrap"
             >
               {loading ? 'LOADING...' : 'LOAD KEYS'}
@@ -380,6 +341,13 @@ export default function KeyholderConsole() {
             >
               Clear
             </button>
+          </div>
+
+          <div className="mt-3 text-sm" aria-live="polite">
+            {traitDataState === 'loading' && <p className="text-zinc-500">Loading Key trait data…</p>}
+            {traitDataState === 'unavailable' && <p className="text-amber-400">Trait data is temporarily unavailable. Key ownership can still be checked; Trait Points will be marked unavailable.</p>}
+            {rewardDataState === 'loading' && <p className="text-zinc-500">Loading Phantom Reward history…</p>}
+            {rewardDataState === 'unavailable' && <p className="text-amber-400">Reward history is temporarily unavailable. Key ownership can still be checked.</p>}
           </div>
 
           <div className="mt-4 flex items-center gap-2">
@@ -396,29 +364,36 @@ export default function KeyholderConsole() {
           </div>
 
           {error && (
-            <div className="mt-6 text-center">
-              <p className="text-red-400 text-lg font-medium">No Keys found in this wallet.</p>
-              <a 
-                href="https://manifold.xyz/@gridphantoms/id/4067746032" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="mt-3 inline-block text-cyan-400 hover:text-cyan-300 text-lg underline"
-              >
-                Mint Exodus Keys here.
-              </a>
+            <div className="mt-6 text-center" role="alert">
+              <p className="text-red-400 text-lg font-medium">{error}</p>
+              {errorKind === 'empty' && (
+                <a
+                  href="https://manifold.xyz/@gridphantoms/id/4067746032"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block text-cyan-400 hover:text-cyan-300 text-lg underline"
+                >
+                  Mint Exodus Keys here.
+                </a>
+              )}
             </div>
           )}
         </div>
 
         {keys.length > 0 && (
           <div className="kh-results">
+            {(rewardDataState === 'unavailable' || hasIncompleteTraits) && (
+              <div className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200" role="alert">
+                Partial data: Key ownership is available, but {hasIncompleteTraits ? 'some Trait Points' : 'Lifetime Phantom Rewards'} {hasIncompleteTraits && rewardDataState === 'unavailable' ? 'and Lifetime Phantom Rewards are' : 'are'} temporarily unavailable.
+              </div>
+            )}
             {/* Main Stats + Lifetime Rewards */}
             <div className="kh-summary-grid grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
               <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                   <div>
                     <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
-                    <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{totalPoints.toLocaleString()}</p>
+                    <p className="text-4xl md:text-5xl font-bold text-cyan-400 tracking-tighter">{hasIncompleteTraits ? '—' : totalPoints.toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-zinc-500 mb-1">GENESIS KEYS</p>
@@ -441,6 +416,7 @@ export default function KeyholderConsole() {
                   {phantomRewards !== null ? phantomRewards.toLocaleString() : '—'}
                 </p>
                 <p className="text-sm text-cyan-400 mt-1">$BYTES</p>
+                {rewardDataState === 'unavailable' && <p className="mt-2 text-xs text-amber-400">Lifetime Phantom Rewards unavailable</p>}
               </div>
             </div>
 
@@ -575,10 +551,11 @@ function Card({ keyData }: { keyData: KeyData }) {
 
         <div className="mt-4">
           <p className="text-xs text-zinc-500">POINTS</p>
-          <p className="text-3xl font-bold tracking-tighter">{keyData.points}</p>
+          <p className="text-3xl font-bold tracking-tighter">{keyData.traitsAvailable ? keyData.points : '—'}</p>
+          {!keyData.traitsAvailable && <p className="mt-1 text-xs text-amber-400">Trait Points unavailable</p>}
         </div>
 
-        {keyData.topTrait && keyData.topTrait !== 'None' && (
+        {keyData.traitsAvailable && keyData.topTrait && keyData.topTrait !== 'None' && (
           <div className="mt-4 pt-4 border-t border-zinc-900">
             <p className="text-xs text-cyan-400 tracking-widest">HOT TRAIT</p>
             <p className="text-base font-medium text-white mt-1">{keyData.topTrait}</p>

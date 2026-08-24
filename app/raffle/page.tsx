@@ -1,13 +1,17 @@
 'use client';
 
 import SiteNav from '../components/SiteNav';
+import SiteFooter from '../components/SiteFooter';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
+type RaffleEntrant = { wallet: string; tickets: number; odds: number };
+
 export default function RaffleTracker() {
-  const [totalTickets, setTotalTickets] = useState(0);
-  const [entrants, setEntrants] = useState<any[]>([]);
+  const [totalTickets, setTotalTickets] = useState<number | null>(null);
+  const [entrants, setEntrants] = useState<RaffleEntrant[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [raffleError, setRaffleError] = useState('');
   const [lastSnapshot] = useState("August 3, 2026 17:33 UTC");
 
   // Exact timestamp of the 30th eligible mint. Updated by the raffle snapshot generator once reached.
@@ -18,6 +22,7 @@ export default function RaffleTracker() {
     const loadSnapshot = async () => {
       try {
         const res = await fetch('/raffle-snapshot.csv');
+        if (!res.ok) throw new Error('Raffle snapshot unavailable');
         const text = await res.text();
 
         const ownerMap: Record<string, number> = {};
@@ -49,6 +54,9 @@ export default function RaffleTracker() {
         setEntrants(sortedEntrants);
       } catch (err) {
         console.error("Failed to load raffle snapshot:", err);
+        setRaffleError('Raffle snapshot is temporarily unavailable. Please try again later.');
+        setTotalTickets(null);
+        setEntrants(null);
       } finally {
         setLoading(false);
       }
@@ -96,6 +104,7 @@ export default function RaffleTracker() {
       <SiteNav active="raffle" />
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 flex-1">
+        <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">Grid Phantoms Raffle Tracker</h1>
         {/* Two Prizes Side-by-Side */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8">Up for Raffle</h2>
@@ -151,13 +160,18 @@ export default function RaffleTracker() {
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Raffle Status</h2>
-            <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">Live</span>
+            <span className="text-sm bg-zinc-900 px-4 py-1 rounded-full">{raffleError ? 'Unavailable' : loading ? 'Loading' : 'Live'}</span>
           </div>
 
-          <div className="text-center">
-            <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
-            <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
-          </div>
+          {loading ? (
+            <p className="py-10 text-center text-zinc-500" aria-live="polite">Loading raffle snapshot…</p>
+          ) : raffleError ? (
+            <p className="py-10 text-center text-red-400" role="alert">{raffleError}</p>
+          ) : totalTickets !== null ? (<>
+            <div className="text-center">
+              <p className="text-6xl font-bold text-cyan-400">{totalTickets}</p>
+              <p className="text-zinc-500">Exodus Keys minted during raffle window</p>
+            </div>
 
           {totalTickets < 30 ? (
             <div className="mt-8 text-center">
@@ -176,6 +190,7 @@ export default function RaffleTracker() {
               </p>
             </div>
           )}
+          </>) : null}
         </div>
 
         {/* Entrant Ledger */}
@@ -184,9 +199,13 @@ export default function RaffleTracker() {
           <p className="text-sm text-zinc-500 mb-6">Snapshot: {lastSnapshot}</p>
           
           <div className="space-y-4">
-            {entrants.length === 0 ? (
+            {loading ? (
+              <p className="text-zinc-500 text-center py-12" aria-live="polite">Loading entrant ledger…</p>
+            ) : raffleError ? (
+              <p className="text-red-400 text-center py-12" role="alert">Entrant ledger unavailable.</p>
+            ) : entrants && entrants.length === 0 ? (
               <p className="text-zinc-500 text-center py-12">No entrants yet — be the first to mint!</p>
-            ) : (
+            ) : entrants ? (
               entrants.map((entrant, i) => (
                 <div key={i} className="bg-black/50 border border-zinc-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="font-mono text-sm text-zinc-400 break-all">
@@ -200,7 +219,7 @@ export default function RaffleTracker() {
                   </div>
                 </div>
               ))
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -216,23 +235,7 @@ export default function RaffleTracker() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950 py-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8">
-            <div className="flex flex-wrap gap-8 text-sm justify-center md:justify-start">
-              <a href="https://discord.gg/gridphantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
-              <a href="https://x.com/GridPhantoms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
-              <a href="https://opensea.io/collection/grid-phantoms-genesis-keys" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenSea</a>
-              <a href="https://snapshot.box/#/s:gridphantoms.eth" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Snapshot</a>
-              <a href="https://manifold.xyz/@gridphantoms/id/4067746032" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Exodus Mint</a>
-            </div>
-            <div className="text-xs text-zinc-500 text-center md:text-right">
-              © 2026 Grid Phantoms Ltd. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

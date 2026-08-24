@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { calculateImpliedValuation, type ValuationMethod } from '@/lib/citizen-valuation';
 
@@ -233,7 +234,7 @@ export default function CitizenTerminal() {
 
       {lookup && <div className="ct-citizen-result">
         <div className="ct-citizen-overview">
-          <div className="ct-citizen-image">{lookup.imageUrl ? <img src={lookup.imageUrl} alt={lookup.name} /> : <span>NO IMAGE</span>}</div>
+          <div className="ct-citizen-image">{lookup.imageUrl ? <Image src={lookup.imageUrl} alt={lookup.name} width={800} height={800} unoptimized /> : <span>NO IMAGE</span>}</div>
           <div className="ct-citizen-title">
             <p>{lookup.season.toUpperCase()} · ASSEMBLED CITIZEN</p>
             <h3>{lookup.name}</h3>
@@ -358,7 +359,7 @@ export default function CitizenTerminal() {
     <section className="ct-panel">
       <SectionHeading eyebrow="04 / ELITE WATCH" title="S1 Elite listings" detail="Current listed S1s whose live NeoTokyo.codes rarity rank is 500 or better." />
       <div className="ct-table-wrap"><table><thead><tr><th>Citizen</th><th>Rank</th><th>Reward rate</th><th>Listing</th><th /></tr></thead><tbody>
-        {market?.eliteListings.map((item) => <tr key={item.tokenId}><td><div className="ct-listing-citizen">{item.imageUrl && <img src={item.imageUrl} alt="" />}<strong>#{item.tokenId}</strong></div></td><td><span className="ct-rank-pill">ELITE #{item.rank}</span></td><td>{item.rewardRate ?? '—'}</td><td><strong>{item.priceEth == null ? '—' : `${formatNumber(item.priceEth, 4)} Ξ`}</strong><small>{formatUsd(item.priceUsd)}</small></td><td><a href={item.url} target="_blank" rel="noreferrer">VIEW ↗</a></td></tr>)}
+        {market?.eliteListings.map((item) => <tr key={item.tokenId}><td><div className="ct-listing-citizen">{item.imageUrl && <Image src={item.imageUrl} alt="" width={48} height={48} unoptimized />}<strong>#{item.tokenId}</strong></div></td><td><span className="ct-rank-pill">ELITE #{item.rank}</span></td><td>{item.rewardRate ?? '—'}</td><td><strong>{item.priceEth == null ? '—' : `${formatNumber(item.priceEth, 4)} Ξ`}</strong><small>{formatUsd(item.priceUsd)}</small></td><td><a href={item.url} target="_blank" rel="noreferrer">VIEW ↗</a></td></tr>)}
         {market && market.eliteListings.length === 0 && <tr><td colSpan={5} className="ct-empty">No Elite S1 listings in the current OpenSea scan.</td></tr>}
         {!market && !marketError && <tr><td colSpan={5} className="ct-empty">Scanning current listings…</td></tr>}
       </tbody></table></div>

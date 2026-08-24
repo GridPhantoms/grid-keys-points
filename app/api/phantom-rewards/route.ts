@@ -1,27 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-
-const AIRDROP_FILES = [
-  '2025-10Airdrop.csv',
-  '2025-11Airdrop.csv',
-  '2025-12Airdrop.csv',
-  '2026-01Airdrop.csv',
-  '2026-02Airdrop.csv',
-  '2026-03Airdrop.csv',
-  '2026-04Airdrop.csv',
-  '2026-05Airdrop.csv',
-  '2026-06Airdrop.csv',
-  '2026-07Airdrop.csv',
-];
+import { PHANTOM_REWARD_FILE_NAMES } from '@/lib/phantom-reward-files';
 
 function loadRewardsLookup(): Record<string, number> {
   const lookup: Record<string, number> = {};
   const airdropsDir = path.join(process.cwd(), 'public', 'airdrops');
 
-  for (const file of AIRDROP_FILES) {
+  for (const file of PHANTOM_REWARD_FILE_NAMES) {
     const filePath = path.join(airdropsDir, file);
-    if (!fs.existsSync(filePath)) continue;
+    if (!fs.existsSync(filePath)) throw new Error(`Missing reward archive file: ${file}`);
 
     const text = fs.readFileSync(filePath, 'utf8');
     text.trim().split('\n').forEach((line) => {

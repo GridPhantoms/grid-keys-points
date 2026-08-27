@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T00:23:23.000Z",
-  "sourceBlock": 25756837,
+  "generatedAt": "2026-08-27T17:48:35.000Z",
+  "sourceBlock": 25848158,
+  "sourceBlockHash": "0xbdc65be669b8939bddfbccd0cb37f4985bd2fd2766f37610c90c680a2c43ef9d",
   "methodology": {
     "classification": "calculated",
     "source": "Neo Tokyo staking contract getTotalEmissions cumulative differences",
     "contract": "0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16",
-    "normalization": "Each interval is normalized to a 24-hour UTC daily rate; the final source interval may be shorter than 24 hours.",
+    "normalization": "Each row is one complete 24-hour UTC interval reconstructed from cumulative contract emissions at a single pinned Ethereum block.",
     "pools": {
       "0": "S1",
       "1": "S2",
@@ -15,7 +16,7 @@
     }
   },
   "start": "2023-06-01",
-  "end": "2026-08-15",
+  "end": "2026-08-26",
   "rows": [
     {
       "date": "2023-06-01",
@@ -9392,6 +9393,94 @@
       "BYTES": 0,
       "LP": 0,
       "total": 744.22957129
+    },
+    {
+      "date": "2026-08-16",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-17",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-18",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-19",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-20",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-21",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-22",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-23",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-24",
+      "S1": 696.7255561,
+      "S2": 47.50401519,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 744.22957129
+    },
+    {
+      "date": "2026-08-25",
+      "S1": 610.8996178396353,
+      "S2": 41.65224667489935,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 652.5518645145347
+    },
+    {
+      "date": "2026-08-26",
+      "S1": 593.7358605999999,
+      "S2": 40.48199049999992,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 634.2178510999998
     }
   ]
 }

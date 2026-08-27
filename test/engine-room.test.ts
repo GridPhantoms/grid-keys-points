@@ -34,7 +34,7 @@ test('Engine Room uses the terminal-family hero and five-section hierarchy', asy
     '02 / PHANTOM REWARD HISTORY',
     '03 / REWARD VALUE SIMULATOR',
     '04 / REBELLION VITALS',
-    '05 / NEO TOKYO HOLDINGS',
+    '05 / NFT HOLDINGS',
   ];
   sections.forEach((label) => assert.match(ui, new RegExp(label.replace('/', '\\/'))));
   sections.slice(1).forEach((label, index) => {
@@ -42,7 +42,7 @@ test('Engine Room uses the terminal-family hero and five-section hierarchy', asy
   });
 });
 
-test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tiles', async () => {
+test('Engine Room renders a sanitized, extensible NFT portfolio as responsive linked tiles', async () => {
   const [ui, css, neoRoute, alchemy] = await Promise.all([
     read('../app/engine/EngineRoom.tsx'),
     read('../app/engine/engine.css'),
@@ -50,28 +50,31 @@ test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tile
     read('../app/api/_lib/alchemy-server.ts'),
   ]);
 
-  assert.match(ui, /type NeoAsset = \{/);
-  assert.match(ui, /assets: NeoAsset\[\]/);
+  assert.match(ui, /type NftAsset = \{/);
+  assert.match(ui, /assets: NftAsset\[\]/);
   assert.match(ui, /<h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault<\/h2>/);
+  assert.match(ui, /<p>NFTs<\/p>/);
   assert.match(ui, /className="engine-holdings-grid"/);
   assert.match(ui, /className="engine-holding-card"/);
   assert.match(ui, /alt=\{asset\.name\}/);
   assert.match(ui, /href=\{asset\.openseaUrl\}/);
   assert.doesNotMatch(ui, /<b>#\{asset\.tokenId\}<\/b>/);
-  assert.match(ui, /NO NEO TOKYO HOLDINGS FOUND/);
+  assert.match(ui, /NO NFT HOLDINGS FOUND/);
   assert.match(css, /\.engine-holdings-grid\{/);
   assert.match(css, /\.engine-holding-card\{/);
   assert.match(css, /\.engine-holding-art\{/);
 
   assert.match(neoRoute, /assets:/);
-  assert.match(neoRoute, /s1: \{[^\n]+label: 'S1 Citizen'/);
-  assert.match(neoRoute, /s2: \{[^\n]+label: 'S2 Outer Citizen'/);
-  assert.match(neoRoute, /items: \{[^\n]+label: 'S1 Item Cache'/);
-  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2 \}/);
+  assert.match(neoRoute, /s1: \{[^\n]+brand: 'NEO TOKYO S1'/);
+  assert.match(neoRoute, /s2: \{[^\n]+brand: 'NEO TOKYO S2'/);
+  assert.match(neoRoute, /items: \{[^\n]+brand: 'S1 ITEM CACHE'/);
+  assert.match(neoRoute, /genesis: \{[^\n]+brand: 'GRID PHANTOMS'/);
+  assert.match(neoRoute, /Genesis Key Card #\$\{tokenId\}/);
+  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3 \}/);
   assert.match(neoRoute, /COLLECTION_ORDER\[a\.name\] - COLLECTION_ORDER\[b\.name\]/);
   assert.match(neoRoute, /const tokenId = cleanText\(nft\.tokenId\)/);
-  assert.match(neoRoute, /collection: collection\.label/);
-  assert.match(neoRoute, /name: cleanText\(nft\.name\)/);
+  assert.match(neoRoute, /collection: collection\.brand/);
+  assert.match(neoRoute, /name: assetName\(name, tokenId, nft\.name\)/);
   assert.match(neoRoute, /\/api\/citizen-terminal\/image\?season=\$\{name\}&tokenId=/);
   assert.match(neoRoute, /: imageUrl\(nft\.image\)/);
   assert.match(neoRoute, /openseaUrl:/);
@@ -79,12 +82,16 @@ test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tile
 });
 
 test('Engine Room preserves calculations and adopts responsive metric and simulator structure', async () => {
-  const [ui, css] = await Promise.all([
+  const [ui, css, generator] = await Promise.all([
     read('../app/engine/EngineRoom.tsx'),
     read('../app/engine/engine.css'),
+    read('../generate-vault-snapshot.js'),
   ]);
 
-  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ neoValue/);
+  assert.match(ui, /genesisCount \* \(snapshot\.grid_genesis_floor_usd \|\| 0\)/);
+  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ nftValue/);
+  assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
+  assert.match(generator, /\['grid_genesis_floor_usd', formatValue\(values\.grid_genesis_floor_usd, 2\)\]/);
   assert.match(ui, /const vaultValuePerKey = TOTAL_KEYS > 0 \? totalVaultValue \/ TOTAL_KEYS : 0/);
   assert.match(ui, /const hypotheticalTotalValue = hypotheticalValuePerKey \* safeRewardKeyCount/);
   assert.match(ui, /aria-pressed=\{rewardKeyType === keyType\}/);
@@ -157,7 +164,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(ui, /PAGE-LOAD SNAPSHOT/);
   assert.match(ui, /Reload to request updated source reads\./);
   assert.match(ui, /VAULT REFERENCES/);
-  assert.match(ui, /NEO TOKYO HOLDINGS/);
+  assert.match(ui, /NFT HOLDINGS/);
   assert.match(ui, /KEY SUPPLY/);
   assert.match(ui, /HOLDER SNAPSHOT/);
   assert.match(ui, /REWARD ARCHIVE/);
@@ -192,7 +199,7 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /new AbortController\(\)/);
   assert.match(ui, /controller\.abort\(\)/);
   assert.match(ui, /loadSource\('vault'/);
-  assert.match(ui, /loadSource\('neo'/);
+  assert.match(ui, /loadSource\('nft'/);
   assert.match(ui, /loadSource\('supply'/);
   assert.match(ui, /loadSource\('holders'/);
   assert.match(ui, /loadSource\('rewards'/);
@@ -203,7 +210,7 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /combineSourceStatuses/);
   assert.match(ui, /staleAfterMs/);
   assert.match(ui, /isSourceUsable/);
-  assert.doesNotMatch(ui, /return \{ s1: 0, s2: 0, items: 0 \}/);
+  assert.doesNotMatch(ui, /return \{ s1: 0, s2: 0, items: 0, genesis: 0 \}/);
   assert.doesNotMatch(ui, /Snapshot captured \{LAST_SNAPSHOT\}/);
 });
 
@@ -297,6 +304,6 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
   assert.match(css, /\.engine-output-heading\{[^}]*margin-bottom:14px/);
   assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
-  assert.match(ui, /DeBank portfolio, Neo Tokyo asset values and the veBLACK position\./);
+  assert.match(ui, /DeBank portfolio, NFT floor values and the veBLACK position\./);
   assert.doesNotMatch(ui, /Neo Tokyo asset references/);
 });

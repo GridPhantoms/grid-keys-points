@@ -14,14 +14,14 @@ type SourceResult<T> = {
 };
 
 type VaultSnapshot = Record<string, number>;
-type NeoAsset = {
+type NftAsset = {
   tokenId: string;
   collection: string;
   name: string;
   image: string;
   openseaUrl: string;
 };
-type NeoHoldings = { s1: number; s2: number; items: number; assets: NeoAsset[] };
+type NftHoldings = { s1: number; s2: number; items: number; genesis: number; assets: NftAsset[] };
 type KeySupply = { exodusMinted: number };
 type HolderSnapshot = { holderCount: number };
 type RewardArchive = {
@@ -32,7 +32,7 @@ type RewardArchive = {
 
 type EngineSources = {
   vault: SourceResult<VaultSnapshot>;
-  neo: SourceResult<NeoHoldings>;
+  nft: SourceResult<NftHoldings>;
   supply: SourceResult<KeySupply>;
   holders: SourceResult<HolderSnapshot>;
   rewards: SourceResult<RewardArchive>;
@@ -50,7 +50,7 @@ const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: nul
 
 const INITIAL_SOURCES: EngineSources = {
   vault: loadingSource<VaultSnapshot>(),
-  neo: loadingSource<NeoHoldings>(),
+  nft: loadingSource<NftHoldings>(),
   supply: loadingSource<KeySupply>(),
   holders: loadingSource<HolderSnapshot>(),
   rewards: loadingSource<RewardArchive>(),
@@ -176,6 +176,7 @@ function parseVaultSnapshot(text: string): VaultSnapshot {
     'neo_s1_floor_usd',
     'neo_s2_floor_usd',
     'neo_items_cache_floor_usd',
+    'grid_genesis_floor_usd',
   ];
   if (required.some((key) => !Number.isFinite(snapshot[key]))) throw new Error('Incomplete vault snapshot');
   return snapshot;
@@ -392,7 +393,7 @@ export default function EngineRoom() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [vault, neo, supply, holders, rewards] = await Promise.all([
+      const [vault, nft, supply, holders, rewards] = await Promise.all([
         loadSource('vault', async () => {
           const [text, metadata] = await Promise.all([
             fetchText('/vault-snapshot.csv'),
@@ -401,19 +402,19 @@ export default function EngineRoom() {
           if (!isValidTimestamp(metadata.capturedAt)) throw new Error('Invalid vault capture metadata');
           return { data: parseVaultSnapshot(text), asOf: metadata.capturedAt };
         }, 48 * 60 * 60 * 1000),
-        loadSource('neo', async () => {
+        loadSource('nft', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
-          const counts = [data.s1, data.s2, data.items];
+          const counts = [data.s1, data.s2, data.items, data.genesis];
           if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !Array.isArray(data.assets) || !isValidTimestamp(data.readAt)) {
-            throw new Error('Invalid Neo holdings response');
+            throw new Error('Invalid NFT holdings response');
           }
-          const assets = data.assets.filter((asset): asset is NeoAsset => {
+          const assets = data.assets.filter((asset): asset is NftAsset => {
             if (!asset || typeof asset !== 'object' || Array.isArray(asset)) return false;
             const candidate = asset as Record<string, unknown>;
             return ['tokenId', 'collection', 'name', 'image', 'openseaUrl'].every((key) => typeof candidate[key] === 'string');
           });
           return {
-            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items), assets },
+            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items), genesis: Number(data.genesis), assets },
             asOf: data.readAt,
           };
         }),
@@ -438,7 +439,7 @@ export default function EngineRoom() {
         })),
       ]);
 
-      if (!cancelled) setSources({ vault, neo, supply, holders, rewards });
+      if (!cancelled) setSources({ vault, nft, supply, holders, rewards });
     };
 
     loadData();
@@ -446,7 +447,7 @@ export default function EngineRoom() {
   }, []);
 
   const snapshot = sources.vault.data ?? {};
-  const neoHoldings = sources.neo.data;
+  const nftHoldings = sources.nft.data;
   const exodusMinted = sources.supply.data?.exodusMinted ?? 0;
   const liberatedSlaves = sources.holders.data?.holderCount ?? 0;
   const rewardArchive = sources.rewards.data;
@@ -455,9 +456,9 @@ export default function EngineRoom() {
 
   // Dynamic Total Keys (on-demand Exodus minted count plus fixed Genesis supply)
   const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
-  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.neo);
+  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.nft);
   const totalKeysStatus = sources.supply.status;
-  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.neo, sources.supply);
+  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.nft, sources.supply);
   const rewardTotalStatus = sources.rewards.status;
   const rewardReferenceStatus = combineSourceStatuses(sources.rewards, sources.vault);
   const holderStatus = sources.holders.status;
@@ -494,16 +495,18 @@ export default function EngineRoom() {
 
   const daysSinceGenesis = Math.floor((currentTime - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
 
-  const neoS1Count = neoHoldings?.s1 ?? 0;
-  const neoS2Count = neoHoldings?.s2 ?? 0;
-  const neoItemsCount = neoHoldings?.items ?? 0;
-  const neoAssets = neoHoldings?.assets ?? [];
-  const neoValue =
+  const neoS1Count = nftHoldings?.s1 ?? 0;
+  const neoS2Count = nftHoldings?.s2 ?? 0;
+  const neoItemsCount = nftHoldings?.items ?? 0;
+  const genesisCount = nftHoldings?.genesis ?? 0;
+  const nftAssets = nftHoldings?.assets ?? [];
+  const nftValue =
     (neoS1Count * (snapshot.neo_s1_floor_usd || 0)) +
     (neoS2Count * (snapshot.neo_s2_floor_usd || 0)) +
-    (neoItemsCount * (snapshot.neo_items_cache_floor_usd || 0));
+    (neoItemsCount * (snapshot.neo_items_cache_floor_usd || 0)) +
+    (genesisCount * (snapshot.grid_genesis_floor_usd || 0));
 
-  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + neoValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
+  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + nftValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
 
   const vaultValuePerKey = TOTAL_KEYS > 0 ? totalVaultValue / TOTAL_KEYS : 0;
 
@@ -547,7 +550,7 @@ export default function EngineRoom() {
           <summary><span>VIEW SOURCE &amp; EVIDENCE DETAILS</span><i aria-hidden="true">+</i></summary>
           <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
             <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
-            <SourceCard label="NEO TOKYO HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.neo} />
+            <SourceCard label="NFT HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.nft} />
             <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
             <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
             <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />
@@ -569,7 +572,7 @@ export default function EngineRoom() {
             <article className="engine-metric engine-metric-primary">
               <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
-              <p className="engine-metric-note">DeBank portfolio, Neo Tokyo asset values and the veBLACK position.</p>
+              <p className="engine-metric-note">DeBank portfolio, NFT floor values and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
               <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>
@@ -669,18 +672,18 @@ export default function EngineRoom() {
 
         <section className="engine-section engine-panel engine-holdings" aria-labelledby="holdings-heading">
           <div className="engine-section-head">
-            <div><p className="engine-eyebrow">05 / NEO TOKYO HOLDINGS</p><h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault</h2></div>
-            <p>Current Neo Tokyo NFTs detected in the vault wallet. Select any tile to inspect the asset on OpenSea.</p>
+            <div><p className="engine-eyebrow">05 / NFT HOLDINGS</p><h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault</h2></div>
+            <p>NFTs</p>
           </div>
-          {sources.neo.status === 'loading' ? (
-            <div className="engine-holdings-state">LOADING NEO TOKYO HOLDINGS…</div>
-          ) : sources.neo.status === 'unavailable' ? (
-            <div className="engine-holdings-state is-unavailable">NEO TOKYO HOLDINGS UNAVAILABLE</div>
-          ) : neoAssets.length === 0 ? (
-            <div className="engine-holdings-state">NO NEO TOKYO HOLDINGS FOUND</div>
+          {sources.nft.status === 'loading' ? (
+            <div className="engine-holdings-state">LOADING NFT HOLDINGS…</div>
+          ) : sources.nft.status === 'unavailable' ? (
+            <div className="engine-holdings-state is-unavailable">NFT HOLDINGS UNAVAILABLE</div>
+          ) : nftAssets.length === 0 ? (
+            <div className="engine-holdings-state">NO NFT HOLDINGS FOUND</div>
           ) : (
             <div className="engine-holdings-grid">
-              {neoAssets.map((asset) => (
+              {nftAssets.map((asset) => (
                 <a key={`${asset.collection}-${asset.tokenId}`} className="engine-holding-card" href={asset.openseaUrl} target="_blank" rel="noopener noreferrer">
                   <span className="engine-holding-art">
                     {asset.image ? <img src={asset.image} alt={asset.name} loading="lazy" decoding="async" /> : <span>ART UNAVAILABLE</span>}

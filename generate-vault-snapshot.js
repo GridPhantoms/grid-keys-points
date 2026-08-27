@@ -22,6 +22,7 @@ const OPENSEA_COLLECTIONS = {
   neo_s1_floor_usd: 'neotokyo-citizens',
   neo_s2_floor_usd: 'neotokyo-outer-citizens',
   neo_items_cache_floor_usd: 'neo-tokyo-part-3-item-caches',
+  grid_genesis_floor_usd: 'grid-phantoms-genesis-keys',
 };
 
 function parseArgs(argv) {
@@ -175,6 +176,7 @@ function toCsv(values) {
     ['neo_s1_floor_usd', formatValue(values.neo_s1_floor_usd, 2)],
     ['neo_s2_floor_usd', formatValue(values.neo_s2_floor_usd, 2)],
     ['neo_items_cache_floor_usd', formatValue(values.neo_items_cache_floor_usd, 2)],
+    ['grid_genesis_floor_usd', formatValue(values.grid_genesis_floor_usd, 2)],
   ];
   return `${rows.map((row) => row.join(',')).join('\n')}\n`;
 }
@@ -278,6 +280,7 @@ async function main() {
   console.log(`neo_s1_floor_usd=${formatValue(values.neo_s1_floor_usd, 2)}`);
   console.log(`neo_s2_floor_usd=${formatValue(values.neo_s2_floor_usd, 2)}`);
   console.log(`neo_items_cache_floor_usd=${formatValue(values.neo_items_cache_floor_usd, 2)}`);
+  console.log(`grid_genesis_floor_usd=${formatValue(values.grid_genesis_floor_usd, 2)}`);
 }
 
 main().catch((err) => {

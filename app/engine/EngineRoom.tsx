@@ -669,7 +669,7 @@ export default function EngineRoom() {
 
         <section className="engine-section engine-panel engine-holdings" aria-labelledby="holdings-heading">
           <div className="engine-section-head">
-            <div><p className="engine-eyebrow">05 / NEO TOKYO HOLDINGS</p><h2 id="holdings-heading">Assets held by Sakura&apos;s Vault</h2></div>
+            <div><p className="engine-eyebrow">05 / NEO TOKYO HOLDINGS</p><h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault</h2></div>
             <p>Current Neo Tokyo NFTs detected in the vault wallet. Select any tile to inspect the asset on OpenSea.</p>
           </div>
           {sources.neo.status === 'loading' ? (

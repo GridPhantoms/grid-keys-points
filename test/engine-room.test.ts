@@ -52,6 +52,7 @@ test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tile
 
   assert.match(ui, /type NeoAsset = \{/);
   assert.match(ui, /assets: NeoAsset\[\]/);
+  assert.match(ui, /<h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault<\/h2>/);
   assert.match(ui, /className="engine-holdings-grid"/);
   assert.match(ui, /className="engine-holding-card"/);
   assert.match(ui, /alt=\{asset\.name\}/);

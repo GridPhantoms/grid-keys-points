@@ -82,7 +82,7 @@
 .engine-holding-card:focus-visible{outline:2px solid var(--engine-cyan);outline-offset:3px}
 .engine-holding-art{position:relative;display:grid;place-items:center;aspect-ratio:1/1;overflow:hidden;background:linear-gradient(145deg,#0b1114,#030506);color:#59686e;font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}
 .engine-holding-art img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease}.engine-holding-card:hover .engine-holding-art img{transform:scale(1.025)}
-.engine-holding-art b{position:absolute;right:9px;top:9px;padding:6px 7px;border:1px solid rgba(53,217,243,.26);border-radius:7px;background:rgba(2,6,8,.88);color:#dffbff;font:700 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;backdrop-filter:blur(7px)}
+
 .engine-holding-copy{display:block;padding:15px}.engine-holding-copy small,.engine-holding-copy strong,.engine-holding-copy em{display:block}.engine-holding-copy small{color:#73838a;font:650 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.11em;text-transform:uppercase}.engine-holding-copy strong{min-height:38px;margin-top:7px;color:#eef5f6;font-size:14px;line-height:1.35}.engine-holding-copy em{margin-top:12px;color:var(--engine-cyan);font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.11em;font-style:normal}
 .engine-holdings-state{padding:44px 20px;border:1px dashed #253139;border-radius:13px;color:#829096;font:700 10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;text-align:center}.engine-holdings-state.is-unavailable{color:#e08790;border-color:#4b272c}
 @media(min-width:900px){.engine-disclaimer{font-size:11px}}

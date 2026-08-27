@@ -684,7 +684,6 @@ export default function EngineRoom() {
                 <a key={`${asset.collection}-${asset.tokenId}`} className="engine-holding-card" href={asset.openseaUrl} target="_blank" rel="noopener noreferrer">
                   <span className="engine-holding-art">
                     {asset.image ? <img src={asset.image} alt={asset.name} loading="lazy" decoding="async" /> : <span>ART UNAVAILABLE</span>}
-                    <b>#{asset.tokenId}</b>
                   </span>
                   <span className="engine-holding-copy"><small>{asset.collection}</small><strong>{asset.name}</strong><em>VIEW ASSET ↗</em></span>
                 </a>

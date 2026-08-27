@@ -5,10 +5,11 @@ const NEO_VAULT_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
 const NEO_CONTRACTS = {
   s1: { address: '0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f', label: 'S1 Citizen' },
   s2: { address: '0x4481507cc228fa19d203bd42110d679571f7912e', label: 'S2 Outer Citizen' },
-  items: { address: '0xe7489ea1847395d7eead33e9c85fe327d513d249', label: 'Item Cache' },
+  items: { address: '0xe7489ea1847395d7eead33e9c85fe327d513d249', label: 'S1 Item Cache' },
 } as const;
 
 type NeoCountName = keyof typeof NEO_CONTRACTS;
+const COLLECTION_ORDER = { s1: 0, s2: 1, items: 2 } as const;
 
 export const dynamic = 'force-dynamic';
 
@@ -52,8 +53,8 @@ export async function GET() {
 
     const counts = Object.fromEntries(entries.map((entry) => [entry.name, entry.count])) as Record<NeoCountName, number>;
     const assets = entries
-      .flatMap((entry) => entry.assets)
-      .sort((a, b) => a.collection.localeCompare(b.collection) || Number(a.tokenId) - Number(b.tokenId));
+      .sort((a, b) => COLLECTION_ORDER[a.name] - COLLECTION_ORDER[b.name])
+      .flatMap((entry) => entry.assets.sort((a, b) => Number(a.tokenId) - Number(b.tokenId)));
     return NextResponse.json(
       {
         ...counts,

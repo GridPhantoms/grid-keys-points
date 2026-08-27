@@ -56,12 +56,18 @@ test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tile
   assert.match(ui, /className="engine-holding-card"/);
   assert.match(ui, /alt=\{asset\.name\}/);
   assert.match(ui, /href=\{asset\.openseaUrl\}/);
+  assert.doesNotMatch(ui, /<b>#\{asset\.tokenId\}<\/b>/);
   assert.match(ui, /NO NEO TOKYO HOLDINGS FOUND/);
   assert.match(css, /\.engine-holdings-grid\{/);
   assert.match(css, /\.engine-holding-card\{/);
   assert.match(css, /\.engine-holding-art\{/);
 
   assert.match(neoRoute, /assets:/);
+  assert.match(neoRoute, /s1: \{[^\n]+label: 'S1 Citizen'/);
+  assert.match(neoRoute, /s2: \{[^\n]+label: 'S2 Outer Citizen'/);
+  assert.match(neoRoute, /items: \{[^\n]+label: 'S1 Item Cache'/);
+  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2 \}/);
+  assert.match(neoRoute, /COLLECTION_ORDER\[a\.name\] - COLLECTION_ORDER\[b\.name\]/);
   assert.match(neoRoute, /const tokenId = cleanText\(nft\.tokenId\)/);
   assert.match(neoRoute, /collection: collection\.label/);
   assert.match(neoRoute, /name: cleanText\(nft\.name\)/);

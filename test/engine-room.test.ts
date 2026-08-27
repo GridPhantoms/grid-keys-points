@@ -53,7 +53,7 @@ test('Engine Room renders a sanitized, extensible NFT portfolio as responsive li
   assert.match(ui, /type NftAsset = \{/);
   assert.match(ui, /assets: NftAsset\[\]/);
   assert.match(ui, /<h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault<\/h2>/);
-  assert.match(ui, /<p>NFTs<\/p>/);
+  assert.match(ui, /Various NFT assets held in Sakura&apos;s Vault\. Select any tile to inspect the asset on OpenSea\./);
   assert.match(ui, /className="engine-holdings-grid"/);
   assert.match(ui, /className="engine-holding-card"/);
   assert.match(ui, /alt=\{asset\.name\}/);

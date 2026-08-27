@@ -673,7 +673,7 @@ export default function EngineRoom() {
         <section className="engine-section engine-panel engine-holdings" aria-labelledby="holdings-heading">
           <div className="engine-section-head">
             <div><p className="engine-eyebrow">05 / NFT HOLDINGS</p><h2 id="holdings-heading">NFTs held by Sakura&apos;s Vault</h2></div>
-            <p>NFTs</p>
+            <p>Various NFT assets held in Sakura&apos;s Vault. Select any tile to inspect the asset on OpenSea.</p>
           </div>
           {sources.nft.status === 'loading' ? (
             <div className="engine-holdings-state">LOADING NFT HOLDINGS…</div>

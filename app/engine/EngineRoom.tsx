@@ -14,7 +14,14 @@ type SourceResult<T> = {
 };
 
 type VaultSnapshot = Record<string, number>;
-type NeoHoldings = { s1: number; s2: number; items: number };
+type NeoAsset = {
+  tokenId: string;
+  collection: string;
+  name: string;
+  image: string;
+  openseaUrl: string;
+};
+type NeoHoldings = { s1: number; s2: number; items: number; assets: NeoAsset[] };
 type KeySupply = { exodusMinted: number };
 type HolderSnapshot = { holderCount: number };
 type RewardArchive = {
@@ -397,11 +404,16 @@ export default function EngineRoom() {
         loadSource('neo', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
           const counts = [data.s1, data.s2, data.items];
-          if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !isValidTimestamp(data.readAt)) {
+          if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !Array.isArray(data.assets) || !isValidTimestamp(data.readAt)) {
             throw new Error('Invalid Neo holdings response');
           }
+          const assets = data.assets.filter((asset): asset is NeoAsset => {
+            if (!asset || typeof asset !== 'object' || Array.isArray(asset)) return false;
+            const candidate = asset as Record<string, unknown>;
+            return ['tokenId', 'collection', 'name', 'image', 'openseaUrl'].every((key) => typeof candidate[key] === 'string');
+          });
           return {
-            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items) },
+            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items), assets },
             asOf: data.readAt,
           };
         }),
@@ -485,6 +497,7 @@ export default function EngineRoom() {
   const neoS1Count = neoHoldings?.s1 ?? 0;
   const neoS2Count = neoHoldings?.s2 ?? 0;
   const neoItemsCount = neoHoldings?.items ?? 0;
+  const neoAssets = neoHoldings?.assets ?? [];
   const neoValue =
     (neoS1Count * (snapshot.neo_s1_floor_usd || 0)) +
     (neoS2Count * (snapshot.neo_s2_floor_usd || 0)) +
@@ -652,6 +665,32 @@ export default function EngineRoom() {
             <article><span>AVG. VOTER PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
             <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
           </div>
+        </section>
+
+        <section className="engine-section engine-panel engine-holdings" aria-labelledby="holdings-heading">
+          <div className="engine-section-head">
+            <div><p className="engine-eyebrow">05 / NEO TOKYO HOLDINGS</p><h2 id="holdings-heading">Assets held by Sakura&apos;s Vault</h2></div>
+            <p>Current Neo Tokyo NFTs detected in the vault wallet. Select any tile to inspect the asset on OpenSea.</p>
+          </div>
+          {sources.neo.status === 'loading' ? (
+            <div className="engine-holdings-state">LOADING NEO TOKYO HOLDINGS…</div>
+          ) : sources.neo.status === 'unavailable' ? (
+            <div className="engine-holdings-state is-unavailable">NEO TOKYO HOLDINGS UNAVAILABLE</div>
+          ) : neoAssets.length === 0 ? (
+            <div className="engine-holdings-state">NO NEO TOKYO HOLDINGS FOUND</div>
+          ) : (
+            <div className="engine-holdings-grid">
+              {neoAssets.map((asset) => (
+                <a key={`${asset.collection}-${asset.tokenId}`} className="engine-holding-card" href={asset.openseaUrl} target="_blank" rel="noopener noreferrer">
+                  <span className="engine-holding-art">
+                    {asset.image ? <img src={asset.image} alt={asset.name} loading="lazy" decoding="async" /> : <span>ART UNAVAILABLE</span>}
+                    <b>#{asset.tokenId}</b>
+                  </span>
+                  <span className="engine-holding-copy"><small>{asset.collection}</small><strong>{asset.name}</strong><em>VIEW ASSET ↗</em></span>
+                </a>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>

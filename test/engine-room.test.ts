@@ -16,7 +16,7 @@ test('Engine Room route provides metadata and shared terminal chrome', async () 
   assert.doesNotMatch(page, /'use client'/);
 });
 
-test('Engine Room uses the terminal-family hero and four-section hierarchy', async () => {
+test('Engine Room uses the terminal-family hero and five-section hierarchy', async () => {
   const ui = await read('../app/engine/EngineRoom.tsx');
 
   assert.match(ui, /className="engine-page"/);
@@ -34,11 +34,41 @@ test('Engine Room uses the terminal-family hero and four-section hierarchy', asy
     '02 / PHANTOM REWARD HISTORY',
     '03 / REWARD VALUE SIMULATOR',
     '04 / REBELLION VITALS',
+    '05 / NEO TOKYO HOLDINGS',
   ];
   sections.forEach((label) => assert.match(ui, new RegExp(label.replace('/', '\\/'))));
   sections.slice(1).forEach((label, index) => {
     assert.ok(ui.indexOf(sections[index]) < ui.indexOf(label));
   });
+});
+
+test('Engine Room renders sanitized Neo Tokyo holdings as responsive linked tiles', async () => {
+  const [ui, css, neoRoute, alchemy] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/engine/engine.css'),
+    read('../app/api/neo-vault-counts/route.ts'),
+    read('../app/api/_lib/alchemy-server.ts'),
+  ]);
+
+  assert.match(ui, /type NeoAsset = \{/);
+  assert.match(ui, /assets: NeoAsset\[\]/);
+  assert.match(ui, /className="engine-holdings-grid"/);
+  assert.match(ui, /className="engine-holding-card"/);
+  assert.match(ui, /alt=\{asset\.name\}/);
+  assert.match(ui, /href=\{asset\.openseaUrl\}/);
+  assert.match(ui, /NO NEO TOKYO HOLDINGS FOUND/);
+  assert.match(css, /\.engine-holdings-grid\{/);
+  assert.match(css, /\.engine-holding-card\{/);
+  assert.match(css, /\.engine-holding-art\{/);
+
+  assert.match(neoRoute, /assets:/);
+  assert.match(neoRoute, /const tokenId = cleanText\(nft\.tokenId\)/);
+  assert.match(neoRoute, /collection: collection\.label/);
+  assert.match(neoRoute, /name: cleanText\(nft\.name\)/);
+  assert.match(neoRoute, /\/api\/citizen-terminal\/image\?season=\$\{name\}&tokenId=/);
+  assert.match(neoRoute, /: imageUrl\(nft\.image\)/);
+  assert.match(neoRoute, /openseaUrl:/);
+  assert.match(alchemy, /withMetadata/);
 });
 
 test('Engine Room preserves calculations and adopts responsive metric and simulator structure', async () => {

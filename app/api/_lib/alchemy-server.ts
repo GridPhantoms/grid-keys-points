@@ -37,6 +37,13 @@ async function fetchJsonWithTimeout<T>(url: URL, init?: RequestInit): Promise<T>
 
 export type AlchemyOwnedNft = {
   tokenId?: unknown;
+  name?: unknown;
+  image?: {
+    cachedUrl?: unknown;
+    thumbnailUrl?: unknown;
+    pngUrl?: unknown;
+    originalUrl?: unknown;
+  } | null;
 };
 
 type AlchemyOwnedNftsResponse = {
@@ -48,6 +55,7 @@ export async function getNftsForOwner(
   owner: string,
   contractAddress: string,
   limit = 100,
+  withMetadata = false,
 ) {
   const ownedNfts: AlchemyOwnedNft[] = [];
   let pageKey: string | undefined;
@@ -59,7 +67,7 @@ export async function getNftsForOwner(
     );
     url.searchParams.set('owner', owner);
     url.searchParams.append('contractAddresses[]', contractAddress);
-    url.searchParams.set('withMetadata', 'false');
+    url.searchParams.set('withMetadata', String(withMetadata));
     url.searchParams.set('limit', String(Math.min(Math.max(limit, 1), 100)));
     if (pageKey) url.searchParams.set('pageKey', pageKey);
 

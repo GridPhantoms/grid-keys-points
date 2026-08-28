@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-27T17:48:35.000Z",
-  "sourceBlock": 25848158,
-  "sourceBlockHash": "0xbdc65be669b8939bddfbccd0cb37f4985bd2fd2766f37610c90c680a2c43ef9d",
+  "generatedAt": "2026-08-28T09:40:23.000Z",
+  "sourceBlock": 25852902,
+  "sourceBlockHash": "0xaa37423c320679fd4fdbfbb385849e8e95846d0b351a5261e06114acb8a086b3",
   "methodology": {
     "classification": "calculated",
     "source": "Neo Tokyo staking contract getTotalEmissions cumulative differences",
@@ -16,7 +16,7 @@
     }
   },
   "start": "2023-06-01",
-  "end": "2026-08-26",
+  "end": "2026-08-27",
   "rows": [
     {
       "date": "2023-06-01",
@@ -9476,6 +9476,14 @@
     },
     {
       "date": "2026-08-26",
+      "S1": 593.7358605999999,
+      "S2": 40.48199049999992,
+      "BYTES": 0,
+      "LP": 0,
+      "total": 634.2178510999998
+    },
+    {
+      "date": "2026-08-27",
       "S1": 593.7358605999999,
       "S2": 40.48199049999992,
       "BYTES": 0,

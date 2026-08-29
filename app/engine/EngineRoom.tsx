@@ -178,6 +178,8 @@ function parseVaultSnapshot(text: string): VaultSnapshot {
     'neo_items_cache_floor_usd',
     'grid_genesis_floor_usd',
     'coattail_brokers_floor_usd',
+    'coattail_broker_wallet_usd',
+    'coattail_broker_wallet_token_count',
   ];
   if (required.some((key) => !Number.isFinite(snapshot[key]))) throw new Error('Incomplete vault snapshot');
   return snapshot;
@@ -509,7 +511,8 @@ export default function EngineRoom() {
     (genesisCount * (snapshot.grid_genesis_floor_usd || 0)) +
     (coattailCount * (snapshot.coattail_brokers_floor_usd || 0));
 
-  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + nftValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
+  const coattailWalletValue = snapshot.coattail_broker_wallet_usd || 0;
+  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + nftValue + coattailWalletValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
 
   const vaultValuePerKey = TOTAL_KEYS > 0 ? totalVaultValue / TOTAL_KEYS : 0;
 
@@ -575,7 +578,7 @@ export default function EngineRoom() {
             <article className="engine-metric engine-metric-primary">
               <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
-              <p className="engine-metric-note">DeBank portfolio, NFT floor values and the veBLACK position.</p>
+              <p className="engine-metric-note">DeBank portfolio, NFT floor values, Broker wallet tokenized stocks and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
               <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>

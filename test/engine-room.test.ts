@@ -94,11 +94,21 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
 
   assert.match(ui, /genesisCount \* \(snapshot\.grid_genesis_floor_usd \|\| 0\)/);
   assert.match(ui, /coattailCount \* \(snapshot\.coattail_brokers_floor_usd \|\| 0\)/);
-  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ nftValue/);
+  assert.match(ui, /const coattailWalletValue = snapshot\.coattail_broker_wallet_usd \|\| 0/);
+  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ nftValue \+ coattailWalletValue/);
+  assert.match(ui, /Broker wallet tokenized stocks/);
   assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
   assert.match(generator, /coattail_brokers_floor_usd: 'coattailbrokers'/);
+  assert.match(generator, /const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b'/);
+  assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/assets/);
+  assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/prices\//);
+  assert.match(generator, /https:\/\/rpc\.mainnet\.chain\.robinhood\.com\//);
+  assert.match(generator, /balanceOf/);
+  assert.match(generator, /currentMultiplier/);
   assert.match(generator, /\['grid_genesis_floor_usd', formatValue\(values\.grid_genesis_floor_usd, 2\)\]/);
   assert.match(generator, /\['coattail_brokers_floor_usd', formatValue\(values\.coattail_brokers_floor_usd, 2\)\]/);
+  assert.match(generator, /\['coattail_broker_wallet_usd', formatValue\(values\.coattail_broker_wallet_usd, 2\)\]/);
+  assert.match(generator, /\['coattail_broker_wallet_token_count', formatValue\(values\.coattail_broker_wallet_token_count, 0\)\]/);
   assert.match(ui, /const vaultValuePerKey = TOTAL_KEYS > 0 \? totalVaultValue \/ TOTAL_KEYS : 0/);
   assert.match(ui, /const hypotheticalTotalValue = hypotheticalValuePerKey \* safeRewardKeyCount/);
   assert.match(ui, /aria-pressed=\{rewardKeyType === keyType\}/);
@@ -311,6 +321,6 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
   assert.match(css, /\.engine-output-heading\{[^}]*margin-bottom:14px/);
   assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
-  assert.match(ui, /DeBank portfolio, NFT floor values and the veBLACK position\./);
+  assert.match(ui, /DeBank portfolio, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
   assert.doesNotMatch(ui, /Neo Tokyo asset references/);
 });

@@ -5,6 +5,13 @@ const path = require('path');
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
 const VEBLACK_BALANCE = 109840.99;
+const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b';
+const ROBINHOOD_CHAIN_ID = 4663;
+const ROBINHOOD_ASSETS_URL = 'https://api.robinhood.com/rhj/assets';
+const ROBINHOOD_PRICES_URL = 'https://api.robinhood.com/rhj/prices/';
+const ROBINHOOD_RPC_URL = 'https://rpc.mainnet.chain.robinhood.com/';
+const ROBINHOOD_BALANCE_BATCH_SIZE = 20;
+const BALANCE_OF_SELECTOR = '70a08231';
 
 const SOURCES = {
   black: 'https://api.dexscreener.com/latest/dex/pairs/avalanche/0x0d9fd6dd9b1ff55fb0a9bb0e5f1b6a2d65b741a3',
@@ -56,12 +63,15 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry(url, label, headers) {
+async function fetchWithRetry(url, label, init = {}) {
   let lastError;
   for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt += 1) {
     try {
       const res = await fetch(url, {
-        headers,
+        ...init,
+        headers: {
+          ...(init.headers || {}),
+        },
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
       if (res.ok) return res;
@@ -89,18 +99,24 @@ async function fetchWithRetry(url, label, headers) {
   );
 }
 
-async function fetchJson(url, label) {
+async function fetchJson(url, label, init = {}) {
   const res = await fetchWithRetry(url, label, {
-    accept: 'application/json',
-    'user-agent': 'GridPhantomsVaultSnapshot/1.0',
+    ...init,
+    headers: {
+      accept: 'application/json',
+      'user-agent': 'GridPhantomsVaultSnapshot/1.0',
+      ...(init.headers || {}),
+    },
   });
   return res.json();
 }
 
 async function fetchText(url, label) {
   const res = await fetchWithRetry(url, label, {
-    accept: 'text/html,application/xhtml+xml',
-    'user-agent': 'Mozilla/5.0 GridPhantomsVaultSnapshot/1.0',
+    headers: {
+      accept: 'text/html,application/xhtml+xml',
+      'user-agent': 'Mozilla/5.0 GridPhantomsVaultSnapshot/1.0',
+    },
   });
   return res.text();
 }
@@ -135,7 +151,7 @@ async function getCoinbaseEthPrice(url, label) {
 async function getPriceWithFallback(primaryUrl, primaryLabel, fallbackLabel, fallbackFetch) {
   try {
     return await getDexScreenerPrice(primaryUrl, primaryLabel);
-  } catch (error) {
+  } catch {
     console.warn(`${primaryLabel} unavailable; using ${fallbackLabel}.`);
     return fallbackFetch();
   }
@@ -162,6 +178,126 @@ async function getOpenSeaFloorEth(slug) {
   return floor;
 }
 
+function isEvmAddress(value) {
+  return typeof value === 'string' && /^0x[0-9a-fA-F]{40}$/.test(value);
+}
+
+function balanceOfCallData(wallet) {
+  if (!isEvmAddress(wallet)) throw new Error('Invalid Coattail Broker wallet address');
+  return `0x${BALANCE_OF_SELECTOR}${wallet.slice(2).toLowerCase().padStart(64, '0')}`;
+}
+
+function formatTokenUnits(rawValue, decimals) {
+  if (typeof rawValue !== 'bigint' || rawValue < 0n || !Number.isInteger(decimals) || decimals < 0 || decimals > 36) {
+    throw new Error('Invalid Robinhood token balance');
+  }
+  if (decimals === 0) return Number(rawValue);
+  const padded = rawValue.toString().padStart(decimals + 1, '0');
+  const value = Number(`${padded.slice(0, -decimals)}.${padded.slice(-decimals)}`);
+  if (!Number.isFinite(value) || value < 0) throw new Error('Unusable Robinhood token balance');
+  return value;
+}
+
+async function getRobinhoodStockAssets() {
+  const payload = await fetchJson(ROBINHOOD_ASSETS_URL, 'Robinhood Stock Token registry');
+  if (!Array.isArray(payload?.assets)) throw new Error('Robinhood Stock Token registry missing assets');
+
+  const seen = new Set();
+  const assets = [];
+  for (const asset of payload.assets) {
+    const deployment = Array.isArray(asset?.deployments)
+      ? asset.deployments.find((item) => item?.chainId === ROBINHOOD_CHAIN_ID && isEvmAddress(item?.contractAddress))
+      : null;
+    const symbol = typeof asset?.tokenSymbol === 'string' ? asset.tokenSymbol.trim() : '';
+    const decimals = Number(asset?.tokenDecimals);
+    const currentMultiplier = Number.parseFloat(asset?.currentMultiplier);
+    const address = deployment?.contractAddress;
+    if (!deployment || !symbol || !Number.isInteger(decimals) || decimals < 0 || decimals > 36 || !Number.isFinite(currentMultiplier) || currentMultiplier <= 0) continue;
+    if (seen.has(address.toLowerCase())) continue;
+    seen.add(address.toLowerCase());
+    assets.push({ symbol, address, decimals, currentMultiplier });
+  }
+
+  if (!assets.length) throw new Error('Robinhood Stock Token registry has no usable mainnet assets');
+  return assets;
+}
+
+async function getRobinhoodWalletBalances(assets) {
+  const calls = assets.map((asset, index) => ({
+    jsonrpc: '2.0',
+    id: index + 1,
+    method: 'eth_call',
+    params: [{ to: asset.address, data: balanceOfCallData(COATTAIL_BROKER_WALLET) }, 'latest'],
+  }));
+  const positive = [];
+
+  for (let start = 0; start < calls.length; start += ROBINHOOD_BALANCE_BATCH_SIZE) {
+    const callBatch = calls.slice(start, start + ROBINHOOD_BALANCE_BATCH_SIZE);
+    const resultBatch = await fetchJson(ROBINHOOD_RPC_URL, `Robinhood wallet balance batch ${start / ROBINHOOD_BALANCE_BATCH_SIZE + 1}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(callBatch),
+    });
+    if (!Array.isArray(resultBatch) || resultBatch.length !== callBatch.length) {
+      throw new Error('Robinhood RPC returned an incomplete balance batch');
+    }
+    const resultsById = new Map(resultBatch.map((item) => [item?.id, item]));
+    for (let offset = 0; offset < callBatch.length; offset += 1) {
+      const call = callBatch[offset];
+      const response = resultsById.get(call.id);
+      if (response?.error || typeof response?.result !== 'string' || !/^0x[0-9a-fA-F]+$/.test(response.result)) {
+        throw new Error(`Robinhood RPC returned an invalid balance for ${assets[start + offset].symbol}`);
+      }
+      const rawBalance = BigInt(response.result);
+      if (rawBalance > 0n) {
+        const asset = assets[start + offset];
+        positive.push({ ...asset, balance: formatTokenUnits(rawBalance, asset.decimals) });
+      }
+    }
+    if (start + ROBINHOOD_BALANCE_BATCH_SIZE < calls.length) await sleep(250);
+  }
+
+  return positive;
+}
+
+async function getRobinhoodTokenPrice(asset) {
+  const payload = await fetchJson(`${ROBINHOOD_PRICES_URL}${encodeURIComponent(asset.symbol)}`, `Robinhood ${asset.symbol} price`);
+  const quote = Array.isArray(payload?.quotes)
+    ? payload.quotes.find((item) => item?.tokenSymbol === asset.symbol && item?.currency === 'USD')
+    : null;
+  const bid = Number.parseFloat(quote?.bid);
+  const ask = Number.parseFloat(quote?.ask);
+  if (!Number.isFinite(bid) || bid <= 0 || !Number.isFinite(ask) || ask <= 0 || ask < bid) {
+    throw new Error(`Robinhood ${asset.symbol} price missing a usable USD bid/ask`);
+  }
+  return {
+    midpointUsd: ((bid + ask) / 2) * asset.currentMultiplier,
+    generatedAt: typeof quote?.generatedAt === 'string' ? quote.generatedAt : '',
+  };
+}
+
+async function getCoattailBrokerWalletValue() {
+  const assets = await getRobinhoodStockAssets();
+  const balances = await getRobinhoodWalletBalances(assets);
+  const holdings = [];
+
+  for (const asset of balances) {
+    const price = await getRobinhoodTokenPrice(asset);
+    holdings.push({
+      symbol: asset.symbol,
+      balance: asset.balance,
+      priceUsd: price.midpointUsd,
+      valueUsd: asset.balance * price.midpointUsd,
+      generatedAt: price.generatedAt,
+    });
+    await sleep(100);
+  }
+
+  const totalUsd = holdings.reduce((sum, holding) => sum + holding.valueUsd, 0);
+  if (!Number.isFinite(totalUsd) || totalUsd < 0) throw new Error('Invalid Coattail Broker wallet value');
+  return { totalUsd, holdings };
+}
+
 function readExistingSnapshot() {
   if (!fs.existsSync(VAULT_SNAPSHOT_PATH)) return null;
   return fs.readFileSync(VAULT_SNAPSHOT_PATH, 'utf8').replace(/\r\n/g, '\n').trim();
@@ -179,6 +315,8 @@ function toCsv(values) {
     ['neo_items_cache_floor_usd', formatValue(values.neo_items_cache_floor_usd, 2)],
     ['grid_genesis_floor_usd', formatValue(values.grid_genesis_floor_usd, 2)],
     ['coattail_brokers_floor_usd', formatValue(values.coattail_brokers_floor_usd, 2)],
+    ['coattail_broker_wallet_usd', formatValue(values.coattail_broker_wallet_usd, 2)],
+    ['coattail_broker_wallet_token_count', formatValue(values.coattail_broker_wallet_token_count, 0)],
   ];
   return `${rows.map((row) => row.join(',')).join('\n')}\n`;
 }
@@ -226,12 +364,15 @@ async function collectValues(debankValue) {
       return [key, floorEth * ethUsd, floorEth];
     })
   );
+  const brokerWallet = await getCoattailBrokerWalletValue();
 
   const values = {
     debank_portfolio_usd: debankValue,
     black_price_usd: blackPrice,
     veblack_balance: VEBLACK_BALANCE,
     bytes_price_usd: bytesPrice,
+    coattail_broker_wallet_usd: brokerWallet.totalUsd,
+    coattail_broker_wallet_token_count: brokerWallet.holdings.length,
   };
 
   const floorsEth = {};
@@ -240,14 +381,14 @@ async function collectValues(debankValue) {
     floorsEth[key] = eth;
   }
 
-  return { values, ethUsd, floorsEth };
+  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings };
 }
 
 async function main() {
   const args = parseArgs(process.argv);
   const debank = args.debank ? parseNumber(args.debank, 'debank_portfolio_usd') : null;
 
-  const { values, ethUsd, floorsEth } = await collectValues(debank ?? 0);
+  const { values, ethUsd, floorsEth, brokerWalletHoldings } = await collectValues(debank ?? 0);
 
   if (args.preview || debank === null) {
     console.log('Vault snapshot source preview. No files were changed.');
@@ -257,6 +398,10 @@ async function main() {
     console.log(`eth_usd=${formatValue(ethUsd, 2)}`);
     for (const key of Object.keys(OPENSEA_COLLECTIONS)) {
       console.log(`${key}=${formatValue(values[key], 2)} (${formatValue(floorsEth[key], 6)} ETH)`);
+    }
+    console.log(`coattail_broker_wallet_usd=${formatValue(values.coattail_broker_wallet_usd, 2)} (${brokerWalletHoldings.length} tokenized stocks)`);
+    for (const holding of brokerWalletHoldings) {
+      console.log(`  ${holding.symbol}: balance=${formatValue(holding.balance, 8)} price_usd=${formatValue(holding.priceUsd, 4)} value_usd=${formatValue(holding.valueUsd, 2)}`);
     }
     if (debank === null) {
       console.log('Missing debank_portfolio_usd. Re-run with --debank <usd_value> to update public/vault-snapshot.csv.');
@@ -284,6 +429,8 @@ async function main() {
   console.log(`neo_items_cache_floor_usd=${formatValue(values.neo_items_cache_floor_usd, 2)}`);
   console.log(`grid_genesis_floor_usd=${formatValue(values.grid_genesis_floor_usd, 2)}`);
   console.log(`coattail_brokers_floor_usd=${formatValue(values.coattail_brokers_floor_usd, 2)}`);
+  console.log(`coattail_broker_wallet_usd=${formatValue(values.coattail_broker_wallet_usd, 2)}`);
+  console.log(`coattail_broker_wallet_token_count=${formatValue(values.coattail_broker_wallet_token_count, 0)}`);
 }
 
 main().catch((err) => {

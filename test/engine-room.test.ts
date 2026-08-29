@@ -69,8 +69,12 @@ test('Engine Room renders a sanitized, extensible NFT portfolio as responsive li
   assert.match(neoRoute, /s2: \{[^\n]+brand: 'NEO TOKYO S2'/);
   assert.match(neoRoute, /items: \{[^\n]+brand: 'S1 ITEM CACHE'/);
   assert.match(neoRoute, /genesis: \{[^\n]+brand: 'GRID PHANTOMS'/);
+  assert.match(neoRoute, /const COATTAIL_BROKERS = \{[^\n]+brand: 'COATTAIL BROKERS'/);
+  assert.match(neoRoute, /tokenIds: \['1381'\]/);
+  assert.match(neoRoute, /source: 'alchemy_eth_and_robinhood_rpc_owner_lookup'/);
+  assert.match(neoRoute, /https:\/\/opensea\.io\/item\/robinhood\//);
   assert.match(neoRoute, /Genesis Key Card #\$\{tokenId\}/);
-  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3 \}/);
+  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3, coattail: 4 \}/);
   assert.match(neoRoute, /COLLECTION_ORDER\[a\.name\] - COLLECTION_ORDER\[b\.name\]/);
   assert.match(neoRoute, /const tokenId = cleanText\(nft\.tokenId\)/);
   assert.match(neoRoute, /collection: collection\.brand/);
@@ -89,9 +93,12 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   ]);
 
   assert.match(ui, /genesisCount \* \(snapshot\.grid_genesis_floor_usd \|\| 0\)/);
+  assert.match(ui, /coattailCount \* \(snapshot\.coattail_brokers_floor_usd \|\| 0\)/);
   assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ nftValue/);
   assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
+  assert.match(generator, /coattail_brokers_floor_usd: 'coattailbrokers'/);
   assert.match(generator, /\['grid_genesis_floor_usd', formatValue\(values\.grid_genesis_floor_usd, 2\)\]/);
+  assert.match(generator, /\['coattail_brokers_floor_usd', formatValue\(values\.coattail_brokers_floor_usd, 2\)\]/);
   assert.match(ui, /const vaultValuePerKey = TOTAL_KEYS > 0 \? totalVaultValue \/ TOTAL_KEYS : 0/);
   assert.match(ui, /const hypotheticalTotalValue = hypotheticalValuePerKey \* safeRewardKeyCount/);
   assert.match(ui, /aria-pressed=\{rewardKeyType === keyType\}/);
@@ -185,7 +192,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(css, /\.engine-evidence\{/);
   assert.match(css, /\.engine-evidence-projected\{/);
 
-  assert.match(neoRoute, /source: 'alchemy_nft_owner_lookup'/);
+  assert.match(neoRoute, /source: 'alchemy_eth_and_robinhood_rpc_owner_lookup'/);
   assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
   assert.match(exodusRoute, /source: 'alchemy_getAssetTransfers_zero_address_mints'/);
   assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);

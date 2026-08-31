@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- standalone Node generator uses CommonJS */
 const fs = require('fs');
 const path = require('path');
+const { Interface } = require('ethers');
 
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
@@ -10,8 +11,11 @@ const ROBINHOOD_CHAIN_ID = 4663;
 const ROBINHOOD_ASSETS_URL = 'https://api.robinhood.com/rhj/assets';
 const ROBINHOOD_PRICES_URL = 'https://api.robinhood.com/rhj/prices/';
 const ROBINHOOD_RPC_URL = 'https://rpc.mainnet.chain.robinhood.com/';
-const ROBINHOOD_BALANCE_BATCH_SIZE = 20;
+const ROBINHOOD_MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const BALANCE_OF_SELECTOR = '70a08231';
+const MULTICALL3_INTERFACE = new Interface([
+  'function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)',
+]);
 
 const SOURCES = {
   black: 'https://api.dexscreener.com/latest/dex/pairs/avalanche/0x0d9fd6dd9b1ff55fb0a9bb0e5f1b6a2d65b741a3',
@@ -78,6 +82,8 @@ async function fetchWithRetry(url, label, init = {}) {
 
       const body = (await res.text()).slice(0, 500);
       const error = new Error(`${label} HTTP ${res.status}: ${body}`);
+      error.status = res.status;
+      error.retryAfterMs = Number.parseFloat(res.headers.get('retry-after')) * 1_000;
       const retryable = res.status === 429 || res.status >= 500;
       if (!retryable) {
         error.retryable = false;
@@ -90,8 +96,13 @@ async function fetchWithRetry(url, label, init = {}) {
       if (error?.retryable === false || attempt === FETCH_MAX_ATTEMPTS) throw error;
     }
 
-    console.warn(`${label} attempt ${attempt} failed; retrying.`);
-    await sleep(500 * 2 ** (attempt - 1));
+    const retryAfterMs = Number.isFinite(lastError?.retryAfterMs) && lastError.retryAfterMs > 0
+      ? lastError.retryAfterMs
+      : lastError?.status === 429
+        ? 2_000 * 2 ** (attempt - 1)
+        : 500 * 2 ** (attempt - 1);
+    console.warn(`${label} attempt ${attempt} failed; retrying after ${retryAfterMs}ms.`);
+    await sleep(retryAfterMs);
   }
 
   throw new Error(
@@ -223,38 +234,47 @@ async function getRobinhoodStockAssets() {
 }
 
 async function getRobinhoodWalletBalances(assets) {
-  const calls = assets.map((asset, index) => ({
-    jsonrpc: '2.0',
-    id: index + 1,
-    method: 'eth_call',
-    params: [{ to: asset.address, data: balanceOfCallData(COATTAIL_BROKER_WALLET) }, 'latest'],
+  const calls = assets.map((asset) => ({
+    target: asset.address,
+    allowFailure: false,
+    callData: balanceOfCallData(COATTAIL_BROKER_WALLET),
   }));
-  const positive = [];
+  const callData = MULTICALL3_INTERFACE.encodeFunctionData('aggregate3', [calls]);
+  const response = await fetchJson(ROBINHOOD_RPC_URL, 'Robinhood wallet balance multicall', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'eth_call',
+      params: [{ to: ROBINHOOD_MULTICALL3, data: callData }, 'latest'],
+    }),
+  });
+  if (response?.error || typeof response?.result !== 'string') {
+    throw new Error('Robinhood RPC returned an invalid multicall response');
+  }
 
-  for (let start = 0; start < calls.length; start += ROBINHOOD_BALANCE_BATCH_SIZE) {
-    const callBatch = calls.slice(start, start + ROBINHOOD_BALANCE_BATCH_SIZE);
-    const resultBatch = await fetchJson(ROBINHOOD_RPC_URL, `Robinhood wallet balance batch ${start / ROBINHOOD_BALANCE_BATCH_SIZE + 1}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(callBatch),
-    });
-    if (!Array.isArray(resultBatch) || resultBatch.length !== callBatch.length) {
-      throw new Error('Robinhood RPC returned an incomplete balance batch');
+  let results;
+  try {
+    [results] = MULTICALL3_INTERFACE.decodeFunctionResult('aggregate3', response.result);
+  } catch {
+    throw new Error('Robinhood RPC returned undecodable multicall balance data');
+  }
+  if (!Array.isArray(results) || results.length !== assets.length) {
+    throw new Error('Robinhood RPC returned an incomplete multicall balance result');
+  }
+
+  const positive = [];
+  for (let index = 0; index < results.length; index += 1) {
+    const result = results[index];
+    if (!result?.success || typeof result?.returnData !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(result.returnData)) {
+      throw new Error(`Robinhood multicall returned an invalid balance for ${assets[index].symbol}`);
     }
-    const resultsById = new Map(resultBatch.map((item) => [item?.id, item]));
-    for (let offset = 0; offset < callBatch.length; offset += 1) {
-      const call = callBatch[offset];
-      const response = resultsById.get(call.id);
-      if (response?.error || typeof response?.result !== 'string' || !/^0x[0-9a-fA-F]+$/.test(response.result)) {
-        throw new Error(`Robinhood RPC returned an invalid balance for ${assets[start + offset].symbol}`);
-      }
-      const rawBalance = BigInt(response.result);
-      if (rawBalance > 0n) {
-        const asset = assets[start + offset];
-        positive.push({ ...asset, balance: formatTokenUnits(rawBalance, asset.decimals) });
-      }
+    const rawBalance = BigInt(result.returnData);
+    if (rawBalance > 0n) {
+      const asset = assets[index];
+      positive.push({ ...asset, balance: formatTokenUnits(rawBalance, asset.decimals) });
     }
-    if (start + ROBINHOOD_BALANCE_BATCH_SIZE < calls.length) await sleep(250);
   }
 
   return positive;

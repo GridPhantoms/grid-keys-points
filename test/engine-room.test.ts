@@ -103,6 +103,10 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/assets/);
   assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/prices\//);
   assert.match(generator, /https:\/\/rpc\.mainnet\.chain\.robinhood\.com\//);
+  assert.match(generator, /0xcA11bde05977b3631167028862bE2a173976CA11/);
+  assert.match(generator, /encodeFunctionData\('aggregate3'/);
+  assert.match(generator, /decodeFunctionResult\('aggregate3'/);
+  assert.doesNotMatch(generator, /ROBINHOOD_BALANCE_BATCH_SIZE/);
   assert.match(generator, /balanceOf/);
   assert.match(generator, /currentMultiplier/);
   assert.match(generator, /\['grid_genesis_floor_usd', formatValue\(values\.grid_genesis_floor_usd, 2\)\]/);

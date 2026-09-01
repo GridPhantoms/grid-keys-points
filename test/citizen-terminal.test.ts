@@ -9,6 +9,50 @@ import { extractOpenSeaEstimatedRank } from '../lib/opensea-rarity.ts';
 import { calculateCitizenSupply, calculateComponentSupply, calculateImpliedValuation, NEO_TOKYO_SUPPLY_CONFIG } from '../lib/citizen-valuation.ts';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { buildBytes2BytesSummary, normalizeCitizenPosition } from '../lib/bytes-to-bytes.ts';
+// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
+import { mapWithConcurrency, readResponseBuffer } from '../app/api/_lib/bounded-response.ts';
+// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
+import { decodeAbiString, parseMetadataUri } from '../app/api/_lib/ethereum-nft-metadata.ts';
+
+test('Citizen image buffering rejects declared and streamed responses above the cap', async () => {
+  const declared = new Response('small', { headers: { 'content-length': '6' } });
+  await assert.rejects(() => readResponseBuffer(declared, 5), /exceeds limit/);
+
+  const streamed = new Response(new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3]));
+      controller.enqueue(new Uint8Array([4, 5, 6]));
+      controller.close();
+    },
+  }));
+  await assert.rejects(() => readResponseBuffer(streamed, 5), /exceeds limit/);
+});
+
+test('Citizen image layer work is concurrency bounded and order preserving', async () => {
+  let active = 0;
+  let peak = 0;
+  const result = await mapWithConcurrency([1, 2, 3, 4, 5], 2, async (value) => {
+    active += 1;
+    peak = Math.max(peak, active);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    active -= 1;
+    return value * 2;
+  });
+  assert.deepEqual(result, [2, 4, 6, 8, 10]);
+  assert.equal(peak, 2);
+});
+
+test('onchain Citizen metadata decodes ABI strings and image_data', () => {
+  const tokenUri = `data:application/json;base64,${Buffer.from(JSON.stringify({ image_data: 'data:image/svg+xml;base64,PHN2Zy8+' })).toString('base64')}`;
+  const value = Buffer.from(tokenUri);
+  const offset = Buffer.alloc(32); offset[31] = 32;
+  const length = Buffer.alloc(32); length.writeUInt32BE(value.length, 28);
+  const padded = Buffer.concat([value, Buffer.alloc((32 - (value.length % 32)) % 32)]);
+  const encoded = `0x${Buffer.concat([offset, length, padded]).toString('hex')}`;
+
+  assert.equal(parseMetadataUri(decodeAbiString(encoded)), 'data:image/svg+xml;base64,PHN2Zy8+');
+  assert.throws(() => decodeAbiString('0x00'), /Invalid tokenURI ABI string/);
+});
 
 test('S2 accepts 200 BYTES and never calculates more than one BYTES point', () => {
   const atCap = calculateStakingPoints({ season: 's2', lockPeriod: '12 months', bytesStaked: 200 });
@@ -340,6 +384,10 @@ test('Bytes2Bytes artwork never exposes native broken-image UI and supports clea
   assert.match(ui, /<AssetArtwork src=/);
   assert.match(ui, /\/api\/citizen-terminal\/image\?season=\$\{collection\.season\.toLowerCase\(\)\}/);
   assert.match(imageRoute, /const LAYER_FETCH_ATTEMPTS = 3/);
+  assert.match(imageRoute, /const LAYER_FETCH_CONCURRENCY = 4/);
+  assert.match(imageRoute, /readResponseBuffer/);
+  assert.match(imageRoute, /mapWithConcurrency/);
+  assert.match(imageRoute, /Content-Security-Policy/);
   assert.match(imageRoute, /fetchCitizenLayer/);
   assert.match(imageRoute, /getOnchainMetadataImage/);
   assert.match(assetImageRoute, /const isComponent/);

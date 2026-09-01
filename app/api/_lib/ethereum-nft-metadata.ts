@@ -14,7 +14,7 @@ function tokenCallData(tokenId: string) {
   return `0x${TOKEN_URI_SELECTOR}${BigInt(tokenId).toString(16).padStart(64, '0')}`;
 }
 
-function decodeAbiString(encoded: string) {
+export function decodeAbiString(encoded: string) {
   if (!/^0x[0-9a-fA-F]+$/.test(encoded) || encoded.length > MAX_RPC_HEX_LENGTH) throw new Error('Invalid tokenURI response');
   const bytes = Buffer.from(encoded.slice(2), 'hex');
   if (bytes.length < 64) throw new Error('Invalid tokenURI ABI string');
@@ -27,7 +27,7 @@ function decodeAbiString(encoded: string) {
   return bytes.subarray(offset + 32, offset + 32 + length).toString('utf8');
 }
 
-function parseMetadataUri(tokenUri: string) {
+export function parseMetadataUri(tokenUri: string) {
   const base64Prefix = 'data:application/json;base64,';
   const utf8Prefix = 'data:application/json;utf8,';
   let json = '';

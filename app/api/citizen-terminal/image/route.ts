@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CITIZEN_CONTRACTS } from '@/lib/citizen-terminal';
 import { getOnchainMetadataImage } from '@/app/api/_lib/ethereum-nft-metadata';
+import { mapWithConcurrency, readResponseBuffer } from '@/app/api/_lib/bounded-response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,8 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_LAYER_ORIGIN = 'https://neotokyo.mypinata.cloud';
 const FALLBACK_LAYER_ORIGIN = 'https://gateway.pinata.cloud';
 const LAYER_FETCH_ATTEMPTS = 3;
+const LAYER_FETCH_CONCURRENCY = 4;
+const MAX_LAYER_BYTES = 2_000_000;
 
 async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 8_000) {
   const controller = new AbortController();
@@ -29,8 +32,7 @@ async function fetchCitizenLayer(layerUrl: string) {
       if (!response.ok) continue;
       const contentType = response.headers.get('content-type')?.split(';', 1)[0] ?? 'image/png';
       if (!contentType.startsWith('image/')) continue;
-      const bytes = Buffer.from(await response.arrayBuffer());
-      if (bytes.length === 0 || bytes.length > 2_000_000) continue;
+      const bytes = await readResponseBuffer(response, MAX_LAYER_BYTES);
       return `data:${contentType};base64,${bytes.toString('base64')}`;
     } catch {
       // Try the alternate allowlisted IPFS gateway.
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
       if (parsed.origin !== ALLOWED_LAYER_ORIGIN || !parsed.pathname.startsWith('/ipfs/')) throw new Error('Unexpected image layer source');
     }
 
-    const embeddedLayers = await Promise.all(layerUrls.map(fetchCitizenLayer));
+    const embeddedLayers = await mapWithConcurrency(layerUrls, LAYER_FETCH_CONCURRENCY, fetchCitizenLayer);
 
     let selfContainedSvg = svg;
     layerUrls.forEach((layerUrl, index) => {
@@ -91,6 +93,8 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'image/svg+xml; charset=utf-8',
         'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
+        'Content-Security-Policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox",
+        'Cross-Origin-Resource-Policy': 'same-origin',
         'X-Content-Type-Options': 'nosniff',
       },
     });

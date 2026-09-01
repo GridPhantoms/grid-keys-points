@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import SiteFooter from '../components/SiteFooter';
 import SiteNav from '../components/SiteNav';
+import CitizenSubnav from './CitizenSubnav';
 import CitizenTerminal from './CitizenTerminal';
 import './citizen.css';
 
@@ -10,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function CitizenTerminalPage() {
-  return <div className="ct-page"><div className="ct-topline" aria-hidden="true" /><SiteNav active="citizen" /><CitizenTerminal /><SiteFooter /></div>;
+  return <div className="ct-page"><div className="ct-topline" aria-hidden="true" /><SiteNav active="citizen" /><CitizenSubnav active="overview" /><CitizenTerminal /><SiteFooter /></div>;
 }

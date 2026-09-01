@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { calculateImpliedValuation, type ValuationMethod } from '@/lib/citizen-valuation';
 
@@ -218,6 +219,14 @@ export default function CitizenTerminal() {
         <span>Latest source interlinked {formatSnapshotAge(latestSnapshotSource, snapshotNow)}</span>
         <span>Oldest source {formatSnapshotAge(oldestSnapshotSource, snapshotNow)}</span>
         <span>{snapshotSourceTimes.length} / 6 source classes · 5 min–1 hr refresh range</span>
+      </div>
+    </section>
+
+    <section className="relative mb-[18px] overflow-hidden border border-cyan-300/25 bg-[linear-gradient(120deg,rgba(73,232,229,.1),rgba(9,17,16,.96)_58%,rgba(124,255,198,.05))] p-[clamp(22px,4vw,38px)]">
+      <div className="absolute inset-y-0 right-0 w-1/3 bg-[radial-gradient(circle_at_center,rgba(73,232,229,.12),transparent_68%)]" aria-hidden="true" />
+      <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+        <div><p className="mb-3 text-[10px] font-bold tracking-[.2em] text-[#7cffc6]">INTERLINK MODULE // WALLET INTELLIGENCE</p><h2 className="mb-3 text-3xl font-bold tracking-[-.045em] md:text-4xl">Bytes2Bytes</h2><p className="max-w-2xl text-sm leading-7 text-[#91a5a2]">Scan any Citizen wallet for liquid BYTES, pending contract rewards, BYTES committed to Citizen stakes, and a visual ledger of every staked S1 and S2.</p></div>
+        <Link href="/citizen/bytes2bytes" className="relative inline-flex min-h-12 items-center justify-center border border-cyan-300 bg-cyan-300 px-6 text-[10px] font-extrabold tracking-[.14em] text-[#031110] transition-colors hover:bg-[#7cffc6]">ENTER BYTES2BYTES →</Link>
       </div>
     </section>
 

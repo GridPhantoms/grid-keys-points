@@ -7,6 +7,8 @@ import { calculateStakingPoints, getStakingBytesCap } from '../lib/citizen-termi
 import { extractOpenSeaEstimatedRank } from '../lib/opensea-rarity.ts';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { calculateCitizenSupply, calculateComponentSupply, calculateImpliedValuation, NEO_TOKYO_SUPPLY_CONFIG } from '../lib/citizen-valuation.ts';
+// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
+import { buildBytes2BytesSummary, normalizeCitizenPosition } from '../lib/bytes-to-bytes.ts';
 
 test('S2 accepts 200 BYTES and never calculates more than one BYTES point', () => {
   const atCap = calculateStakingPoints({ season: 's2', lockPeriod: '12 months', bytesStaked: 200 });
@@ -227,4 +229,54 @@ test('both Citizen seasons use the cached first-party image route', async () => 
   assert.match(lookupRoute, /image\?season=s2&tokenId=/);
   assert.match(imageRoute, /CITIZEN_CONTRACTS\[season\]/);
   assert.match(imageRoute, /s-maxage=604800/);
+});
+
+test('Bytes2Bytes normalizes staked Citizens and calculates the wallet summary without mixing LP units', () => {
+  const e18 = BigInt('1000000000000000000');
+  const s1 = normalizeCitizenPosition('s1', {
+    citizenId: BigInt(1467),
+    stakedBytes: BigInt(2_000) * e18,
+    timelockEndTime: BigInt(1_900_000_000),
+    points: BigInt(1_200),
+    stakedVaultId: BigInt(88),
+    hasVault: true,
+  });
+  const s2 = normalizeCitizenPosition('s2', {
+    citizenId: BigInt(3883),
+    stakedBytes: BigInt(200) * e18,
+    timelockEndTime: BigInt(0),
+    points: BigInt(200),
+  });
+  assert.equal(s1.citizenId, '1467');
+  assert.equal(s1.stakedBytes, 2_000);
+  assert.equal(s1.vaultId, '88');
+  assert.equal(s2.citizenId, '3883');
+  assert.equal(s2.hasVault, null);
+
+  const summary = buildBytes2BytesSummary({
+    walletBalance: 3.35,
+    pendingByPool: { s1: 4.5, s2: 2.33, lp: 0 },
+    s1Citizens: [s1],
+    s2Citizens: [s2],
+  });
+  assert.equal(summary.citizenBytesStaked, 2_200);
+  assert.equal(summary.pendingRewards, 6.83);
+  assert.equal(summary.totalBytes, 2_210.18);
+  assert.equal(summary.citizenCount, 2);
+});
+
+test('Citizen Interlink exposes Bytes2Bytes as a separate sub-tool and preserves the original project provenance', async () => {
+  const [overview, page, api, subnav] = await Promise.all([
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/bytes2bytes/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/citizen-terminal/bytes2bytes/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenSubnav.tsx', import.meta.url), 'utf8'),
+  ]);
+  assert.match(overview, /ENTER BYTES2BYTES/);
+  assert.match(page, /\$BYTES to \$BYTES/);
+  assert.match(page, /bytestobytes\.com/);
+  assert.match(subnav, /\/citizen\/bytes2bytes/);
+  assert.match(api, /getStakerPositions/);
+  assert.match(api, /getPendingPoolReward/);
+  assert.match(api, /private, no-store/);
 });

@@ -70,6 +70,7 @@ export const BYTES_STAKING_ABI = [
   'function S2_CITIZEN() view returns (address)',
   'function getTotalEmissions(uint8 assetType, uint256 fromTimestamp) view returns (uint256)',
   'function getPendingPoolReward(uint8 assetType, address recipient) view returns (uint256 reward, uint256 tax)',
+  'function getStakerPositions(address staker) view returns (tuple(tuple(uint256 citizenId, uint256 stakedBytes, uint256 timelockEndTime, uint256 points, uint256 stakedVaultId, bool hasVault)[] stakedS1Citizens, tuple(uint256 citizenId, uint256 stakedBytes, uint256 timelockEndTime, uint256 points)[] stakedS2Citizens, tuple(uint256 amount, uint256 timelockEndTime, uint256 points, uint256 multiplier) stakedLPPosition))',
   'event Stake(address indexed staker, address indexed asset, uint256 timelockOption, uint256 amountOrTokenId)',
   'event Claim(address indexed recipient, uint256 reward, uint256 tax)',
 ] as const;

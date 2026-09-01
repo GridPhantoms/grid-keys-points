@@ -57,14 +57,13 @@ export async function GET(request: NextRequest) {
     const staking = new Contract(BYTES_STAKING_CONTRACT, BYTES_STAKING_ABI, provider);
     const token = new Contract(BYTES_TOKEN_CONTRACT, BYTES_TOKEN_ABI, provider);
 
-    const [stakingBytes, stakingS1, stakingS2, walletBalanceRaw, s1Pending, s2Pending, lpPending, positions] = await withTimeout(Promise.all([
+    const [stakingBytes, stakingS1, stakingS2, walletBalanceRaw, s1Pending, s2Pending, positions] = await withTimeout(Promise.all([
       staking.BYTES({ blockTag: block.number }) as Promise<string>,
       staking.S1_CITIZEN({ blockTag: block.number }) as Promise<string>,
       staking.S2_CITIZEN({ blockTag: block.number }) as Promise<string>,
       token.balanceOf(wallet, { blockTag: block.number }) as Promise<bigint>,
       staking.getPendingPoolReward(0, wallet, { blockTag: block.number }) as Promise<[bigint, bigint]>,
       staking.getPendingPoolReward(1, wallet, { blockTag: block.number }) as Promise<[bigint, bigint]>,
-      staking.getPendingPoolReward(3, wallet, { blockTag: block.number }) as Promise<[bigint, bigint]>,
       staking.getStakerPositions(wallet, { blockTag: block.number }) as Promise<StakerPositions>,
     ]), 'Bytes2Bytes contract reads');
 
@@ -76,8 +75,8 @@ export async function GET(request: NextRequest) {
 
     const s1Citizens = positions.stakedS1Citizens.map((position) => normalizeCitizenPosition('s1', position));
     const s2Citizens = positions.stakedS2Citizens.map((position) => normalizeCitizenPosition('s2', position));
-    const pendingByPool = { s1: bytesAmount(s1Pending[0]), s2: bytesAmount(s2Pending[0]), lp: bytesAmount(lpPending[0]) };
-    const pendingDaoTaxByPool = { s1: bytesAmount(s1Pending[1]), s2: bytesAmount(s2Pending[1]), lp: bytesAmount(lpPending[1]) };
+    const pendingByPool = { s1: bytesAmount(s1Pending[0]), s2: bytesAmount(s2Pending[0]) };
+    const pendingDaoTaxByPool = { s1: bytesAmount(s1Pending[1]), s2: bytesAmount(s2Pending[1]) };
     const walletBalance = bytesAmount(walletBalanceRaw);
 
     return NextResponse.json({
@@ -93,9 +92,9 @@ export async function GET(request: NextRequest) {
       s1Citizens,
       s2Citizens,
       notes: [
-        'Wallet balance is liquid Ethereum BYTES. Bridged Avalanche BYTES is not included.',
-        'Citizen stake totals include BYTES locked with S1 and S2 positions. LP token amounts are not treated as BYTES.',
-        'Pending rewards are the contract-reported net reward values for S1, S2 and LP pools; DAO tax is reported separately.',
+        'Wallet balance is liquid Ethereum $BYTES. Bridged Avalanche $BYTES is not included.',
+        'Citizen stake totals include $BYTES locked with S1 and S2 positions.',
+        'Pending rewards are the contract-reported net reward values for S1 and S2 Citizens; DAO tax is reported separately.',
       ],
     }, { headers: RESPONSE_HEADERS });
   } catch (error) {

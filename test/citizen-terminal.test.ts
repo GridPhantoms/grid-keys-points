@@ -231,7 +231,7 @@ test('both Citizen seasons use the cached first-party image route', async () => 
   assert.match(imageRoute, /s-maxage=604800/);
 });
 
-test('Bytes2Bytes normalizes staked Citizens and calculates the wallet summary without mixing LP units', () => {
+test('Bytes2Bytes normalizes staked Citizens and calculates the S1/S2 wallet summary', () => {
   const e18 = BigInt('1000000000000000000');
   const s1 = normalizeCitizenPosition('s1', {
     citizenId: BigInt(1467),
@@ -255,7 +255,7 @@ test('Bytes2Bytes normalizes staked Citizens and calculates the wallet summary w
 
   const summary = buildBytes2BytesSummary({
     walletBalance: 3.35,
-    pendingByPool: { s1: 4.5, s2: 2.33, lp: 0 },
+    pendingByPool: { s1: 4.5, s2: 2.33 },
     s1Citizens: [s1],
     s2Citizens: [s2],
   });
@@ -263,6 +263,19 @@ test('Bytes2Bytes normalizes staked Citizens and calculates the wallet summary w
   assert.equal(summary.pendingRewards, 6.83);
   assert.equal(summary.totalBytes, 2_210.18);
   assert.equal(summary.citizenCount, 2);
+});
+
+test('Bytes2Bytes distinguishes component Vaults from separately staked Vault IDs', () => {
+  const componentVault = normalizeCitizenPosition('s1', {
+    citizenId: BigInt(3099),
+    stakedBytes: BigInt(0),
+    timelockEndTime: BigInt(0),
+    points: BigInt(100),
+    stakedVaultId: BigInt(0),
+    hasVault: true,
+  });
+  assert.equal(componentVault.hasVault, true);
+  assert.equal(componentVault.vaultId, null);
 });
 
 test('Citizen Interlink exposes Bytes2Bytes as a separate sub-tool and preserves the original project provenance', async () => {

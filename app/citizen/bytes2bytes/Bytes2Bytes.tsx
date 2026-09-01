@@ -9,8 +9,8 @@ type CitizenPosition = {
 type WalletResult = {
   input: string; resolvedAddress: string; chain: string; sourceBlock: number; sourceBlockHash: string; asOf: string;
   summary: { walletBalance: number; citizenBytesStaked: number; pendingRewards: number; totalBytes: number; citizenCount: number; s1Count: number; s2Count: number };
-  pendingByPool: { s1: number; s2: number; lp: number };
-  pendingDaoTaxByPool: { s1: number; s2: number; lp: number };
+  pendingByPool: { s1: number; s2: number };
+  pendingDaoTaxByPool: { s1: number; s2: number };
   s1Citizens: CitizenPosition[]; s2Citizens: CitizenPosition[]; notes: string[];
 };
 type BytesMetrics = { metrics?: { bytesPriceUsd?: { value?: number; asOf?: string; availability?: string } } };
@@ -35,9 +35,9 @@ function CitizenCard({ position }: { position: CitizenPosition }) {
       <div className="b2b-citizen-top"><span>{position.season.toUpperCase()} CITIZEN</span><b>{lockLabel(position.timelockEndTime)}</b></div>
       <h3>#{position.citizenId}</h3>
       <dl>
-        <div><dt>BYTES staked</dt><dd>{number(position.stakedBytes, 2)}</dd></div>
+        <div><dt>$BYTES staked</dt><dd>{number(position.stakedBytes, 2)}</dd></div>
         <div><dt>Staking points</dt><dd>{number(position.points, 2)}</dd></div>
-        {position.season === 's1' && <div><dt>Vault</dt><dd>{position.hasVault ? `#${position.vaultId ?? '—'}` : 'None'}</dd></div>}
+        {position.season === 's1' && <div><dt>Vault</dt><dd>{position.hasVault ? (position.vaultId ? `#${position.vaultId}` : 'Component Vault') : 'None'}</dd></div>}
       </dl>
     </div>
   </article>;
@@ -88,11 +88,10 @@ export default function Bytes2Bytes() {
     } finally { setLoading(false); }
   };
 
-  const totalTax = result ? result.pendingDaoTaxByPool.s1 + result.pendingDaoTaxByPool.s2 + result.pendingDaoTaxByPool.lp : 0;
+  const totalTax = result ? result.pendingDaoTaxByPool.s1 + result.pendingDaoTaxByPool.s2 : 0;
   return <main className="b2b-main">
     <section className="b2b-hero">
       <div><p className="b2b-kicker">CITIZEN INTERLINK // WALLET INTELLIGENCE</p><h1>Bytes<span>2</span>Bytes</h1><p>Read the wallet. Surface the stake. Account for every pending byte.</p></div>
-      <aside><b>READ-ONLY CONTRACT LOOKUP</b><span>No wallet connection</span><span>No signing</span><span>Ethereum state only</span></aside>
     </section>
 
     <section className="b2b-tribute">
@@ -103,7 +102,7 @@ export default function Bytes2Bytes() {
     <section className="b2b-lookup" aria-labelledby="wallet-lookup-title">
       <div><p>01 / WALLET LOOKUP</p><h2 id="wallet-lookup-title">Scan any Citizen wallet</h2><span>Enter a public Ethereum address or ENS name. Nothing connects and nothing can be signed.</span></div>
       <form onSubmit={lookup}>
-        <label><span>WALLET OR ENS</span><input value={wallet} onChange={(event) => setWallet(event.target.value)} autoComplete="off" spellCheck={false} placeholder="0x… or citizen.eth" /></label>
+        <label><span>WALLET OR ENS</span><input type="text" inputMode="text" value={wallet} onChange={(event) => setWallet(event.target.value)} autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} placeholder="0x… or citizen.eth" /></label>
         <label className="b2b-remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>Remember on this device</span></label>
         <button disabled={loading}>{loading ? 'SCANNING CONTRACT…' : 'SCAN WALLET'}</button>
       </form>
@@ -116,21 +115,26 @@ export default function Bytes2Bytes() {
         <div><span>ETHEREUM BLOCK</span><b>{result.sourceBlock.toLocaleString()}</b><small>{new Date(result.asOf).toLocaleString()}</small></div>
       </section>
 
+      <section className="b2b-bont-lore" aria-label="Bank of Neo Tokyo account services">
+        <div className="b2b-bont-image"><Image src="/citizen/bont-lore.webp" alt="B.O.N.T. guards standing beside the Bank of Neo Tokyo vault" fill sizes="(max-width: 700px) calc(100vw - 24px), 52vw" priority /></div>
+        <div><p>B.O.N.T. // ACCOUNT SERVICES</p><h2>Welcome to the Bank</h2><span>Citizen stakes and pending $BYTES, reconciled into one account statement.</span></div>
+      </section>
+
       <section className="b2b-summary" aria-labelledby="summary-title">
-        <header><p>02 / SUMMARY</p><h2 id="summary-title">Wallet accounting</h2></header>
+        <header><p>02 / B.O.N.T.</p><h2 id="summary-title">Account Statement</h2></header>
         <div className="b2b-summary-grid">
-          <SummaryMetric label="LIQUID WALLET BALANCE" value={result.summary.walletBalance} price={price} />
-          <SummaryMetric label="BYTES IN CITIZEN STAKES" value={result.summary.citizenBytesStaked} price={price} />
-          <SummaryMetric label="PENDING REWARDS" value={result.summary.pendingRewards} price={price} />
-          <SummaryMetric label="TOTAL ACCOUNTED BYTES" value={result.summary.totalBytes} price={price} accent />
+          <SummaryMetric label="LIQUID $BYTES // ETH" value={result.summary.walletBalance} price={price} />
+          <SummaryMetric label="CITIZEN-STAKED $BYTES" value={result.summary.citizenBytesStaked} price={price} />
+          <SummaryMetric label="PENDING $BYTES" value={result.summary.pendingRewards} price={price} />
+          <SummaryMetric label="TOTAL $BYTES ACCOUNTED" value={result.summary.totalBytes} price={price} accent />
         </div>
-        <div className="b2b-pending-breakdown"><span>PENDING BY POOL</span><b>S1 {number(result.pendingByPool.s1, 4)}</b><b>S2 {number(result.pendingByPool.s2, 4)}</b><b>LP {number(result.pendingByPool.lp, 4)}</b><small>DAO tax reported separately: {number(totalTax, 4)} BYTES</small></div>
-        {priceAsOf && <p className="b2b-source-line">USD references use BYTES spot observed {new Date(priceAsOf).toLocaleString()}</p>}
+        <div className="b2b-pending-breakdown"><span>PENDING $BYTES BY SEASON</span><b>S1 {number(result.pendingByPool.s1, 4)}</b><b>S2 {number(result.pendingByPool.s2, 4)}</b><small>DAO tax reported separately: {number(totalTax, 4)} $BYTES</small></div>
+        {priceAsOf && <p className="b2b-source-line">USD references use $BYTES spot observed {new Date(priceAsOf).toLocaleString()}</p>}
       </section>
 
       <section className="b2b-staked" aria-labelledby="staked-title">
-        <header><div><p>03 / STAKED CITIZENS</p><h2 id="staked-title">Citizens in the Bank</h2></div><div><b>{result.summary.citizenCount}</b><span>{result.summary.s1Count} S1 // {result.summary.s2Count} S2</span></div></header>
-        {result.summary.citizenCount === 0 ? <div className="b2b-empty"><b>NO STAKED CITIZENS FOUND</b><span>This wallet may still hold liquid or LP-position BYTES.</span></div> : <>
+        <header><div><p>03 / STAKED CITIZENS</p><h2 id="staked-title">Account Holders</h2></div><div><b>{result.summary.citizenCount}</b><span>{result.summary.s1Count} S1 // {result.summary.s2Count} S2</span></div></header>
+        {result.summary.citizenCount === 0 ? <div className="b2b-empty"><b>NO STAKED CITIZENS FOUND</b><span>This wallet may still hold liquid $BYTES.</span></div> : <>
           {result.s1Citizens.length > 0 && <div className="b2b-season"><h3>S1 CITIZENS <span>{result.s1Citizens.length}</span></h3><div className="b2b-citizen-grid">{result.s1Citizens.map((position) => <CitizenCard key={`s1-${position.citizenId}`} position={position} />)}</div></div>}
           {result.s2Citizens.length > 0 && <div className="b2b-season"><h3>S2 OUTER CITIZENS <span>{result.s2Citizens.length}</span></h3><div className="b2b-citizen-grid">{result.s2Citizens.map((position) => <CitizenCard key={`s2-${position.citizenId}`} position={position} />)}</div></div>}
         </>}
@@ -139,7 +143,7 @@ export default function Bytes2Bytes() {
       <section className="b2b-method">
         <p>04 / SOURCE NOTES</p>
         <div>{result.notes.map((note) => <span key={note}>{note}</span>)}</div>
-        <small>Read from the verified NeoTokyoStaker and Ethereum BYTES contracts at pinned block {result.sourceBlock.toLocaleString()}. Values can change after this snapshot.</small>
+        <small>Read from the verified NeoTokyoStaker and Ethereum $BYTES contracts at pinned block {result.sourceBlock.toLocaleString()}. Values can change after this snapshot.</small>
       </section>
     </>}
   </main>;

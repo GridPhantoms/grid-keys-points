@@ -21,7 +21,7 @@ export type CitizenPosition = {
   hasVault: boolean | null;
 };
 
-export type PendingByPool = { s1: number; s2: number; lp: number };
+export type PendingByPool = { s1: number; s2: number };
 
 function finiteAmount(value: string, label: string) {
   const amount = Number(value);
@@ -68,7 +68,7 @@ export function buildBytes2BytesSummary({
   s2Citizens: CitizenPosition[];
 }) {
   const citizenBytesStaked = round([...s1Citizens, ...s2Citizens].reduce((total, position) => total + position.stakedBytes, 0));
-  const pendingRewards = round(pendingByPool.s1 + pendingByPool.s2 + pendingByPool.lp);
+  const pendingRewards = round(pendingByPool.s1 + pendingByPool.s2);
   return {
     walletBalance: round(walletBalance),
     citizenBytesStaked,

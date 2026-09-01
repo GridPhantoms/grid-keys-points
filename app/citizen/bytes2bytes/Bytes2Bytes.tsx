@@ -93,12 +93,26 @@ function DirectCitizenCard({ collection, tokenId }: { collection: DirectAssetCol
   </article>;
 }
 
+function componentItemLabel(collection: DirectAssetCollection) {
+  const labels: Record<string, string> = {
+    's1-identities': 'Identity',
+    's1-vaults': 'Vault Card',
+    's1-items': 'Item Cache',
+    's1-lands': 'Land Deed',
+    's2-identities': 'Outer Identity',
+    's2-items': 'Outer Item Cache',
+    's2-lands': 'Outer Land Deed',
+  };
+  return labels[collection.key] ?? collection.label;
+}
+
 function ComponentAssetCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
+  const itemLabel = componentItemLabel(collection);
   return <article className="b2b-component-card">
     <div className="b2b-component-image">
-      <AssetArtwork src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.label} #${tokenId}`} sizes="(max-width: 700px) 44vw, 210px" />
+      <AssetArtwork src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${itemLabel} #${tokenId}`} sizes="(max-width: 700px) 44vw, 210px" />
     </div>
-    <div><span>{collection.season} COMPONENT</span><b>{collection.label} #{tokenId}</b></div>
+    <div><span>{collection.season} COMPONENT</span><b>{itemLabel} #{tokenId}</b></div>
   </article>;
 }
 

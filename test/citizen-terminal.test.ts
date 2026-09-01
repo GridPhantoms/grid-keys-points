@@ -328,6 +328,11 @@ test('Bytes2Bytes artwork never exposes native broken-image UI and supports clea
   assert.match(ui, /ART NOT AVAILABLE/);
   assert.match(ui, /RETRY ART/);
   assert.match(ui, /setAttempt\(\(value\) => value \+ 1\)/);
+  assert.match(ui, /function componentItemLabel/);
+  assert.match(ui, /Vault Card/);
+  assert.match(ui, /Item Cache/);
+  assert.match(ui, /Land Deed/);
+  assert.match(ui, /Outer Identity/);
   assert.match(ui, /<AssetArtwork src=/);
   assert.match(imageRoute, /const isComponent/);
   assert.match(imageRoute, /refreshCache: retry \? 'true' : 'false'/);

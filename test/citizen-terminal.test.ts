@@ -293,3 +293,25 @@ test('Citizen Interlink exposes Bytes2Bytes as a separate sub-tool and preserves
   assert.match(api, /getPendingPoolReward/);
   assert.match(api, /private, no-store/);
 });
+
+test('Bytes2Bytes inventories pinned wallet-held Citizen assets and reveals component art on demand', async () => {
+  const [api, imageRoute, ui, css] = await Promise.all([
+    readFile(new URL('../app/api/citizen-terminal/bytes2bytes/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/citizen-terminal/asset-image/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/bytes2bytes/Bytes2Bytes.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/bytes2bytes/bytes2bytes.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(api, /CITIZEN_COLLECTIONS\.map/);
+  assert.match(api, /ownerOfInterface\.encodeFunctionData\('ownerOf'/);
+  assert.match(api, /aggregate3\.staticCall\(calls, \{ blockTag: blockNumber \}\)/);
+  assert.match(api, /directAssets/);
+  assert.match(imageRoute, /getNFTMetadata/);
+  assert.match(imageRoute, /ALLOWED_IMAGE_HOSTS/);
+  assert.match(ui, /04 \/ UNSTAKED CITIZENS \/ COMPONENTS/);
+  assert.match(ui, /Undeposited Assets/);
+  assert.match(ui, /Other Neo Tokyo Citizen assets detected directly in this wallet but outside the active B\.O\.N\.T\. staking statement\./);
+  assert.match(ui, /<details className="b2b-component-collection"/);
+  assert.match(ui, /resultHeadRef\.current\?\.scrollIntoView/);
+  assert.match(css, /\.b2b-tribute\{display:flex;flex-direction:column/);
+});

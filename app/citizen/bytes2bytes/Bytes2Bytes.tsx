@@ -1,17 +1,22 @@
 'use client';
 
 import Image from 'next/image';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 type CitizenPosition = {
   season: 's1' | 's2'; citizenId: string; stakedBytes: number; timelockEndTime: number; points: number; vaultId: string | null; hasVault: boolean | null;
+};
+type DirectAssetCollection = {
+  key: string; season: 'S1' | 'S2'; label: string; kind: 'citizen' | 'component'; items: { tokenId: string }[];
 };
 type WalletResult = {
   input: string; resolvedAddress: string; chain: string; sourceBlock: number; sourceBlockHash: string; asOf: string;
   summary: { walletBalance: number; citizenBytesStaked: number; pendingRewards: number; totalBytes: number; citizenCount: number; s1Count: number; s2Count: number };
   pendingByPool: { s1: number; s2: number };
   pendingDaoTaxByPool: { s1: number; s2: number };
-  s1Citizens: CitizenPosition[]; s2Citizens: CitizenPosition[]; notes: string[];
+  s1Citizens: CitizenPosition[]; s2Citizens: CitizenPosition[];
+  directAssets: { totalCount: number; assembledCount: number; componentCount: number; collections: DirectAssetCollection[] };
+  notes: string[];
 };
 type BytesMetrics = { metrics?: { bytesPriceUsd?: { value?: number; asOf?: string; availability?: string } } };
 
@@ -43,6 +48,32 @@ function CitizenCard({ position }: { position: CitizenPosition }) {
   </article>;
 }
 
+function DirectCitizenCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  return <article className="b2b-citizen-card b2b-direct-citizen-card">
+    <div className="b2b-citizen-image">{imageFailed
+      ? <span className="b2b-art-unavailable">ART<br />UNAVAILABLE</span>
+      : <Image unoptimized src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.season} ${collection.label} #${tokenId}`} width={360} height={360} onError={() => setImageFailed(true)} />}</div>
+    <div className="b2b-citizen-data">
+      <div className="b2b-citizen-top"><span>{collection.season} {collection.season === 'S2' ? 'OUTER CITIZEN' : 'CITIZEN'}</span><b>HELD IN WALLET</b></div>
+      <h3>#{tokenId}</h3>
+      <div className="b2b-direct-status"><span>UNSTAKED</span><small>Outside the active B.O.N.T. statement</small></div>
+    </div>
+  </article>;
+}
+
+function ComponentAssetCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  return <article className="b2b-component-card">
+    <div className="b2b-component-image">
+      {imageFailed
+        ? <span>ART<br />UNAVAILABLE</span>
+        : <Image unoptimized src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.label} #${tokenId}`} fill sizes="(max-width: 700px) 44vw, 210px" onError={() => setImageFailed(true)} />}
+    </div>
+    <div><span>{collection.season} COMPONENT</span><b>{collection.label} #{tokenId}</b></div>
+  </article>;
+}
+
 export default function Bytes2Bytes() {
   const [wallet, setWallet] = useState('');
   const [remember, setRemember] = useState(false);
@@ -51,6 +82,7 @@ export default function Bytes2Bytes() {
   const [priceAsOf, setPriceAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const resultHeadRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const restore = window.setTimeout(() => {
@@ -71,6 +103,15 @@ export default function Bytes2Bytes() {
     return () => { window.clearTimeout(restore); controller.abort(); };
   }, []);
 
+  useEffect(() => {
+    if (!result) return;
+    const frame = window.requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      resultHeadRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [result]);
+
   const lookup = async (event: FormEvent) => {
     event.preventDefault();
     const input = wallet.trim();
@@ -89,6 +130,8 @@ export default function Bytes2Bytes() {
   };
 
   const totalTax = result ? result.pendingDaoTaxByPool.s1 + result.pendingDaoTaxByPool.s2 : 0;
+  const directCitizenCollections = result?.directAssets.collections.filter((collection) => collection.kind === 'citizen') ?? [];
+  const directComponentCollections = result?.directAssets.collections.filter((collection) => collection.kind === 'component') ?? [];
   return <main className="b2b-main">
     <section className="b2b-hero">
       <div><p className="b2b-kicker">CITIZEN INTERLINK // WALLET INTELLIGENCE</p><h1>Bytes<span>2</span>Bytes</h1><p>Read the wallet. Surface the stake. Account for every pending byte.</p></div>
@@ -110,7 +153,7 @@ export default function Bytes2Bytes() {
     </section>
 
     {result && <>
-      <section className="b2b-result-head">
+      <section className="b2b-result-head" ref={resultHeadRef}>
         <div><p>INTERLINK RESOLVED</p><h2>{result.input.toLowerCase().endsWith('.eth') ? result.input : shortened(result.resolvedAddress)}</h2><a href={`https://etherscan.io/address/${result.resolvedAddress}`} target="_blank" rel="noreferrer">{shortened(result.resolvedAddress)} ↗</a></div>
         <div><span>ETHEREUM BLOCK</span><b>{result.sourceBlock.toLocaleString()}</b><small>{new Date(result.asOf).toLocaleString()}</small></div>
       </section>
@@ -140,8 +183,20 @@ export default function Bytes2Bytes() {
         </>}
       </section>
 
+      <section className="b2b-undeposited" aria-labelledby="undeposited-title">
+        <header><div><p>04 / UNSTAKED CITIZENS / COMPONENTS</p><h2 id="undeposited-title">Undeposited Assets</h2></div><div><b>{result.directAssets.totalCount}</b><span>{result.directAssets.assembledCount} CITIZENS // {result.directAssets.componentCount} COMPONENTS</span></div></header>
+        <p className="b2b-undeposited-copy">Other Neo Tokyo Citizen assets detected directly in this wallet but outside the active B.O.N.T. staking statement.</p>
+        {result.directAssets.totalCount === 0 ? <div className="b2b-empty"><b>NO UNDEPOSITED ASSETS DETECTED</b><span>No directly held Citizen or component assets were found at this block.</span></div> : <>
+          {directCitizenCollections.length > 0 && <div className="b2b-direct-citizens"><h3>UNSTAKED CITIZENS <span>{result.directAssets.assembledCount}</span></h3><div className="b2b-citizen-grid">{directCitizenCollections.flatMap((collection) => collection.items.map((item) => <DirectCitizenCard key={`${collection.key}-${item.tokenId}`} collection={collection} tokenId={item.tokenId} />))}</div></div>}
+          {directComponentCollections.length > 0 && <div className="b2b-components"><h3>WALLET-HELD COMPONENTS <span>{result.directAssets.componentCount}</span></h3><div className="b2b-component-collections">{directComponentCollections.map((collection) => <details className="b2b-component-collection" key={collection.key}>
+            <summary><div><span>{collection.season} COMPONENTS</span><b>{collection.label}</b></div><strong>{collection.items.length}</strong><em>VIEW ART</em></summary>
+            <div className="b2b-component-grid">{collection.items.map((item) => <ComponentAssetCard key={`${collection.key}-${item.tokenId}`} collection={collection} tokenId={item.tokenId} />)}</div>
+          </details>)}</div></div>}
+        </>}
+      </section>
+
       <section className="b2b-method">
-        <p>04 / SOURCE NOTES</p>
+        <p>05 / SOURCE NOTES</p>
         <div>{result.notes.map((note) => <span key={note}>{note}</span>)}</div>
         <small>Read from the verified NeoTokyoStaker and Ethereum $BYTES contracts at pinned block {result.sourceBlock.toLocaleString()}. Values can change after this snapshot.</small>
       </section>

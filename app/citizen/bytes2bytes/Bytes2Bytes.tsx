@@ -37,7 +37,7 @@ function CitizenCard({ position }: { position: CitizenPosition }) {
       <dl>
         <div><dt>$BYTES staked</dt><dd>{number(position.stakedBytes, 2)}</dd></div>
         <div><dt>Staking points</dt><dd>{number(position.points, 2)}</dd></div>
-        {position.season === 's1' && <div><dt>Vault</dt><dd>{position.hasVault ? (position.vaultId ? `#${position.vaultId}` : 'Component Vault') : 'None'}</dd></div>}
+        {position.season === 's1' && <div><dt>Vault</dt><dd>{position.hasVault ? 'Vault Detected' : 'Vaultless'}</dd></div>}
       </dl>
     </div>
   </article>;
@@ -117,18 +117,18 @@ export default function Bytes2Bytes() {
 
       <section className="b2b-bont-lore" aria-label="Bank of Neo Tokyo account services">
         <div className="b2b-bont-image"><Image src="/citizen/bont-lore.webp" alt="B.O.N.T. guards standing beside the Bank of Neo Tokyo vault" fill sizes="(max-width: 700px) calc(100vw - 24px), 52vw" priority /></div>
-        <div><p>B.O.N.T. // ACCOUNT SERVICES</p><h2>Welcome to the Bank</h2><span>Citizen stakes and pending $BYTES, reconciled into one account statement.</span></div>
+        <div><p>B.O.N.T. // ACCOUNT SERVICES</p><h2>Welcome to the Bank</h2><span>Citizen stakes and pending $BYTES, reconciled into one Bank of Neo Tokyo (B.O.N.T.) account statement.</span></div>
       </section>
 
       <section className="b2b-summary" aria-labelledby="summary-title">
-        <header><p>02 / B.O.N.T.</p><h2 id="summary-title">Account Statement</h2></header>
+        <header><p>02 / B.O.N.T. TELLER DESK</p><h2 id="summary-title">Account Statement</h2></header>
         <div className="b2b-summary-grid">
           <SummaryMetric label="LIQUID $BYTES // ETH" value={result.summary.walletBalance} price={price} />
           <SummaryMetric label="CITIZEN-STAKED $BYTES" value={result.summary.citizenBytesStaked} price={price} />
           <SummaryMetric label="PENDING $BYTES" value={result.summary.pendingRewards} price={price} />
           <SummaryMetric label="TOTAL $BYTES ACCOUNTED" value={result.summary.totalBytes} price={price} accent />
         </div>
-        <div className="b2b-pending-breakdown"><span>PENDING $BYTES BY SEASON</span><b>S1 {number(result.pendingByPool.s1, 4)}</b><b>S2 {number(result.pendingByPool.s2, 4)}</b><small>DAO tax reported separately: {number(totalTax, 4)} $BYTES</small></div>
+        <div className="b2b-pending-breakdown"><span>PENDING $BYTES BY SEASON</span><div className="b2b-pending-stats"><b>S1 {number(result.pendingByPool.s1, 4)}</b><b>S2 {number(result.pendingByPool.s2, 4)}</b></div><small>DAO tax reported separately: {number(totalTax, 4)} $BYTES</small></div>
         {priceAsOf && <p className="b2b-source-line">USD references use $BYTES spot observed {new Date(priceAsOf).toLocaleString()}</p>}
       </section>
 

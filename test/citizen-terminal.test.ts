@@ -315,3 +315,22 @@ test('Bytes2Bytes inventories pinned wallet-held Citizen assets and reveals comp
   assert.match(ui, /resultHeadRef\.current\?\.scrollIntoView/);
   assert.match(css, /\.b2b-tribute\{display:flex;flex-direction:column/);
 });
+
+test('Bytes2Bytes artwork never exposes native broken-image UI and supports clean retry states', async () => {
+  const [ui, imageRoute, css] = await Promise.all([
+    readFile(new URL('../app/citizen/bytes2bytes/Bytes2Bytes.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/citizen-terminal/asset-image/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/bytes2bytes/bytes2bytes.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(ui, /function AssetArtwork/);
+  assert.match(ui, /LOADING ART/);
+  assert.match(ui, /ART NOT AVAILABLE/);
+  assert.match(ui, /RETRY ART/);
+  assert.match(ui, /setAttempt\(\(value\) => value \+ 1\)/);
+  assert.match(ui, /<AssetArtwork src=/);
+  assert.match(imageRoute, /const isComponent/);
+  assert.match(imageRoute, /refreshCache: retry \? 'true' : 'false'/);
+  assert.match(imageRoute, /fetchImageCandidate/);
+  assert.match(css, /\.b2b-art-retry/);
+});

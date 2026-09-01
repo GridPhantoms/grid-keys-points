@@ -33,9 +33,43 @@ function SummaryMetric({ label, value, price, accent = false }: { label: string;
   return <article className={`b2b-summary-card ${accent ? 'accent' : ''}`}><span>{label}</span><strong>{number(value, 4)}</strong><small>{price == null ? 'PRICE SOURCE UNAVAILABLE' : `${usd(value * price)} AT CURRENT SPOT`}</small></article>;
 }
 
+function AssetArtwork({ src, alt, sizes }: { src: string; alt: string; sizes: string }) {
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [attempt, setAttempt] = useState(0);
+  const retrySrc = attempt === 0 ? src : `${src}${src.includes('?') ? '&' : '?'}retry=${attempt}`;
+
+  const retry = () => {
+    setStatus('loading');
+    setAttempt((value) => value + 1);
+  };
+
+  return <div className={`b2b-art-frame is-${status}`}>
+    <div className="b2b-art-status" aria-live="polite">
+      {status === 'loading' && <><i aria-hidden="true" /><span>LOADING ART</span></>}
+      {status === 'error' && <>
+        <span>ART NOT AVAILABLE</span>
+        <button className="b2b-art-retry" type="button" onClick={retry} aria-label={`Retry ${alt}`}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5M6.1 9a7 7 0 0 1 11.6-2.4L20 9M4 15l2.3 2.4A7 7 0 0 0 17.9 15" /></svg>
+          RETRY ART
+        </button>
+      </>}
+    </div>
+    {status !== 'error' && <Image
+      key={retrySrc}
+      unoptimized
+      src={retrySrc}
+      alt={alt}
+      fill
+      sizes={sizes}
+      onLoad={(event) => { if (event.currentTarget.naturalWidth > 0) setStatus('loaded'); }}
+      onError={() => setStatus('error')}
+    />}
+  </div>;
+}
+
 function CitizenCard({ position }: { position: CitizenPosition }) {
   return <article className="b2b-citizen-card">
-    <div className="b2b-citizen-image"><Image unoptimized src={`/api/citizen-terminal/image?season=${position.season}&tokenId=${encodeURIComponent(position.citizenId)}`} alt={`${position.season.toUpperCase()} Citizen #${position.citizenId}`} width={360} height={360} /></div>
+    <div className="b2b-citizen-image"><AssetArtwork src={`/api/citizen-terminal/image?season=${position.season}&tokenId=${encodeURIComponent(position.citizenId)}`} alt={`${position.season.toUpperCase()} Citizen #${position.citizenId}`} sizes="(max-width: 700px) 110px, 145px" /></div>
     <div className="b2b-citizen-data">
       <div className="b2b-citizen-top"><span>{position.season.toUpperCase()} CITIZEN</span><b>{lockLabel(position.timelockEndTime)}</b></div>
       <h3>#{position.citizenId}</h3>
@@ -49,11 +83,8 @@ function CitizenCard({ position }: { position: CitizenPosition }) {
 }
 
 function DirectCitizenCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
-  const [imageFailed, setImageFailed] = useState(false);
   return <article className="b2b-citizen-card b2b-direct-citizen-card">
-    <div className="b2b-citizen-image">{imageFailed
-      ? <span className="b2b-art-unavailable">ART<br />UNAVAILABLE</span>
-      : <Image unoptimized src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.season} ${collection.label} #${tokenId}`} width={360} height={360} onError={() => setImageFailed(true)} />}</div>
+    <div className="b2b-citizen-image"><AssetArtwork src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.season} ${collection.label} #${tokenId}`} sizes="(max-width: 700px) 110px, 145px" /></div>
     <div className="b2b-citizen-data">
       <div className="b2b-citizen-top"><span>{collection.season} {collection.season === 'S2' ? 'OUTER CITIZEN' : 'CITIZEN'}</span><b>HELD IN WALLET</b></div>
       <h3>#{tokenId}</h3>
@@ -63,12 +94,9 @@ function DirectCitizenCard({ collection, tokenId }: { collection: DirectAssetCol
 }
 
 function ComponentAssetCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
-  const [imageFailed, setImageFailed] = useState(false);
   return <article className="b2b-component-card">
     <div className="b2b-component-image">
-      {imageFailed
-        ? <span>ART<br />UNAVAILABLE</span>
-        : <Image unoptimized src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.label} #${tokenId}`} fill sizes="(max-width: 700px) 44vw, 210px" onError={() => setImageFailed(true)} />}
+      <AssetArtwork src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.label} #${tokenId}`} sizes="(max-width: 700px) 44vw, 210px" />
     </div>
     <div><span>{collection.season} COMPONENT</span><b>{collection.label} #{tokenId}</b></div>
   </article>;

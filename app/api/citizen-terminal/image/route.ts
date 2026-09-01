@@ -1,19 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CITIZEN_CONTRACTS } from '@/lib/citizen-terminal';
+import { getOnchainMetadataImage } from '@/app/api/_lib/ethereum-nft-metadata';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ALLOWED_LAYER_ORIGIN = 'https://neotokyo.mypinata.cloud';
+const FALLBACK_LAYER_ORIGIN = 'https://gateway.pinata.cloud';
+const LAYER_FETCH_ATTEMPTS = 3;
 
 async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 8_000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await fetch(url, { cache: 'no-store', ...init, signal: controller.signal });
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchCitizenLayer(layerUrl: string) {
+  const parsed = new URL(layerUrl);
+  const ipfsPath = parsed.pathname.slice('/ipfs/'.length);
+  const candidates = [layerUrl, `${FALLBACK_LAYER_ORIGIN}/ipfs/${ipfsPath}`];
+  for (let attempt = 0; attempt < LAYER_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(candidates[attempt % candidates.length], { headers: { accept: 'image/png,image/*' } }, 12_000);
+      if (!response.ok) continue;
+      const contentType = response.headers.get('content-type')?.split(';', 1)[0] ?? 'image/png';
+      if (!contentType.startsWith('image/')) continue;
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (bytes.length === 0 || bytes.length > 2_000_000) continue;
+      return `data:${contentType};base64,${bytes.toString('base64')}`;
+    } catch {
+      // Try the alternate allowlisted IPFS gateway.
+    }
+  }
+  throw new Error('Image layer unavailable');
 }
 
 export async function GET(request: NextRequest) {
@@ -26,20 +49,23 @@ export async function GET(request: NextRequest) {
   if (!apiKey) return NextResponse.json({ error: 'Citizen image provider is not configured.' }, { status: 503 });
 
   try {
+    const retry = request.nextUrl.searchParams.has('retry');
     const params = new URLSearchParams({
       contractAddress: CITIZEN_CONTRACTS[season],
       tokenId,
-      refreshCache: 'false',
+      refreshCache: retry ? 'true' : 'false',
     });
     const metadataResponse = await fetchWithTimeout(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTMetadata?${params}`, {
       headers: { accept: 'application/json' },
     });
-    if (!metadataResponse.ok) throw new Error('Metadata unavailable');
-    const metadata = await metadataResponse.json() as {
-      image?: { originalUrl?: string; pngUrl?: string; cachedUrl?: string };
-    };
+    const metadata = metadataResponse.ok
+      ? await metadataResponse.json() as { image?: { originalUrl?: string; pngUrl?: string; cachedUrl?: string } }
+      : {};
 
-    const original = metadata.image?.originalUrl ?? '';
+    let original = metadata.image?.originalUrl ?? '';
+    if (!original.startsWith('data:image/svg+xml;base64,')) {
+      original = await getOnchainMetadataImage(CITIZEN_CONTRACTS[season], tokenId).catch(() => null) ?? original;
+    }
     if (!original.startsWith('data:image/svg+xml;base64,')) {
       const fallback = metadata.image?.pngUrl ?? metadata.image?.cachedUrl;
       if (fallback) return NextResponse.redirect(fallback, 307);
@@ -54,13 +80,7 @@ export async function GET(request: NextRequest) {
       if (parsed.origin !== ALLOWED_LAYER_ORIGIN || !parsed.pathname.startsWith('/ipfs/')) throw new Error('Unexpected image layer source');
     }
 
-    const embeddedLayers = await Promise.all(layerUrls.map(async (layerUrl) => {
-      const response = await fetchWithTimeout(layerUrl, { headers: { accept: 'image/png,image/*' } });
-      if (!response.ok) throw new Error('Image layer unavailable');
-      const contentType = response.headers.get('content-type')?.split(';', 1)[0] ?? 'image/png';
-      if (!contentType.startsWith('image/')) throw new Error('Invalid image layer');
-      return `data:${contentType};base64,${Buffer.from(await response.arrayBuffer()).toString('base64')}`;
-    }));
+    const embeddedLayers = await Promise.all(layerUrls.map(fetchCitizenLayer));
 
     let selfContainedSvg = svg;
     layerUrls.forEach((layerUrl, index) => {

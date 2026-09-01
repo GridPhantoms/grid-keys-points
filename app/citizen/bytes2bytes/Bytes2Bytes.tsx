@@ -84,7 +84,7 @@ function CitizenCard({ position }: { position: CitizenPosition }) {
 
 function DirectCitizenCard({ collection, tokenId }: { collection: DirectAssetCollection; tokenId: string }) {
   return <article className="b2b-citizen-card b2b-direct-citizen-card">
-    <div className="b2b-citizen-image"><AssetArtwork src={`/api/citizen-terminal/asset-image?collection=${encodeURIComponent(collection.key)}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.season} ${collection.label} #${tokenId}`} sizes="(max-width: 700px) 110px, 145px" /></div>
+    <div className="b2b-citizen-image"><AssetArtwork src={`/api/citizen-terminal/image?season=${collection.season.toLowerCase()}&tokenId=${encodeURIComponent(tokenId)}`} alt={`${collection.season} ${collection.label} #${tokenId}`} sizes="(max-width: 700px) 110px, 145px" /></div>
     <div className="b2b-citizen-data">
       <div className="b2b-citizen-top"><span>{collection.season} {collection.season === 'S2' ? 'OUTER CITIZEN' : 'CITIZEN'}</span><b>HELD IN WALLET</b></div>
       <h3>#{tokenId}</h3>
@@ -114,6 +114,14 @@ function ComponentAssetCard({ collection, tokenId }: { collection: DirectAssetCo
     </div>
     <div><span>{collection.season} COMPONENT</span><b>{itemLabel} #{tokenId}</b></div>
   </article>;
+}
+
+function ComponentCollection({ collection }: { collection: DirectAssetCollection }) {
+  const [open, setOpen] = useState(false);
+  return <details className="b2b-component-collection" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary><div><span>{collection.season} COMPONENTS</span><b>{collection.label}</b></div><strong>{collection.items.length}</strong><em>VIEW ART</em></summary>
+    {open && <div className="b2b-component-grid">{collection.items.map((item) => <ComponentAssetCard key={`${collection.key}-${item.tokenId}`} collection={collection} tokenId={item.tokenId} />)}</div>}
+  </details>;
 }
 
 export default function Bytes2Bytes() {
@@ -230,10 +238,7 @@ export default function Bytes2Bytes() {
         <p className="b2b-undeposited-copy">Other Neo Tokyo Citizen assets detected directly in this wallet but outside the active B.O.N.T. staking statement.</p>
         {result.directAssets.totalCount === 0 ? <div className="b2b-empty"><b>NO UNDEPOSITED ASSETS DETECTED</b><span>No directly held Citizen or component assets were found at this block.</span></div> : <>
           {directCitizenCollections.length > 0 && <div className="b2b-direct-citizens"><h3>UNSTAKED CITIZENS <span>{result.directAssets.assembledCount}</span></h3><div className="b2b-citizen-grid">{directCitizenCollections.flatMap((collection) => collection.items.map((item) => <DirectCitizenCard key={`${collection.key}-${item.tokenId}`} collection={collection} tokenId={item.tokenId} />))}</div></div>}
-          {directComponentCollections.length > 0 && <div className="b2b-components"><h3>WALLET-HELD COMPONENTS <span>{result.directAssets.componentCount}</span></h3><div className="b2b-component-collections">{directComponentCollections.map((collection) => <details className="b2b-component-collection" key={collection.key}>
-            <summary><div><span>{collection.season} COMPONENTS</span><b>{collection.label}</b></div><strong>{collection.items.length}</strong><em>VIEW ART</em></summary>
-            <div className="b2b-component-grid">{collection.items.map((item) => <ComponentAssetCard key={`${collection.key}-${item.tokenId}`} collection={collection} tokenId={item.tokenId} />)}</div>
-          </details>)}</div></div>}
+          {directComponentCollections.length > 0 && <div className="b2b-components"><h3>WALLET-HELD COMPONENTS <span>{result.directAssets.componentCount}</span></h3><div className="b2b-component-collections">{directComponentCollections.map((collection) => <ComponentCollection collection={collection} key={collection.key} />)}</div></div>}
         </>}
       </section>
 

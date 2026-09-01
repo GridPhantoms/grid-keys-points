@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CITIZEN_COLLECTIONS } from '@/lib/citizen-terminal';
+import { getOnchainMetadataImage } from '@/app/api/_lib/ethereum-nft-metadata';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,13 +63,16 @@ export async function GET(request: NextRequest) {
   try {
     const params = new URLSearchParams({ contractAddress: collection.contract, tokenId, refreshCache: retry ? 'true' : 'false' });
     const response = await fetchWithTimeout(`https://eth-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTMetadata?${params}`, 'application/json');
-    if (!response.ok) throw new Error('Metadata unavailable');
-    const metadata = await response.json() as {
-      image?: { pngUrl?: string | null; cachedUrl?: string | null; thumbnailUrl?: string | null; originalUrl?: string | null };
-    };
-    const original = metadata.image?.originalUrl ?? '';
+    const metadata = response.ok
+      ? await response.json() as { image?: { pngUrl?: string | null; cachedUrl?: string | null; thumbnailUrl?: string | null; originalUrl?: string | null } }
+      : {};
+    let original = metadata.image?.originalUrl ?? '';
+    const onchain = (!original || isComponent)
+      ? await getOnchainMetadataImage(collection.contract, tokenId).catch(() => null) ?? ''
+      : '';
+    if (!original) original = onchain;
     if (isComponent) {
-      const inline = embeddedImage(original);
+      const inline = embeddedImage(onchain || original);
       if (inline) return inline;
     }
     const candidates = [metadata.image?.pngUrl, metadata.image?.cachedUrl, metadata.image?.thumbnailUrl]

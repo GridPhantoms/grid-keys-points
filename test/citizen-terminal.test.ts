@@ -317,9 +317,11 @@ test('Bytes2Bytes inventories pinned wallet-held Citizen assets and reveals comp
 });
 
 test('Bytes2Bytes artwork never exposes native broken-image UI and supports clean retry states', async () => {
-  const [ui, imageRoute, css] = await Promise.all([
+  const [ui, imageRoute, assetImageRoute, metadataHelper, css] = await Promise.all([
     readFile(new URL('../app/citizen/bytes2bytes/Bytes2Bytes.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/citizen-terminal/image/route.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/citizen-terminal/asset-image/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/_lib/ethereum-nft-metadata.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/bytes2bytes/bytes2bytes.css', import.meta.url), 'utf8'),
   ]);
 
@@ -328,14 +330,23 @@ test('Bytes2Bytes artwork never exposes native broken-image UI and supports clea
   assert.match(ui, /ART NOT AVAILABLE/);
   assert.match(ui, /RETRY ART/);
   assert.match(ui, /setAttempt\(\(value\) => value \+ 1\)/);
+  assert.match(ui, /function ComponentCollection/);
+  assert.match(ui, /open && <div className="b2b-component-grid">/);
   assert.match(ui, /function componentItemLabel/);
   assert.match(ui, /Vault Card/);
   assert.match(ui, /Item Cache/);
   assert.match(ui, /Land Deed/);
   assert.match(ui, /Outer Identity/);
   assert.match(ui, /<AssetArtwork src=/);
-  assert.match(imageRoute, /const isComponent/);
-  assert.match(imageRoute, /refreshCache: retry \? 'true' : 'false'/);
-  assert.match(imageRoute, /fetchImageCandidate/);
+  assert.match(ui, /\/api\/citizen-terminal\/image\?season=\$\{collection\.season\.toLowerCase\(\)\}/);
+  assert.match(imageRoute, /const LAYER_FETCH_ATTEMPTS = 3/);
+  assert.match(imageRoute, /fetchCitizenLayer/);
+  assert.match(imageRoute, /getOnchainMetadataImage/);
+  assert.match(assetImageRoute, /const isComponent/);
+  assert.match(assetImageRoute, /refreshCache: retry \? 'true' : 'false'/);
+  assert.match(assetImageRoute, /fetchImageCandidate/);
+  assert.match(assetImageRoute, /getOnchainMetadataImage/);
+  assert.match(metadataHelper, /image_data/);
+  assert.match(metadataHelper, /TOKEN_URI_SELECTOR/);
   assert.match(css, /\.b2b-art-retry/);
 });

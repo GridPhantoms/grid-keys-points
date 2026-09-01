@@ -123,7 +123,7 @@ export default function Bytes2Bytes() {
       <section className="b2b-summary" aria-labelledby="summary-title">
         <header><p>02 / B.O.N.T. TELLER DESK</p><h2 id="summary-title">Account Statement</h2></header>
         <div className="b2b-summary-grid">
-          <SummaryMetric label="LIQUID $BYTES // ETH" value={result.summary.walletBalance} price={price} />
+          <SummaryMetric label="LIQUID $BYTES IN WALLET // ETH" value={result.summary.walletBalance} price={price} />
           <SummaryMetric label="CITIZEN-STAKED $BYTES" value={result.summary.citizenBytesStaked} price={price} />
           <SummaryMetric label="PENDING $BYTES" value={result.summary.pendingRewards} price={price} />
           <SummaryMetric label="TOTAL $BYTES ACCOUNTED" value={result.summary.totalBytes} price={price} accent />

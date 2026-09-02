@@ -188,8 +188,8 @@ export default function Bytes2Bytes() {
     </section>
 
     <section className="b2b-tribute">
-      <span>ARCHIVE SIGNAL // RESTORED UTILITY</span>
-      <p>A modern homage to the Citizen-built <strong>$BYTES to $BYTES</strong> tool once hosted at <strong>bytestobytes.com</strong>—rebuilt as a first-party, source-pinned Interlink utility.</p>
+      <span>LEGACY SIGNAL // EXPANDED UTILITY</span>
+      <p>A modern expansion of the Citizen-built <strong>$BYTES to $BYTES</strong> tool at <strong>bytestobytes.com</strong>—rebuilt with source-pinned reads inside Citizen Interlink.</p>
     </section>
 
     <section className="b2b-lookup" aria-labelledby="wallet-lookup-title">

@@ -870,7 +870,10 @@ export async function GET(request: Request) {
   const generatedAt = new Date().toISOString();
   const searchParams = new URL(request.url).searchParams;
   const isCanonical = searchParams.size === 0;
-  const isScheduledWarm = searchParams.size === 1 && searchParams.get('warm') === '1';
+  const isScheduledWarm = searchParams.get('warm') === '1'
+    && [...searchParams.keys()].every((key) => key === 'warm' || key === 'nonce')
+    && searchParams.has('nonce')
+    && searchParams.get('nonce') !== '';
   if (!isCanonical && !isScheduledWarm) {
     return Response.json({ status: 'invalid_request' }, {
       status: 400,
@@ -884,7 +887,11 @@ export async function GET(request: Request) {
     ]);
     if (lightweightResult.status === 'rejected') throw new Error('Lightweight snapshot unavailable.');
     const payload = combineSnapshotTiers(lightweightResult.value, pendingResult);
-    return Response.json(payload, { headers: { 'cache-control': PUBLIC_CACHE_CONTROL } });
+    return Response.json(payload, {
+      headers: {
+        'cache-control': isScheduledWarm ? PRIVATE_FAILURE_CACHE_CONTROL : PUBLIC_CACHE_CONTROL,
+      },
+    });
   } catch {
     console.error('BYTES materialized snapshot unavailable.');
     return Response.json(publicFailurePayload(generatedAt), {

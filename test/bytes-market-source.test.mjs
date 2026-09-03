@@ -54,6 +54,16 @@ test('route source retains Avalanche, Uniswap factory, oracle, and reorg identit
   assert.match(source.slice(getIndex), /Promise\.allSettled\(\[\s*readCachedBytesMetricsPayload\(\),\s*readCachedPendingRewardsSnapshot\(\)/);
 });
 
+test('scheduled warm requests bypass the outer CDN cache without bypassing materialized caches', async () => {
+  const source = await readFile(routeUrl, 'utf8');
+  const getSource = source.slice(source.indexOf('export async function GET(request: Request)'));
+  assert.match(getSource, /searchParams\.get\('warm'\) === '1'/);
+  assert.match(getSource, /searchParams\.has\('nonce'\)/);
+  assert.match(getSource, /isScheduledWarm \? PRIVATE_FAILURE_CACHE_CONTROL : PUBLIC_CACHE_CONTROL/);
+  assert.match(getSource, /readCachedBytesMetricsPayload\(\)/);
+  assert.match(getSource, /readCachedPendingRewardsSnapshot\(\)/);
+});
+
 test('participant refresh indexes through the selected finalized source block', async () => {
   const source = await readFile(participantGeneratorUrl, 'utf8');
   assert.match(source, /getBlock\(refresh \? 'finalized' : BYTES_PARTICIPANT_SNAPSHOT_BLOCK\)/);

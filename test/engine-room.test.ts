@@ -146,6 +146,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   ]);
 
   const proofHashes = [
+    '0x831b49fea0931019c04575f82a292072c9da831dc9bcf48d78189f4c8cd71931',
     '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd',
     '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d',
     '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7',
@@ -160,7 +161,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
 
   proofHashes.forEach((hash) => assert.match(ui, new RegExp(hash)));
   assert.match(ui, /<details className="engine-proof-shelf">/);
-  assert.match(ui, /VIEW 9 EARLIER PROOFS/);
+  assert.match(ui, /VIEW \{EARLIER_REWARD_PROOFS\.length\} EARLIER PROOFS/);
   assert.match(ui, /TOTAL VOTES CAST/);
   assert.doesNotMatch(ui, /ELIGIBLE DISTRIBUTION ROWS/);
   assert.match(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*max-width:none[^}]*white-space:nowrap/);
@@ -268,7 +269,7 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(ui, /AVG\. VOTER PARTICIPATION/);
   assert.match(ui, /VS CURRENT HOLDERS/);
 
-  assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 10);
+  assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 11);
   assert.match(ui, /<time dateTime=\{proof\.occurredAt\}>/);
 
   assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);

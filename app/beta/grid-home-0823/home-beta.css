@@ -306,8 +306,35 @@
 .kh-console-form button:first-of-type:hover { background: #a5f3fc; }
 .kh-console-form button:disabled { background: #25373c; color: #60747a; }
 .kh-results { margin-top: 46px; }
-.kh-summary-grid { display: grid; grid-template-columns: 4fr 1.18fr; gap: 14px; }
+.kh-summary-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, .78fr) minmax(210px, .62fr); gap: 14px; align-items: stretch; }
 .kh-summary-grid > div, .kh-roles { border-radius: 0; border-color: #19343d; background: rgba(2, 7, 9, .78); }
+.kh-stat-panel { display: flex; align-items: center; }
+.kh-stat-panel > div { width: 100%; }
+.kh-clearance-panel { position: relative; overflow: hidden; background: radial-gradient(circle at 100% 0, rgba(103, 232, 249, .12), transparent 42%), rgba(2, 7, 9, .9) !important; }
+.kh-clearance-panel:before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .18; background-image: linear-gradient(rgba(103, 232, 249, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(103, 232, 249, .08) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(135deg, black, transparent 72%); }
+.kh-clearance-panel > * { position: relative; z-index: 1; }
+.kh-clearance-level { margin-top: 13px; }
+.kh-clearance-level strong, .kh-clearance-level span { display: block; }
+.kh-clearance-level strong { color: #f4fbfc; font-size: clamp(28px, 3vw, 42px); line-height: .95; letter-spacing: -.05em; }
+.kh-clearance-level span { margin-top: 8px; color: #8aa2a8; font: 650 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.kh-clearance-support { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; align-items: end; margin-top: 20px; padding: 13px; border: 1px solid rgba(103, 232, 249, .24); background: rgba(4, 14, 17, .72); }
+.kh-clearance-support span { color: #769198; font: 700 7px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; }
+.kh-clearance-support strong { grid-row: span 2; color: #67e8f9; font-size: 22px; line-height: 1; letter-spacing: -.04em; white-space: nowrap; }
+.kh-clearance-support small { color: #7cffc6; font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; }
+.kh-clearance-progress { margin-top: 18px; }
+.kh-clearance-progress > div:first-child { display: flex; justify-content: space-between; gap: 14px; color: #80959b; font: 700 8px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; }
+.kh-clearance-progress strong { color: #d6e3e5; }
+.kh-clearance-track { height: 5px; margin-top: 8px; overflow: hidden; background: #172329; }
+.kh-clearance-track span { display: block; height: 100%; background: linear-gradient(90deg, #19a4bd, #67e8f9, #7cffc6); box-shadow: 0 0 16px rgba(103, 232, 249, .42); }
+.kh-clearance-classified { margin-top: 17px; padding-top: 14px; border-top: 1px solid #1a333a; }
+.kh-clearance-classified span, .kh-clearance-classified strong { display: block; }
+.kh-clearance-classified span { color: #6f858b; font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .11em; }
+.kh-clearance-classified strong { margin-top: 8px; color: #9b86d9; font: 700 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .11em; }
+.kh-clearance-rule { margin: 18px 0 0; color: #d8e8ea; font-size: 11px; font-weight: 650; line-height: 1.5; }
+.kh-clearance-note { margin: 8px 0 0; color: #71878d; font-size: 9px; line-height: 1.55; }
+.kh-clearance-link { display: inline-block; margin-top: 15px; color: #67e8f9; font: 700 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .09em; }
+.kh-clearance-link:hover { color: #a5f3fc; }
+.kh-reward-panel { min-width: 0; }
 .kh-roles { margin-top: 16px; }
 .kh-key-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .kh-key-card { border-radius: 0; border-color: #162d34; background: #04090b; }
@@ -454,6 +481,7 @@
   .kh-console-form > div:first-of-type { display: grid; grid-template-columns: 1fr; }
   .kh-console-form button { width: 100%; }
   .kh-summary-grid { grid-template-columns: 1fr; }
+  .kh-clearance-support { grid-template-columns: minmax(0, 1fr) auto; }
   .kh-key-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .kh-key-card .p-4 { padding: 12px; }
   .hb-lore { padding: 80px 0; gap: 48px; }

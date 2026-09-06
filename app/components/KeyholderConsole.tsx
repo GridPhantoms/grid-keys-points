@@ -2,8 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element -- role icons and shared season art retain the existing direct sources */
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { PHANTOM_REWARD_FILES } from '@/lib/phantom-reward-files';
+import { getGridClearance } from '@/lib/grid-clearance';
 import { KEY_TRAIT_POINTS } from '@/lib/key-trait-points';
 
 const GENESIS_CONTRACT = "0xF26e168D053F6779f7172A1d0b0A6cD8d7446493".toLowerCase();
@@ -300,6 +302,7 @@ export default function KeyholderConsole() {
   const totalGenesis = sortedGenesis.length;
   const totalExodus = sortedExodus.length;
   const totalKeys = keys.length;
+  const clearance = getGridClearance(totalPoints);
 
   return (
     <section className="kh-console-shell" id="keyholder-console" aria-labelledby="console-title">
@@ -387,9 +390,9 @@ export default function KeyholderConsole() {
                 Partial data: Key ownership is available, but {hasIncompleteTraits ? 'some Trait Points' : 'Lifetime Phantom Rewards'} {hasIncompleteTraits && rewardDataState === 'unavailable' ? 'and Lifetime Phantom Rewards are' : 'are'} temporarily unavailable.
               </div>
             )}
-            {/* Main Stats + Lifetime Rewards */}
-            <div className="kh-summary-grid grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
-              <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
+            {/* Main Stats + Grid Clearance + Lifetime Rewards */}
+            <div className="kh-summary-grid mb-10">
+              <div className="kh-stat-panel bg-zinc-950 border border-zinc-900 rounded-2xl p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                   <div>
                     <p className="text-[10px] text-zinc-500 mb-1">TOTAL POINT SUM</p>
@@ -410,7 +413,49 @@ export default function KeyholderConsole() {
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-cyan-500/30 rounded-2xl p-6 text-center flex flex-col justify-center">
+              <div className="kh-clearance-panel bg-zinc-950 border border-cyan-500/40 rounded-2xl p-6">
+                {hasIncompleteTraits ? (
+                  <>
+                    <p className="text-[10px] text-cyan-400 tracking-widest">GRID CLEARANCE</p>
+                    <p className="mt-4 text-2xl font-bold">UNAVAILABLE</p>
+                    <p className="mt-3 text-xs leading-relaxed text-amber-300">Complete Trait Point data is required to reconstruct Clearance.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-cyan-400 tracking-widest">GRID CLEARANCE</p>
+                    <div className="kh-clearance-level">
+                      <strong>LEVEL {clearance.level}</strong>
+                      <span>{clearance.name}</span>
+                    </div>
+
+                    <div className="kh-clearance-support">
+                      <span>CURRENT HAZARD SUPPORT SCHEDULE</span>
+                      <strong>+{clearance.hazardSupport} BYTES</strong>
+                      <small>WHEN ACTIVATED</small>
+                    </div>
+
+                    {clearance.nextLevel && clearance.pointsToNextLevel !== null ? (
+                      <div className="kh-clearance-progress">
+                        <div><span>POINTS TO LEVEL {clearance.nextLevel.level}</span><strong>{clearance.pointsToNextLevel.toLocaleString()}</strong></div>
+                        <div className="kh-clearance-track" aria-label={`${clearance.progressPercent.toFixed(0)}% progress to Level ${clearance.nextLevel.level}`}>
+                          <span style={{ width: `${clearance.progressPercent}%` }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="kh-clearance-classified">
+                        <span>MAXIMUM ACTIVE CLEARANCE</span>
+                        <strong>LEVEL 5 // CLASSIFIED</strong>
+                      </div>
+                    )}
+
+                    <p className="kh-clearance-rule">Points determine Clearance. Participation activates it.</p>
+                    <p className="kh-clearance-note">The current schedule applies once per eligible wallet only when participation qualifies and a discretionary potential Phantom Reward distribution is approved. Points follow current Key ownership.</p>
+                    <Link href="/trait-charts" className="kh-clearance-link">OPEN TRAIT INTELLIGENCE ARCHIVE →</Link>
+                  </>
+                )}
+              </div>
+
+              <div className="kh-reward-panel bg-zinc-950 border border-cyan-500/30 rounded-2xl p-6 text-center flex flex-col justify-center">
                 <p className="text-[10px] text-cyan-400 mb-1 tracking-widest">LIFETIME PHANTOM REWARDS</p>
                 <p className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
                   {phantomRewards !== null ? phantomRewards.toLocaleString() : '—'}

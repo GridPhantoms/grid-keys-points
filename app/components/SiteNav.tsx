@@ -20,7 +20,7 @@ type SiteNavProps = {
 const navItems: Array<{ href: string; label: string; active: SiteNavActive }> = [
   { href: '/', label: 'Home', active: 'home' },
   { href: '/leaderboard', label: 'Leaderboards', active: 'leaderboard' },
-  { href: '/trait-charts', label: 'Trait Charts', active: 'trait-charts' },
+  { href: '/trait-charts', label: 'Trait Intelligence', active: 'trait-charts' },
   { href: '/raffle', label: 'Raffle Tracker', active: 'raffle' },
   { href: '/mint-progress', label: 'Mint Progress', active: 'mint-progress' },
   { href: '/engine', label: 'Engine Room', active: 'engine' },

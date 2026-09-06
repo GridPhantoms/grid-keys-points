@@ -67,6 +67,7 @@ const COMPLETED_REWARD_HISTORY = [
   { cycle: 'May 2026', genesis: 3.6, exodus: 3 },
   { cycle: 'June 2026', genesis: 2.4, exodus: 2 },
   { cycle: 'July 2026', genesis: 2.4, exodus: 2 },
+  { cycle: 'August 2026', genesis: 1.5, exodus: 1.25 },
 ] as const;
 
 const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
@@ -79,7 +80,28 @@ const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
 
 const REWARD_HISTORY_THROUGH = COMPLETED_REWARD_HISTORY.at(-1)?.cycle ?? '';
 
+const LATEST_GRID_CYCLE = {
+  cycle: 'August 2026',
+  proposalUrl: 'https://snapshot.box/#/s:gridphantoms.eth/proposal/0x105b2a2f4b29b359f721e84a6e997e02f04474a71e2aede2b8010076343eba10',
+  winner: 'Full-Spectrum Vault',
+  winnerGp: '286 GP',
+  winnerShare: '37.93%',
+  runnerUp: 'Liquid Diversified',
+  runnerUpGp: '269 GP',
+  participatingWallets: 36,
+  totalGp: 754,
+  snapshotBlock: '25,876,257',
+  genesisKeys: 307,
+  exodusKeys: 447,
+  genesisRate: '1.50',
+  exodusRate: '1.25',
+  baseBytes: '1,019.25',
+  hazardBytes: '217',
+  totalBytes: '1,236.25',
+} as const;
+
 const REWARD_PROOFS = [
+  { cycle: 'August 2026', distributed: 'September 6, 2026', occurredAt: '2026-09-06T22:56:53Z', bytes: '1,236.25', transfers: 36, hash: '0x831b49fea0931019c04575f82a292072c9da831dc9bcf48d78189f4c8cd71931' },
   { cycle: 'July 2026', distributed: 'August 3, 2026', occurredAt: '2026-08-03T02:10:34Z', bytes: '1,178.8', transfers: 27, hash: '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd' },
   { cycle: 'June 2026', distributed: 'July 13, 2026', occurredAt: '2026-07-13T03:17:55Z', bytes: '1,115.6', transfers: 28, hash: '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d' },
   { cycle: 'May 2026', distributed: 'June 3, 2026', occurredAt: '2026-06-03T22:28:39Z', bytes: '2,050.8', transfers: 39, hash: '0xb6ed9da83476ef32e88d689ddc10e49380f8b699a874e97c88996da7c713e3c7' },
@@ -559,7 +581,7 @@ export default function EngineRoom() {
             <SourceCard label="NFT HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.nft} />
             <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
             <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
-            <SourceCard label="REWARD ARCHIVE" mode="VERIFIED THROUGH JULY 2026" timeKind="OCCURRED" source={sources.rewards} />
+            <SourceCard label="REWARD ARCHIVE" mode={`VERIFIED THROUGH ${REWARD_HISTORY_THROUGH.toUpperCase()}`} timeKind="OCCURRED" source={sources.rewards} />
           </div>
           <p className="engine-evidence-key" aria-label="Metric classification key">
             <span><b>Observed</b> direct source fact</span>
@@ -608,13 +630,42 @@ export default function EngineRoom() {
               <p className="engine-metric-value"><MetricState status={rewardReferenceStatus}>${Math.round(airdropUSD).toLocaleString()}</MetricState></p><p className="engine-metric-unit">TOTAL BYTES × SNAPSHOT PRICE</p>
             </article>
           </div>
+          <div className="engine-cycle-brief" aria-labelledby="latest-cycle-heading">
+            <div className="engine-cycle-brief-head">
+              <div>
+                <span>LATEST COMPLETED GRID CYCLE</span>
+                <h3 id="latest-cycle-heading">{LATEST_GRID_CYCLE.cycle} mandate and distribution</h3>
+              </div>
+              <a href={LATEST_GRID_CYCLE.proposalUrl} target="_blank" rel="noopener noreferrer">VIEW VERIFIED VOTE ↗</a>
+            </div>
+            <div className="engine-cycle-result">
+              <div className="engine-cycle-winner">
+                <span>WINNING MANDATE</span>
+                <strong>{LATEST_GRID_CYCLE.winner}</strong>
+                <small>{LATEST_GRID_CYCLE.winnerGp} · {LATEST_GRID_CYCLE.winnerShare} · runner-up {LATEST_GRID_CYCLE.runnerUp} at {LATEST_GRID_CYCLE.runnerUpGp}</small>
+              </div>
+              <dl className="engine-cycle-stats">
+                <div><dt>PARTICIPATION</dt><dd>{LATEST_GRID_CYCLE.participatingWallets}</dd><small>36 PARTICIPATING WALLETS</small></div>
+                <div><dt>VOTING POWER</dt><dd>{LATEST_GRID_CYCLE.totalGp}</dd><small>754 GP</small></div>
+                <div><dt>SNAPSHOT BLOCK</dt><dd>{LATEST_GRID_CYCLE.snapshotBlock}</dd><small>ETHEREUM</small></div>
+                <div><dt>QUALIFYING KEYS</dt><dd>{LATEST_GRID_CYCLE.genesisKeys + LATEST_GRID_CYCLE.exodusKeys}</dd><small>{LATEST_GRID_CYCLE.genesisKeys} GENESIS · {LATEST_GRID_CYCLE.exodusKeys} EXODUS</small></div>
+              </dl>
+            </div>
+            <div className="engine-cycle-allocation">
+              <div><span>PER-KEY BASE RATES</span><strong>{LATEST_GRID_CYCLE.genesisRate} GENESIS · {LATEST_GRID_CYCLE.exodusRate} EXODUS</strong></div>
+              <div><span>BASE REWARDS</span><strong>{LATEST_GRID_CYCLE.baseBytes} BASE</strong></div>
+              <div><span>FIRST HAZARD SUPPORT</span><strong>{LATEST_GRID_CYCLE.hazardBytes} HAZARD SUPPORT</strong><small>30 WALLETS RECEIVED POSITIVE SUPPORT</small></div>
+              <div className="is-total"><span>VERIFIED DISTRIBUTION</span><strong>{LATEST_GRID_CYCLE.totalBytes} BYTES</strong></div>
+            </div>
+            <p className="engine-cycle-note">Hazard Support is wallet-level and is not included in the per-Key simulator. It was applied once under the cycle&apos;s fixed Clearance schedule after participation qualified; future potential Phantom Rewards remain discretionary and are never guaranteed.</p>
+          </div>
           <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
             <span className="engine-proof-status">LATEST VERIFIED DISTRIBUTION</span>
             <span className="engine-proof-copy"><strong>{LATEST_REWARD_PROOF.cycle} Grid Cycle potential Phantom Rewards</strong><small><time dateTime={LATEST_REWARD_PROOF.occurredAt}>{LATEST_REWARD_PROOF.distributed} · {formatUtcTime(LATEST_REWARD_PROOF.occurredAt)}</time> · {LATEST_REWARD_PROOF.bytes} BYTES · {LATEST_REWARD_PROOF.transfers} transfers</small></span>
             <b aria-hidden="true">↗</b>
           </a>
           <details className="engine-proof-shelf">
-            <summary><span>HISTORICAL PROOF ARCHIVE</span><strong>VIEW 9 EARLIER PROOFS</strong><i aria-hidden="true">+</i></summary>
+            <summary><span>HISTORICAL PROOF ARCHIVE</span><strong>VIEW {EARLIER_REWARD_PROOFS.length} EARLIER PROOFS</strong><i aria-hidden="true">+</i></summary>
             <div className="engine-proof-archive">
               {EARLIER_REWARD_PROOFS.map((proof) => (
                 <a key={proof.hash} href={`https://snowtrace.io/tx/${proof.hash}`} target="_blank" rel="noopener noreferrer">
@@ -629,7 +680,7 @@ export default function EngineRoom() {
         <section className="engine-section engine-panel engine-simulator" aria-labelledby="simulator-heading">
           <div className="engine-section-head">
             <div><p className="engine-eyebrow">03 / REWARD VALUE SIMULATOR</p><h2 id="simulator-heading">Model completed per-Key rewards</h2></div>
-            <p>Choose a Key type and hypothetical BYTES price to explore completed historical reward value.</p>
+            <p>Choose a Key type and hypothetical BYTES price to explore completed historical per-Key base reward value.</p>
           </div>
           <div className="engine-simulator-grid">
             <div className="engine-control-panel">
@@ -658,7 +709,7 @@ export default function EngineRoom() {
               <div className="engine-output-total"><span>{`TOTAL ACROSS ${safeRewardKeyCount.toLocaleString()} ${safeRewardKeyCount === 1 ? 'KEY' : 'KEYS'}`}</span><EvidenceBadge classification="Projected" /><strong>{hasHypotheticalPrice ? formatUsd(hypotheticalTotalValue) : '—'}</strong></div>
             </div>
           </div>
-          <p className="engine-disclaimer">Completed distributions through {REWARD_HISTORY_THROUGH} only. User-entered prices are hypothetical and are not forecasts. Phantom Rewards are discretionary and never guaranteed.</p>
+          <p className="engine-disclaimer">Completed distributions through {REWARD_HISTORY_THROUGH} only. Wallet-level Hazard Support is excluded from per-Key modeling. User-entered prices are hypothetical and are not forecasts. Phantom Rewards are discretionary and never guaranteed.</p>
         </section>
 
         <section className="engine-section engine-panel" aria-labelledby="vitals-heading">
@@ -668,7 +719,7 @@ export default function EngineRoom() {
           </div>
           <div className="engine-vitals-grid">
             <article><span>LIBERATED SLAVES</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
-            <article><span>TOTAL VOTES CAST</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 10 CYCLES</small></article>
+            <article><span>TOTAL VOTES CAST</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 11 CYCLES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
             <article><span>AVG. VOTER PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>

@@ -10,6 +10,7 @@
     "test:bytes": "node --test test/*.test.mjs",
     "test:citizen": "node --experimental-strip-types --test test/citizen-terminal.test.ts",
     "test:engine": "node --experimental-strip-types --test test/engine-room.test.ts",
+    "test:grid": "node --experimental-strip-types --test test/grid-clearance-rollout.test.ts test/home-live.test.ts test/site-audit-regressions.test.ts",
     "validate:bytes-history": "node scripts/validate-bytes-history.mjs",
     "generate:bytes-history": "node scripts/generate-bytes-emissions-history.mjs",
     "generate:bytes-participants": "node scripts/generate-bytes-staking-participants.mjs",

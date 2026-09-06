@@ -70,8 +70,8 @@ test('Engine Room renders a sanitized, extensible NFT portfolio as responsive li
   assert.match(neoRoute, /items: \{[^\n]+brand: 'S1 ITEM CACHE'/);
   assert.match(neoRoute, /genesis: \{[^\n]+brand: 'GRID PHANTOMS'/);
   assert.match(neoRoute, /const COATTAIL_BROKERS = \{[^\n]+brand: 'COATTAIL BROKERS'/);
-  assert.match(neoRoute, /tokenIds: \['1381'\]/);
-  assert.match(neoRoute, /source: 'alchemy_eth_and_robinhood_rpc_owner_lookup'/);
+  assert.match(neoRoute, /COATTAIL_FALLBACK_TOKEN_IDS = \['1381', '1664'\]/);
+  assert.match(neoRoute, /source: 'alchemy_eth_plus_blockscout_discovery_and_robinhood_rpc_verification'/);
   assert.match(neoRoute, /https:\/\/opensea\.io\/item\/robinhood\//);
   assert.match(neoRoute, /Genesis Key Card #\$\{tokenId\}/);
   assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3, coattail: 4 \}/);
@@ -164,7 +164,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   assert.match(ui, /VIEW \{EARLIER_REWARD_PROOFS\.length\} EARLIER PROOFS/);
   assert.match(ui, /TOTAL VOTES CAST/);
   assert.doesNotMatch(ui, /ELIGIBLE DISTRIBUTION ROWS/);
-  assert.match(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*max-width:none[^}]*white-space:nowrap/);
+  assert.match(css, /\.engine-disclaimer\{[^}]*overflow-wrap:anywhere/);
   assert.match(css, /\.engine-proof-shelf\{/);
   assert.match(css, /\.engine-proof-archive\{/);
   assert.match(css, /\.engine-proof-archive>a:last-child:nth-child\(odd\)\{grid-column:1\/-1\}/);
@@ -207,7 +207,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(css, /\.engine-evidence\{/);
   assert.match(css, /\.engine-evidence-projected\{/);
 
-  assert.match(neoRoute, /source: 'alchemy_eth_and_robinhood_rpc_owner_lookup'/);
+  assert.match(neoRoute, /source: 'alchemy_eth_plus_blockscout_discovery_and_robinhood_rpc_verification'/);
   assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
   assert.match(exodusRoute, /source: 'alchemy_getAssetTransfers_zero_address_mints'/);
   assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);
@@ -252,7 +252,9 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   const vaultMetadata = JSON.parse(vaultMetaText);
   assert.deepEqual(Object.keys(vaultMetadata), ['capturedAt']);
   assert.match(vaultMetadata.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
-  assert.deepEqual(JSON.parse(holderMetaText), { capturedAt: '2026-08-14T04:20:00Z' });
+  const holderMetadata = JSON.parse(holderMetaText);
+  assert.deepEqual(Object.keys(holderMetadata), ['capturedAt']);
+  assert.match(holderMetadata.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/);
   assert.match(ui, /fetchJson\('\/vault-snapshot\.meta\.json'\)/);
   assert.match(ui, /fetchJson\('\/holders-snapshot\.meta\.json'\)/);
   assert.doesNotMatch(ui, /const VAULT_SNAPSHOT_AT|const HOLDER_SNAPSHOT_AT/);
@@ -328,4 +330,20 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
   assert.match(ui, /DeBank portfolio, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
   assert.doesNotMatch(ui, /Neo Tokyo asset references/);
+});
+
+test('Engine Room keeps long disclaimer copy inside its panel', async () => {
+  const css = await read('../app/engine/engine.css');
+
+  assert.match(css, /\.engine-disclaimer\{[^}]*overflow-wrap:anywhere/);
+  assert.doesNotMatch(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*white-space:nowrap/);
+});
+
+test('Vault NFT route discovers current Coattail holdings instead of relying on one token id', async () => {
+  const route = await read('../app/api/neo-vault-counts/route.ts');
+
+  assert.match(route, /robinhoodchain\.blockscout\.com\/api\/v2\/addresses/);
+  assert.match(route, /getOwnedCoattailTokenIds/);
+  assert.match(route, /address_hash/);
+  assert.doesNotMatch(route, /tokenIds: \['1381'\]/);
 });

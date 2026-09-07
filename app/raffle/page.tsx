@@ -12,7 +12,7 @@ export default function RaffleTracker() {
   const [entrants, setEntrants] = useState<RaffleEntrant[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [raffleError, setRaffleError] = useState('');
-  const [lastSnapshot] = useState("August 3, 2026 17:33 UTC");
+  const [lastSnapshot] = useState("September 7, 2026 03:41 UTC");
 
   // Exact timestamp of the 30th eligible mint. Updated by the raffle snapshot generator once reached.
   const RAFFLE_30TH_MINT_TIMESTAMP: number | null = null; // milliseconds

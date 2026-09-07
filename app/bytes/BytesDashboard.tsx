@@ -39,6 +39,10 @@ function formatPercentage(value: unknown) {
   return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
+function formatWeekCount(value: number) {
+  return `${value} ${value === 1 ? 'week' : 'weeks'}`;
+}
+
 function isPoolValue(value: unknown): value is EmissionPools {
   return Boolean(value && typeof value === 'object' && 'total' in value);
 }
@@ -133,7 +137,7 @@ function EmissionsSummaryCard({ configured, modeled, divergence, theoryWeek }: {
         <div><b>{modeledAvailable ? formatNumber(modeledTotal) : '—'}</b><small>Modeled reference rate · BYTES/day</small></div>
         <div><b>{divergenceAvailable ? `${formatSigned(divergence.value)} · ${variancePercent === null ? '—' : formatSigned(variancePercent)}%` : '—'}</b><small>Configured vs. modeled · BYTES/day</small></div>
       </div>
-      {alignedReferenceWeek !== null && modelWeek !== null && roundedOffsetWeeks !== null && roundedOffsetWeeks > 0 ? <p className="bytes-observer-note">Configured emissions currently match the modeled rate from {roundedOffsetWeeks} weeks ago (week {alignedReferenceWeek} vs. week {modelWeek} today). A manual administrator adjustment is expected.</p> : null}
+      {alignedReferenceWeek !== null && modelWeek !== null && roundedOffsetWeeks !== null && roundedOffsetWeeks > 0 ? <p className="bytes-observer-note">Configured emissions currently match the modeled rate from {formatWeekCount(roundedOffsetWeeks)} ago (week {alignedReferenceWeek} vs. week {modelWeek} today). A manual administrator adjustment is expected.</p> : null}
       {legacyEmissionTotal !== null && legacyEmissionTotal > 0 ? <p className="bytes-contract-alert">Additional nonzero contract reward-window configuration detected for BYTES/LP asset indices: {formatNumber(legacyEmissionTotal)} BYTES/day. Inspect claimability and pool treatment before including it in headline issuance.</p> : null}
     </article>
   );
@@ -448,7 +452,7 @@ export default function BytesDashboard() {
               </article>
               <article className="bytes-human-item bytes-human-item--issuance">
                 <h3>Issuance Outlook</h3>
-                <p>The configured S1 and S2 reward windows currently emit about <strong>{configuredTotal === null ? 'an unavailable amount' : `${formatNumber(configuredTotal)} BYTES per day`}</strong>. {modeledOffsetWeeks !== null && modeledOffsetWeeks > 0 ? <>Those settings align with the reference model from <strong>{modeledOffsetWeeks} weeks ago</strong> rather than today&apos;s modeled rate, and a manual administrator adjustment is expected.</> : <>Actual configured emissions may differ from today&apos;s modeled rate.</>} If participation remains near current levels and future reward windows resume tracking the weekly curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' && typeof next365DayIssuance.value === 'number' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days{projectedIssuanceShare === null ? '.' : <>, or <strong>{formatNumber(projectedIssuanceShare, 1)}% of the steady scenario&apos;s remaining issuance</strong>.</>} The Terminal separately tracks about <strong>{pendingRewards?.availability === 'available' && typeof pendingRewards.value === 'number' ? `${integerFormatter.format(pendingRewards.value)} BYTES of net pending rewards` : 'an unavailable amount of net pending rewards'}</strong>. Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted.</p>
+                <p>The configured S1 and S2 reward windows currently emit about <strong>{configuredTotal === null ? 'an unavailable amount' : `${formatNumber(configuredTotal)} BYTES per day`}</strong>. {modeledOffsetWeeks !== null && modeledOffsetWeeks > 0 ? <>Those settings align with the reference model from <strong>{formatWeekCount(modeledOffsetWeeks)} ago</strong> rather than today&apos;s modeled rate, and a manual administrator adjustment is expected.</> : <>Actual configured emissions may differ from today&apos;s modeled rate.</>} If participation remains near current levels and future reward windows resume tracking the weekly curve, the model projects about <strong>{next365DayIssuance?.availability === 'available' && typeof next365DayIssuance.value === 'number' ? `${integerFormatter.format(next365DayIssuance.value)} BYTES` : 'an unavailable amount'}</strong> of issuance over the next 365 days{projectedIssuanceShare === null ? '.' : <>, or <strong>{formatNumber(projectedIssuanceShare, 1)}% of the steady scenario&apos;s remaining issuance</strong>.</>} The Terminal separately tracks about <strong>{pendingRewards?.availability === 'available' && typeof pendingRewards.value === 'number' ? `${integerFormatter.format(pendingRewards.value)} BYTES of net pending rewards` : 'an unavailable amount of net pending rewards'}</strong>. Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted.</p>
               </article>
               <article className="bytes-human-item bytes-human-item--pressure">
                 <h3>Pressure Profile</h3>

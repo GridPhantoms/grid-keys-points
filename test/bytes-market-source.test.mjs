@@ -142,7 +142,11 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /Current daily emissions/i);
   assert.match(dashboard, /Modeled reference rate/i);
   assert.match(dashboard, /Configured vs\. modeled/i);
-  assert.match(dashboard, /Configured emissions currently match the modeled rate from \{roundedOffsetWeeks\} weeks ago/);
+  assert.match(dashboard, /function formatWeekCount\(value: number\) \{/);
+  assert.match(dashboard, /return `\$\{value\} \$\{value === 1 \? 'week' : 'weeks'\}`;/);
+  assert.match(dashboard, /Configured emissions currently match the modeled rate from \{formatWeekCount\(roundedOffsetWeeks\)\} ago/);
+  assert.match(dashboard, /\{formatWeekCount\(modeledOffsetWeeks\)\} ago/);
+  assert.doesNotMatch(dashboard, /\{(?:roundedOffsetWeeks|modeledOffsetWeeks)\} weeks ago/);
   assert.match(dashboard, /week \{alignedReferenceWeek\} vs\. week \{modelWeek\} today/);
   assert.match(dashboard, /A manual administrator adjustment is expected\./);
   assert.match(dashboard, /of the steady scenario.{0,80}total remaining issuance is projected to be emitted within the next 365 days/i);

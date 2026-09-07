@@ -71,7 +71,7 @@ test('Engine Room renders a sanitized, extensible NFT portfolio as responsive li
   assert.match(neoRoute, /genesis: \{[^\n]+brand: 'GRID PHANTOMS'/);
   assert.match(neoRoute, /const COATTAIL_BROKERS = \{[^\n]+brand: 'COATTAIL BROKERS'/);
   assert.match(neoRoute, /COATTAIL_FALLBACK_TOKEN_IDS = \['1381', '1664'\]/);
-  assert.match(neoRoute, /source: 'alchemy_eth_plus_blockscout_discovery_and_robinhood_rpc_verification'/);
+  assert.match(neoRoute, /source: 'alchemy_eth_plus_robinhood_transfer_logs_and_rpc_verification'/);
   assert.match(neoRoute, /https:\/\/opensea\.io\/item\/robinhood\//);
   assert.match(neoRoute, /Genesis Key Card #\$\{tokenId\}/);
   assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3, coattail: 4 \}/);
@@ -207,7 +207,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(css, /\.engine-evidence\{/);
   assert.match(css, /\.engine-evidence-projected\{/);
 
-  assert.match(neoRoute, /source: 'alchemy_eth_plus_blockscout_discovery_and_robinhood_rpc_verification'/);
+  assert.match(neoRoute, /source: 'alchemy_eth_plus_robinhood_transfer_logs_and_rpc_verification'/);
   assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
   assert.match(exodusRoute, /source: 'alchemy_getAssetTransfers_zero_address_mints'/);
   assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);
@@ -339,11 +339,12 @@ test('Engine Room keeps long disclaimer copy inside its panel', async () => {
   assert.doesNotMatch(css, /@media\(min-width:1100px\)\{\.engine-disclaimer\{[^}]*white-space:nowrap/);
 });
 
-test('Vault NFT route discovers current Coattail holdings instead of relying on one token id', async () => {
+test('Vault NFT route discovers current Coattail holdings from transfer logs instead of relying on one token id', async () => {
   const route = await read('../app/api/neo-vault-counts/route.ts');
 
-  assert.match(route, /robinhoodchain\.blockscout\.com\/api\/v2\/addresses/);
+  assert.match(route, /eth_getLogs/);
+  assert.match(route, /TRANSFER_TOPIC/);
   assert.match(route, /getOwnedCoattailTokenIds/);
-  assert.match(route, /address_hash/);
+  assert.match(route, /ownerResult/);
   assert.doesNotMatch(route, /tokenIds: \['1381'\]/);
 });

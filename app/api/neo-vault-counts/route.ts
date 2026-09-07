@@ -11,9 +11,9 @@ const NFT_COLLECTIONS = {
 const COATTAIL_BROKERS = { address: '0x1122db21998707f8c2ed8182734356c947fa5e98', brand: 'COATTAIL BROKERS' } as const;
 const COATTAIL_FALLBACK_TOKEN_IDS = ['1381', '1664'] as const;
 const ROBINHOOD_RPC = 'https://rpc.mainnet.chain.robinhood.com/';
-const ROBINHOOD_BLOCKSCOUT = 'https://robinhoodchain.blockscout.com/api/v2/addresses';
 const OWNER_OF_SELECTOR = '6352211e';
 const TOKEN_URI_SELECTOR = 'c87b56dd';
+const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const RPC_TIMEOUT_MS = 10_000;
 
 type EthereumNftCountName = keyof typeof NFT_COLLECTIONS;
@@ -100,33 +100,34 @@ function parseOnchainMetadata(tokenUri: string) {
 
 async function getOwnedCoattailTokenIds() {
   const tokenIds = new Set<string>(COATTAIL_FALLBACK_TOKEN_IDS);
-  let nextPageParams: Record<string, string | number> | null = { type: 'ERC-721' };
-
-  try {
-    for (let page = 0; nextPageParams && page < 20; page += 1) {
-      const url = new URL(`${ROBINHOOD_BLOCKSCOUT}/${VAULT_WALLET}/nft`);
-      url.searchParams.set('type', 'ERC-721');
-      Object.entries(nextPageParams).forEach(([key, value]) => url.searchParams.set(key, String(value)));
-      const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(RPC_TIMEOUT_MS) });
-      if (!response.ok) throw new Error('Robinhood Blockscout request failed');
-      const payload = await response.json() as {
-        items?: Array<{ id?: unknown; token?: { address_hash?: unknown } }>;
-        next_page_params?: Record<string, string | number> | null;
-      };
-      if (!Array.isArray(payload.items)) throw new Error('Robinhood Blockscout returned invalid data');
-      payload.items.forEach((item) => {
-        const tokenId = cleanText(item.id);
-        const contract = cleanText(item.token?.address_hash).toLowerCase();
-        if (contract === COATTAIL_BROKERS.address && /^\d+$/.test(tokenId)) tokenIds.add(tokenId);
-      });
-      nextPageParams = payload.next_page_params && typeof payload.next_page_params === 'object'
-        ? payload.next_page_params
-        : null;
+  const response = await fetch(ROBINHOOD_RPC, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'eth_getLogs',
+      params: [{
+        address: COATTAIL_BROKERS.address,
+        fromBlock: '0x0',
+        toBlock: 'latest',
+        topics: [TRANSFER_TOPIC, null, `0x${VAULT_WALLET.slice(2).padStart(64, '0')}`],
+      }],
+    }),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error('Robinhood transfer-log request failed');
+  const payload = await response.json() as { result?: unknown; error?: unknown };
+  if (payload.error || !Array.isArray(payload.result)) throw new Error('Robinhood transfer-log response was invalid');
+  payload.result.forEach((log) => {
+    if (!log || typeof log !== 'object' || !Array.isArray((log as { topics?: unknown }).topics)) return;
+    const topics = (log as { topics: unknown[] }).topics;
+    const tokenTopic = topics[3];
+    if (typeof tokenTopic === 'string' && /^0x[0-9a-fA-F]{64}$/.test(tokenTopic)) {
+      tokenIds.add(BigInt(tokenTopic).toString());
     }
-    if (nextPageParams) throw new Error('Robinhood Blockscout pagination limit reached');
-  } catch {
-    console.error('Dynamic Coattail holdings discovery failed; checking verified fallback token IDs');
-  }
+  });
 
   return [...tokenIds].sort((a, b) => Number(a) - Number(b));
 }
@@ -185,7 +186,7 @@ export async function GET() {
       {
         ...counts,
         assets,
-        source: 'alchemy_eth_plus_blockscout_discovery_and_robinhood_rpc_verification',
+        source: 'alchemy_eth_plus_robinhood_transfer_logs_and_rpc_verification',
         readAt: new Date().toISOString(),
       },
       { headers: { 'cache-control': 'no-store' } },

@@ -455,6 +455,7 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(overview, /<h1 id="citizen-title">Citizen <em>Interlink<\/em><\/h1>/);
   assert.match(overview, /Inspect the code\. Price the yield\. Read the market\./);
   assert.match(overview, /ONCHAIN SNAPSHOT INDEXED/);
+  assert.match(overview, /ORIGINAL UPLOAD CITIZENS/);
   assert.match(overview, /ORIGINAL WALLET CITIZENS/);
   assert.match(overview, /Ethereum snapshot block/);
   assert.match(overview, /One network\. Four focused workspaces\./);

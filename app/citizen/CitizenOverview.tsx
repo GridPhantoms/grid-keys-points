@@ -42,7 +42,7 @@ export default function CitizenOverview() {
   const metrics = [
     ['S1 OWNERS', snapshot.seasons.s1.uniqueOwners],
     ['S2 OWNERS', snapshot.seasons.s2.uniqueOwners],
-    ['ORIGINAL UPLOADS', snapshot.s1HistoricalDistinctions.originalUpload.citizens],
+    ['ORIGINAL UPLOAD CITIZENS', snapshot.s1HistoricalDistinctions.originalUpload.citizens],
     ['ORIGINAL WALLET CITIZENS', snapshot.s1HistoricalDistinctions.originalWallet.citizens],
   ] as const;
 

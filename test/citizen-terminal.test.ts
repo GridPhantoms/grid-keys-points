@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
@@ -14,6 +15,196 @@ import { mapWithConcurrency, readResponseBuffer } from '../app/api/_lib/bounded-
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { decodeAbiString, parseMetadataUri } from '../app/api/_lib/ethereum-nft-metadata.ts';
 import { buildCitizenHolderStats } from '../lib/citizen-holders.mjs';
+import { buildOriginalS1Distinctions, originalS1AuditRowsDigest } from '../lib/citizen-lineage.mjs';
+import { isLineageSnapshotCurrent, LINEAGE_MAX_AGE_MS } from '../lib/citizen-lineage-freshness.mjs';
+
+const transfer = (tokenId: string, from: string, to: string, txHash: string, blockNumber: number) => ({ tokenId, from, to, txHash, blockNumber });
+
+const ZERO = '0x0000000000000000000000000000000000000000';
+const LEGACY_S1 = '0xb668beb1fa440f6cf2da0399f8c28cab993bdd65';
+const V2_S1 = '0xB9951B43802dCF3ef5b14567cb17adF367ed1c0F';
+const STAKER = '0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16';
+const ALICE = '0x17553AE6eE2c014f340BD89cf120572A5AbA4fb2';
+const BOB = '0x18ED928719A8951729fBD4dbf617B7968D940c7B';
+test('original S1 distinctions require original components and keep wallet continuity nested', () => {
+  const componentTransfers = {
+    identity: [
+      transfer('1', ZERO, ALICE, '0xmint-i1', 10), transfer('1', ALICE, LEGACY_S1, '0xupload-101', 20),
+      transfer('2', ZERO, ALICE, '0xmint-i2', 10), transfer('2', ALICE, LEGACY_S1, '0xupload-102', 21),
+      transfer('3', ZERO, ALICE, '0xmint-i3', 10), transfer('3', ALICE, LEGACY_S1, '0xupload-103', 22),
+      transfer('4', ZERO, ALICE, '0xmint-i4', 10), transfer('4', ALICE, LEGACY_S1, '0xupload-104', 23),
+    ],
+    vault: [
+      transfer('11', ZERO, ALICE, '0xmint-v11', 11), transfer('11', ALICE, LEGACY_S1, '0xupload-101', 20),
+      transfer('12', ZERO, ALICE, '0xmint-v12', 11), transfer('12', ALICE, LEGACY_S1, '0xupload-102', 21),
+      transfer('13', ZERO, ALICE, '0xmint-v13', 11), transfer('13', ALICE, LEGACY_S1, '0xupload-103', 22),
+    ],
+    item: [
+      transfer('21', ZERO, ALICE, '0xmint-it21', 12), transfer('21', ALICE, LEGACY_S1, '0xupload-101', 20),
+      transfer('22', ZERO, ALICE, '0xmint-it22', 12), transfer('22', ALICE, LEGACY_S1, '0xupload-102', 21),
+      transfer('23', ZERO, ALICE, '0xmint-it23', 12), transfer('23', ALICE, LEGACY_S1, '0xupload-103', 22),
+      transfer('24', ZERO, ALICE, '0xmint-it24', 12), transfer('24', ALICE, LEGACY_S1, '0xupload-104', 23),
+    ],
+    land: [
+      transfer('31', ZERO, ALICE, '0xmint-l31', 13), transfer('31', ALICE, LEGACY_S1, '0xupload-101', 20),
+      transfer('32', ZERO, ALICE, '0xmint-l32', 13), transfer('32', ALICE, LEGACY_S1, '0xupload-102', 21),
+      transfer('33', ZERO, ALICE, '0xlate-l33', 20), transfer('33', ALICE, LEGACY_S1, '0xupload-103', 22),
+      transfer('34', ZERO, ALICE, '0xmint-l34', 13), transfer('34', ALICE, LEGACY_S1, '0xupload-104', 23),
+    ],
+  };
+  const legacyCitizenTransfers = [
+    transfer('101', ZERO, ALICE, '0xupload-101', 20),
+    transfer('101', ALICE, V2_S1, '0xmigrate-101', 30),
+    transfer('102', ZERO, ALICE, '0xupload-102', 21),
+    transfer('102', ALICE, BOB, '0xsale-102', 25),
+    transfer('102', BOB, ALICE, '0xreturn-102', 26),
+    transfer('103', ZERO, ALICE, '0xupload-103', 22),
+    transfer('104', ZERO, ALICE, '0xupload-104', 23),
+    transfer('104', ALICE, ZERO, '0xdisassemble-104', 26),
+  ];
+  const v2CitizenTransfers = [
+    transfer('101', ZERO, ALICE, '0xmigrate-101', 30),
+    transfer('101', ALICE, STAKER, '0xstake-101', 40),
+  ];
+  const result = buildOriginalS1Distinctions({
+    componentTransfers,
+    legacyCitizenTransfers,
+    v2CitizenTransfers,
+    currentV2Owners: new Map([['101', STAKER]]),
+    currentStakedOwners: new Map([['101', ALICE]]),
+    legacyCitizenContract: LEGACY_S1,
+    v2CitizenContract: V2_S1,
+    stakingContract: STAKER,
+    expectedComponentCohorts: {
+      identity: { count: 4, mintEndBlock: 19, tokenIds: ['1', '2', '3', '4'] }, vault: { count: 3, mintEndBlock: 19, tokenIds: ['11', '12', '13'] },
+      item: { count: 4, mintEndBlock: 19, tokenIds: ['21', '22', '23', '24'] }, land: { count: 3, mintEndBlock: 19, tokenIds: ['31', '32', '34'] },
+    },
+  });
+
+  assert.equal(result.originalComponentUploads, 3);
+  assert.equal(result.originalUpload.citizens, 2);
+  assert.deepEqual(result.originalUpload.tokenIds, ['101', '102']);
+  assert.equal(result.originalWallet.citizens, 1);
+  assert.equal(result.originalWallet.uniqueWallets, 1);
+  assert.deepEqual(result.originalWallet.tokenIds, ['101']);
+  assert.deepEqual(result.originalUpload.locations, { legacy: 1, v2: 0, staked: 1 });
+  assert.deepEqual(result.originalWallet.locations, { legacy: 0, v2: 0, staked: 1 });
+});
+
+test('original upload supports a vaultless first upload and rejects disassembly even after reassembly', () => {
+  const componentTransfers = {
+    identity: [transfer('1', ZERO, ALICE, '0xmi', 10), transfer('1', ALICE, LEGACY_S1, '0xu1', 20), transfer('1', LEGACY_S1, ALICE, '0xd1', 30), transfer('1', ALICE, LEGACY_S1, '0xu2', 31)],
+    vault: [],
+    item: [transfer('2', ZERO, ALICE, '0xit', 11), transfer('2', ALICE, LEGACY_S1, '0xu1', 20), transfer('2', LEGACY_S1, ALICE, '0xd1', 30), transfer('2', ALICE, LEGACY_S1, '0xu2', 31)],
+    land: [transfer('3', ZERO, ALICE, '0xla', 12), transfer('3', ALICE, LEGACY_S1, '0xu1', 20), transfer('3', LEGACY_S1, ALICE, '0xd1', 30), transfer('3', ALICE, LEGACY_S1, '0xu2', 31)],
+  };
+  const result = buildOriginalS1Distinctions({
+    componentTransfers,
+    legacyCitizenTransfers: [transfer('101', ZERO, ALICE, '0xu1', 20), transfer('101', ALICE, ZERO, '0xd1', 30), transfer('102', ZERO, ALICE, '0xu2', 31)],
+    v2CitizenTransfers: [], currentV2Owners: new Map(), currentStakedOwners: new Map(),
+    legacyCitizenContract: LEGACY_S1, v2CitizenContract: V2_S1, stakingContract: STAKER,
+    expectedComponentCohorts: {
+      identity: { count: 1, mintEndBlock: 12, tokenIds: ['1'] }, vault: { count: 0, mintEndBlock: 12, tokenIds: [] },
+      item: { count: 1, mintEndBlock: 12, tokenIds: ['2'] }, land: { count: 1, mintEndBlock: 12, tokenIds: ['3'] },
+    },
+  });
+  assert.equal(result.originalComponentUploads, 1);
+  assert.equal(result.originalUpload.citizens, 0);
+  assert.equal(result.exclusions.disassembledOrReassembled, 1);
+});
+
+test('original component cohort manifests fail closed on count or token-ID drift', () => {
+  const base = {
+    componentTransfers: {
+      identity: [transfer('1', ZERO, ALICE, '0xmi', 1)],
+      vault: [],
+      item: [transfer('2', ZERO, ALICE, '0xit', 2)],
+      land: [transfer('3', ZERO, ALICE, '0xla', 3)],
+    },
+    legacyCitizenTransfers: [], v2CitizenTransfers: [],
+    currentV2Owners: new Map(), currentStakedOwners: new Map(),
+    legacyCitizenContract: LEGACY_S1, v2CitizenContract: V2_S1, stakingContract: STAKER,
+  };
+  const cohorts = {
+    identity: { count: 1, mintEndBlock: 1, tokenIds: ['1'] }, vault: { count: 0, mintEndBlock: 1, tokenIds: [] },
+    item: { count: 1, mintEndBlock: 2, tokenIds: ['2'] }, land: { count: 1, mintEndBlock: 3, tokenIds: ['3'] },
+  };
+  assert.throws(() => buildOriginalS1Distinctions({
+    ...base,
+    expectedComponentCohorts: { ...cohorts, identity: { count: 2, mintEndBlock: 1, tokenIds: ['1'] } },
+  }), /exact immutable token-ID manifest/i);
+  assert.throws(() => buildOriginalS1Distinctions({
+    ...base,
+    expectedComponentCohorts: { ...cohorts, land: { count: 1, mintEndBlock: 3, tokenIds: ['3'], digestSha256: '00' } },
+  }), /immutable original-distribution cohort/i);
+});
+
+function buildSingleOriginalLineage({ v2After = [], currentOwner = ALICE, stakedOwner, migrationMintTo = ALICE }: {
+  v2After?: ReturnType<typeof transfer>[]; currentOwner?: string; stakedOwner?: string; migrationMintTo?: string;
+}) {
+  const uploadTx = '0xupload';
+  return buildOriginalS1Distinctions({
+    componentTransfers: {
+      identity: [transfer('1', ZERO, ALICE, '0xmi', 1), transfer('1', ALICE, LEGACY_S1, uploadTx, 10)],
+      vault: [transfer('2', ZERO, ALICE, '0xmv', 2), transfer('2', ALICE, LEGACY_S1, uploadTx, 10)],
+      item: [transfer('3', ZERO, ALICE, '0xmit', 3), transfer('3', ALICE, LEGACY_S1, uploadTx, 10)],
+      land: [transfer('4', ZERO, ALICE, '0xml', 4), transfer('4', ALICE, LEGACY_S1, uploadTx, 10)],
+    },
+    legacyCitizenTransfers: [transfer('101', ZERO, ALICE, uploadTx, 10), transfer('101', ALICE, V2_S1, '0xmigrate', 20)],
+    v2CitizenTransfers: [transfer('101', ZERO, migrationMintTo, '0xmigrate', 20), ...v2After],
+    currentV2Owners: new Map([['101', currentOwner]]),
+    currentStakedOwners: stakedOwner ? new Map([['101', stakedOwner]]) : new Map(),
+    legacyCitizenContract: LEGACY_S1,
+    v2CitizenContract: V2_S1,
+    stakingContract: STAKER,
+    expectedComponentCohorts: {
+      identity: { count: 1, mintEndBlock: 1, tokenIds: ['1'] },
+      vault: { count: 1, mintEndBlock: 2, tokenIds: ['2'] },
+      item: { count: 1, mintEndBlock: 3, tokenIds: ['3'] },
+      land: { count: 1, mintEndBlock: 4, tokenIds: ['4'] },
+    },
+  });
+}
+
+test('Original Wallet fails permanently on V2 transfer-out/return and wrong staking beneficiary', () => {
+  const returned = buildSingleOriginalLineage({
+    v2After: [transfer('101', ALICE, BOB, '0xout', 30), transfer('101', BOB, ALICE, '0xback', 31)],
+  });
+  assert.equal(returned.originalUpload.citizens, 1);
+  assert.equal(returned.originalWallet.citizens, 0);
+
+  const wrongBeneficiary = buildSingleOriginalLineage({
+    v2After: [transfer('101', ALICE, STAKER, '0xstake', 30)], currentOwner: STAKER, stakedOwner: BOB,
+  });
+  assert.equal(wrongBeneficiary.originalUpload.citizens, 1);
+  assert.equal(wrongBeneficiary.originalWallet.citizens, 0);
+});
+
+test('Original Wallet preserves same-wallet staking withdrawal/restake and rejects malformed migration', () => {
+  const restaked = buildSingleOriginalLineage({
+    v2After: [
+      transfer('101', ALICE, STAKER, '0xstake1', 30),
+      transfer('101', STAKER, ALICE, '0xwithdraw', 31),
+      transfer('101', ALICE, STAKER, '0xstake2', 32),
+    ],
+    currentOwner: STAKER,
+    stakedOwner: ALICE,
+  });
+  assert.equal(restaked.originalWallet.citizens, 1);
+
+  const malformed = buildSingleOriginalLineage({ migrationMintTo: BOB, currentOwner: BOB });
+  assert.equal(malformed.originalUpload.citizens, 0);
+  assert.equal(malformed.exclusions.inactiveOrUnresolved, 1);
+});
+
+test('lineage snapshot freshness fails closed after 36 hours', () => {
+  const generatedAt = '2026-09-08T00:00:00.000Z';
+  const generatedMs = Date.parse(generatedAt);
+  assert.equal(isLineageSnapshotCurrent(generatedAt, generatedMs + LINEAGE_MAX_AGE_MS), true);
+  assert.equal(isLineageSnapshotCurrent(generatedAt, generatedMs + LINEAGE_MAX_AGE_MS + 1), false);
+  assert.equal(isLineageSnapshotCurrent('invalid', generatedMs), false);
+  assert.equal(isLineageSnapshotCurrent(generatedAt, generatedMs - 1), false);
+});
 
 test('Citizen holders replace staking custody with wallet-level positions and deduplicate overlap', () => {
   const staker = '0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16';
@@ -299,13 +490,19 @@ test('Citizen Interlink uses the universal Grid Phantoms footer', async () => {
 });
 
 test('Citizen Interlink renders staking-corrected owner cards and top-holder splits', async () => {
-  const [overview, holderMap, snapshot, metricContract] = await Promise.all([
+  const [overview, holderMap, snapshot, publicSnapshot, lineageAudit, cohortManifest, metricContract] = await Promise.all([
     readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/CitizenHolderMap.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../data/citizen-holder-snapshot.json', import.meta.url), 'utf8'),
+    readFile(new URL('../data/citizen-holder-public.json', import.meta.url), 'utf8'),
+    readFile(new URL('../data/citizen-s1-lineage-audit.json', import.meta.url), 'utf8'),
+    readFile(new URL('../data/s1-original-component-cohorts.json', import.meta.url), 'utf8'),
     readFile(new URL('../docs/citizen-terminal-metric-contract.md', import.meta.url), 'utf8'),
   ]);
   const parsed = JSON.parse(snapshot);
+  const publicParsed = JSON.parse(publicSnapshot);
+  const audit = JSON.parse(lineageAudit);
+  const manifest = JSON.parse(cohortManifest);
   assert.ok(overview.indexOf('<CitizenHolderSummary />') < overview.indexOf('INTERLINK MODULE // WALLET INTELLIGENCE'));
   assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') > overview.indexOf('Listings can change at any time'));
   assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') < overview.indexOf('06 / ELITE WATCH'));
@@ -313,6 +510,29 @@ test('Citizen Interlink renders staking-corrected owner cards and top-holder spl
   assert.match(holderMap, /HELD \+ STAKED/);
   assert.match(holderMap, /VIEW TOP HOLDERS/);
   assert.match(holderMap, /Current V2 collections only/);
+  assert.match(holderMap, /ORIGINAL UPLOAD/);
+  assert.match(holderMap, /ORIGINAL WALLET/);
+  assert.match(holderMap, /Never disassembled or reassembled/);
+  assert.match(holderMap, /citizen-holder-public\.json/);
+  assert.doesNotMatch(publicSnapshot, /lookupTokenIds|tokenIds/);
+  assert.deepEqual(publicParsed.source, parsed.source);
+  const distinctions = parsed.s1HistoricalDistinctions;
+  assert.equal(parsed.schemaVersion, 3);
+  assert.equal(distinctions.componentCohorts.identity.count, 2_018);
+  assert.equal(distinctions.componentCohorts.vault.count, 2_500);
+  assert.equal(distinctions.componentCohorts.item.count, 2_495);
+  assert.equal(distinctions.componentCohorts.land.count, 1_985);
+  assert.equal(Object.values(distinctions.originalUpload.locations).reduce((sum: number, count) => sum + Number(count), 0), distinctions.originalUpload.citizens);
+  assert.equal(Object.values(distinctions.originalWallet.locations).reduce((sum: number, count) => sum + Number(count), 0), distinctions.originalWallet.citizens);
+  assert.equal(audit.originalUploadRows.length, distinctions.originalUpload.citizens);
+  assert.equal(audit.originalUploadRows.filter((row: { originalWallet: boolean }) => row.originalWallet).length, distinctions.originalWallet.citizens);
+  assert.equal(audit.rowsDigestSha256, distinctions.rowsDigestSha256);
+  assert.equal(originalS1AuditRowsDigest(audit.originalUploadRows), distinctions.rowsDigestSha256);
+  assert.equal(parsed.verification.s1HistoricalDistinctions.componentManifestDigestSha256, manifest.manifestRowsDigestSha256);
+  assert.equal(manifest.manifestRowsDigestSha256, '2fcbe574ba3343dae1294947ddcc67a6ebc28526b51d3d321a520f1e3de4c351');
+  assert.equal(Object.values(manifest.components as Record<string, { mints: unknown[] }>).reduce((sum, component) => sum + component.mints.length, 0), 8_998);
+  assert.ok(distinctions.originalWallet.tokenIds.every((tokenId: string) => distinctions.originalUpload.tokenIds.includes(tokenId)));
+  assert.equal(parsed.verification.s1HistoricalDistinctions.componentMappingsVerified, distinctions.originalUpload.citizens * 4);
   for (const season of ['s1', 's2']) {
     const stats = parsed.seasons[season];
     const proof = parsed.verification[season];
@@ -323,6 +543,28 @@ test('Citizen Interlink renders staking-corrected owner cards and top-holder spl
     assert.equal(proof.stakingCustody, proof.activePositions);
   }
   assert.match(metricContract, /staking contract's custody token-ID set to equal the active position token-ID set/);
+});
+
+test('S1 lookup exposes simple nested Original Upload and Original Wallet badges', async () => {
+  const [lookupRoute, ui, css] = await Promise.all([
+    readFile(new URL('../app/api/citizen-terminal/lookup/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
+  ]);
+  assert.match(lookupRoute, /s1HistoricalDistinctions/);
+  assert.match(lookupRoute, /originalUploadIds\.has\(tokenId\)/);
+  assert.match(lookupRoute, /originalWalletIds\.has\(tokenId\)/);
+  assert.match(lookupRoute, /BigInt\(rawTokenId\)\.toString\(\)/);
+  assert.match(lookupRoute, /isLineageSnapshotCurrent\(holderSnapshotValue\.generatedAt\)/);
+  assert.match(lookupRoute, /lineageCurrent && originalWalletIds\.has\(tokenId\)/);
+  assert.match(lookupRoute, /season === 's1'[\s\S]*\? 'private, no-store'[\s\S]*: 'public, s-maxage=300, stale-while-revalidate=900'/);
+  assert.match(ui, /ORIGINAL UPLOAD/);
+  assert.match(ui, /ORIGINAL WALLET/);
+  assert.match(ui, /ct-lineage-badge upload/);
+  assert.match(ui, /ct-lineage-badge wallet/);
+  assert.match(ui, /LINEAGE SNAPSHOT STALE/);
+  assert.match(css, /\.ct-lineage-badge\.upload/);
+  assert.match(css, /\.ct-lineage-badge\.wallet/);
 });
 
 test('both Citizen seasons use the cached first-party image route', async () => {

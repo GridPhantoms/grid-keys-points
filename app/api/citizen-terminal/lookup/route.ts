@@ -4,6 +4,8 @@ import { CITIZEN_CONTRACTS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { ethereumRpcUrl } from '@/lib/bytes-api.mjs';
 import { ETHEREUM_CHAIN_ID } from '@/lib/bytes-contracts';
 import { fetchOpenSeaEstimatedRank } from '@/lib/opensea-rarity';
+import holderSnapshotValue from '@/data/citizen-holder-snapshot.json';
+import { isLineageSnapshotCurrent, LINEAGE_MAX_AGE_MS } from '@/lib/citizen-lineage-freshness.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,6 +34,10 @@ const S2_COMPONENT_ABI = [
   'function getItemCacheIdOfTokenId(uint256 citizenId) view returns (uint256)',
   'function getLandDeedIdOfTokenId(uint256 citizenId) view returns (uint256)',
 ] as const;
+const historicalDistinctions = holderSnapshotValue.s1HistoricalDistinctions;
+const originalUploadIds = new Set(historicalDistinctions.originalUpload.lookupTokenIds);
+const originalWalletIds = new Set(historicalDistinctions.originalWallet.lookupTokenIds);
+
 
 function splitSetCookies(value: string) {
   return value.split(/,(?=\s*[^;,=]+=[^;,]+)/g).map((cookie) => cookie.trim());
@@ -138,6 +144,7 @@ async function lookupS1(tokenId: string) {
   const citizenTraits = traits(metadata.raw?.metadata?.attributes);
   const creditYield = identity && typeof identity.creditYield === 'string' ? identity.creditYield : 'Low';
   const creditMultiplier = vault && typeof vault.creditMultiplier === 'string' ? vault.creditMultiplier : 'None';
+  const lineageCurrent = isLineageSnapshotCurrent(holderSnapshotValue.generatedAt);
   return {
     season: 's1' as const,
     tokenId,
@@ -147,6 +154,15 @@ async function lookupS1(tokenId: string) {
     rarityScore: citizen.rarityMonScore ?? null,
     elite: Number(citizen.rarityMonRank) > 0 && Number(citizen.rarityMonRank) <= 500,
     rewardRate: citizen.rewardRate ?? null,
+    distinctions: {
+      status: lineageCurrent ? 'current' : 'stale',
+      originalUpload: lineageCurrent && originalUploadIds.has(tokenId),
+      originalWallet: lineageCurrent && originalWalletIds.has(tokenId),
+      sourceBlock: holderSnapshotValue.source.blockNumber,
+      sourceAsOf: holderSnapshotValue.source.asOf,
+      generatedAt: holderSnapshotValue.generatedAt,
+      maxAgeHours: LINEAGE_MAX_AGE_MS / 3_600_000,
+    },
     traits: citizenTraits,
     components: [component('Identity', identity), component('Vault Card', vault), component('Item Cache', item), component('Land Deed', land)].filter(Boolean),
     calculatorPreset: { creditYield, creditMultiplier },
@@ -206,14 +222,18 @@ async function lookupS2(tokenId: string) {
 
 export async function GET(request: NextRequest) {
   const season = request.nextUrl.searchParams.get('season');
-  const tokenId = request.nextUrl.searchParams.get('tokenId')?.trim() ?? '';
-  if ((season !== 's1' && season !== 's2') || !/^\d{1,8}$/.test(tokenId)) {
+  const rawTokenId = request.nextUrl.searchParams.get('tokenId')?.trim() ?? '';
+  if ((season !== 's1' && season !== 's2') || !/^\d{1,8}$/.test(rawTokenId)) {
     return NextResponse.json({ error: 'Choose S1 or S2 and enter a valid Citizen number.' }, { status: 400 });
   }
+  const tokenId = BigInt(rawTokenId).toString();
 
   try {
     const result = season === 's1' ? await lookupS1(tokenId) : await lookupS2(tokenId);
-    return NextResponse.json(result, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900' } });
+    const cacheControl = season === 's1'
+      ? 'private, no-store'
+      : 'public, s-maxage=300, stale-while-revalidate=900';
+    return NextResponse.json(result, { headers: { 'Cache-Control': cacheControl } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Citizen lookup failed';
     return NextResponse.json({ error: message }, { status: message.includes('not found') ? 404 : 502 });

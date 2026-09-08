@@ -17,6 +17,7 @@
     "validate:bytes-participants": "node scripts/validate-bytes-staking-participants.mjs",
     "generate:bytes-holders": "node scripts/generate-bytes-holder-snapshot.mjs",
     "validate:bytes-holders": "node scripts/generate-bytes-holder-snapshot.mjs --validate",
+    "generate:citizen-cohorts": "node scripts/generate-s1-component-cohort-manifest.mjs",
     "generate:citizen-holders": "node scripts/generate-citizen-holder-snapshot.mjs",
     "snapshot:holders": "node generate-holders-snapshot.js",
     "snapshot:raffle": "node generate-raffle-snapshot.js",

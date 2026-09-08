@@ -13,6 +13,7 @@ type Lookup = {
   season: CitizenSeason; tokenId: string; name: string; imageUrl: string | null; rank: number | null; rarityScore: number | null;
   estimatedRank?: number | null; estimatedRankStatus?: 'available' | 'unavailable'; estimatedRankSource?: string; estimatedRankAsOf?: string; estimatedRankUrl?: string;
   elite: boolean; rewardRate: number | null; traits: Trait[]; components: Component[];
+  distinctions?: { status: 'current' | 'stale'; originalUpload: boolean; originalWallet: boolean; sourceBlock: number; sourceAsOf: string; generatedAt: string; maxAgeHours: number };
   calculatorPreset: { creditYield?: string; creditMultiplier?: string }; notices?: string[]; sources: string[];
 };
 type CollectionFloor = { key: string; season: 'S1' | 'S2'; label: string; floorEth: number | null; owners: number | null; sales24h: number | null; url: string };
@@ -251,11 +252,18 @@ export default function CitizenTerminal() {
             <p>{lookup.season.toUpperCase()} · ASSEMBLED CITIZEN</p>
             <h3>{lookup.name}</h3>
             <div className="ct-badges">
+              {lookup.distinctions?.originalUpload && <span className="ct-lineage-badge upload" title="Original 2021-distributed components; never disassembled or reassembled."><i aria-hidden="true">◇</i> ORIGINAL UPLOAD</span>}
+              {lookup.distinctions?.originalWallet && <span className="ct-lineage-badge wallet" title="Original Upload with uninterrupted beneficial ownership by its first assembly wallet. Verified staking preserves this distinction."><i aria-hidden="true">⌾</i> ORIGINAL WALLET</span>}
               {lookup.elite && <span className="elite">ELITE S1</span>}
               {lookup.season === 's1' && <span>{lookup.rank ? `RANK #${lookup.rank.toLocaleString()}` : 'RANK NOT PUBLISHED'}</span>}
               {lookup.season === 's2' && <span>{lookup.estimatedRank != null ? `OPENSEA EST. RANK #${lookup.estimatedRank.toLocaleString()}` : 'OPENSEA EST. RANK UNAVAILABLE'}</span>}
               {lookup.rewardRate != null && <span>REWARD RATE {lookup.rewardRate}</span>}
             </div>
+            {lookup.distinctions && <p className={`ct-lineage-asof ${lookup.distinctions.status}`}>
+              {lookup.distinctions.status === 'current'
+                ? <>LINEAGE SNAPSHOT · BLOCK {lookup.distinctions.sourceBlock.toLocaleString()} · {new Date(lookup.distinctions.sourceAsOf).toLocaleString()}</>
+                : <>LINEAGE SNAPSHOT STALE · BADGES HIDDEN PENDING REFRESH · LAST BLOCK {lookup.distinctions.sourceBlock.toLocaleString()}</>}
+            </p>}
             <dl>
               {lookup.season === 's1' && <div><dt>Rarity score</dt><dd>{formatNumber(lookup.rarityScore, 2)}</dd></div>}
               <div><dt>Components</dt><dd>{lookup.components.length}</dd></div>

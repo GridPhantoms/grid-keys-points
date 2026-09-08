@@ -1,4 +1,5 @@
 import holderSnapshotValue from '@/data/citizen-holder-public.json';
+import { CitizenDistinctionIcon } from './CitizenDistinctionIcon';
 
 type HolderRow = { rank: number; address: string; count: number; held: number; staked: number };
 type SeasonStats = {
@@ -58,13 +59,13 @@ function HistoricalDistinctionCard({ stats }: { stats: HistoricalDistinctions })
     <p className="ct-origin-intro">Two nested onchain distinctions for Citizens first uploaded from original 2021-distributed parts.</p>
     <div className="ct-distinction-grid">
       <section className="ct-distinction-tile upload">
-        <div><i aria-hidden="true">◇</i><span>ORIGINAL UPLOAD</span></div>
+        <div><i><CitizenDistinctionIcon kind="upload" /></i><span>ORIGINAL UPLOAD</span></div>
         <strong>{stats.originalUpload.citizens.toLocaleString()}</strong>
         <p>Original 2021 components. Never disassembled or reassembled.</p>
         <small>{stats.originalUpload.percentageOfOriginalComponentUploads.toFixed(1)}% of {stats.originalComponentUploads.toLocaleString()} qualifying first uploads · {stats.originalUpload.locations.staked.toLocaleString()} staked</small>
       </section>
       <section className="ct-distinction-tile wallet">
-        <div><i aria-hidden="true">⌾</i><span>ORIGINAL WALLET</span></div>
+        <div><i><CitizenDistinctionIcon kind="wallet" /></i><span>ORIGINAL WALLET</span></div>
         <strong>{stats.originalWallet.citizens.toLocaleString()}</strong>
         <p>Original Upload plus uninterrupted ownership by its first assembly wallet.</p>
         <small>{stats.originalWallet.uniqueWallets.toLocaleString()} wallets · {stats.originalWallet.locations.staked.toLocaleString()} staked with custody attributed back</small>

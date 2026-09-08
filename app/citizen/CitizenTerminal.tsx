@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { calculateImpliedValuation, type ValuationMethod } from '@/lib/citizen-valuation';
 import { CitizenHolderLeaderboard, CitizenHolderSummary } from './CitizenHolderMap';
+import { CitizenDistinctionIcon } from './CitizenDistinctionIcon';
 
 type Trait = { label: string; value: string };
 type Component = { label: string; tokenId: string | null; name: string; rank: number | null; rarityScore: number | null; componentScore: number | null; imageUrl: string | null; traits: Trait[] };
@@ -252,8 +253,8 @@ export default function CitizenTerminal() {
             <p>{lookup.season.toUpperCase()} · ASSEMBLED CITIZEN</p>
             <h3>{lookup.name}</h3>
             <div className="ct-badges">
-              {lookup.distinctions?.originalUpload && <span className="ct-lineage-badge upload" title="Original 2021-distributed components; never disassembled or reassembled."><i aria-hidden="true">◇</i> ORIGINAL UPLOAD</span>}
-              {lookup.distinctions?.originalWallet && <span className="ct-lineage-badge wallet" title="Original Upload with uninterrupted beneficial ownership by its first assembly wallet. Verified staking preserves this distinction."><i aria-hidden="true">⌾</i> ORIGINAL WALLET</span>}
+              {lookup.distinctions?.originalUpload && <span className="ct-lineage-badge upload" title="Original 2021-distributed components; never disassembled or reassembled."><i><CitizenDistinctionIcon kind="upload" /></i> ORIGINAL UPLOAD</span>}
+              {lookup.distinctions?.originalWallet && <span className="ct-lineage-badge wallet" title="Original Upload with uninterrupted beneficial ownership by its first assembly wallet. Verified staking preserves this distinction."><i><CitizenDistinctionIcon kind="wallet" /></i> ORIGINAL WALLET</span>}
               {lookup.elite && <span className="elite">ELITE S1</span>}
               {lookup.season === 's1' && <span>{lookup.rank ? `RANK #${lookup.rank.toLocaleString()}` : 'RANK NOT PUBLISHED'}</span>}
               {lookup.season === 's2' && <span>{lookup.estimatedRank != null ? `OPENSEA EST. RANK #${lookup.estimatedRank.toLocaleString()}` : 'OPENSEA EST. RANK UNAVAILABLE'}</span>}

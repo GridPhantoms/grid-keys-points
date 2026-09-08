@@ -34,8 +34,16 @@ const availableValue = (metric: { value?: number | null; availability?: string }
 const formatPrice = (value: number | null) => value == null ? '—' : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 4 });
 const formatMarketCap = (value: number | null) => value == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 }).format(value);
 const formatEth = (value: number | null) => value == null ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits: 4 })} Ξ`;
+const formatFloorRatio = (s1Floor: number | null, s2Floor: number | null) => s1Floor == null || s2Floor == null || s2Floor <= 0 ? '—' : `${(s1Floor / s2Floor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 
-export default function CitizenOverviewGlance({ s1Owners, s2Owners }: { s1Owners: number; s2Owners: number }) {
+type CitizenOverviewGlanceProps = {
+  s1Owners: number;
+  s1HolderRatio: number;
+  s2Owners: number;
+  s2HolderRatio: number;
+};
+
+export default function CitizenOverviewGlance({ s1Owners, s1HolderRatio, s2Owners, s2HolderRatio }: CitizenOverviewGlanceProps) {
   const [references, setReferences] = useState<MarketReferences>(emptyReferences);
 
   useEffect(() => {
@@ -66,18 +74,21 @@ export default function CitizenOverviewGlance({ s1Owners, s2Owners }: { s1Owners
   }, []);
 
   const metrics = [
-    ['S1 OWNERS', s1Owners.toLocaleString()],
-    ['S2 OWNERS', s2Owners.toLocaleString()],
-    ['$BYTES SPOT', formatPrice(references.bytesPriceUsd)],
-    ['$BYTES MCAP*', formatMarketCap(references.bytesMarketCapUsd)],
-    ['S1 FLOOR', formatEth(references.s1FloorEth)],
-    ['S1 ELITE FLOOR', formatEth(references.s1EliteFloorEth)],
-    ['S2 FLOOR', formatEth(references.s2FloorEth)],
-  ] as const;
+    { label: 'S1 OWNERS', value: s1Owners.toLocaleString(), detail: `${s1HolderRatio.toFixed(1)}% HOLDER RATIO` },
+    { label: 'S2 OWNERS', value: s2Owners.toLocaleString(), detail: `${s2HolderRatio.toFixed(1)}% HOLDER RATIO` },
+    { label: '$BYTES SPOT', value: formatPrice(references.bytesPriceUsd) },
+    { label: '$BYTES MCAP*', value: formatMarketCap(references.bytesMarketCapUsd) },
+    { label: 'S1 FLOOR', value: formatEth(references.s1FloorEth) },
+    { label: 'S1 ELITE FLOOR', value: formatEth(references.s1EliteFloorEth) },
+    { label: 'S2 FLOOR', value: formatEth(references.s2FloorEth) },
+    { label: 'S1 / S2 FLOOR', value: formatFloorRatio(references.s1FloorEth, references.s2FloorEth) },
+  ];
 
   return <section className="ct-overview-glance" aria-label="Citizen Interlink at a glance">
-    <header><span>INTERLINK AT A GLANCE</span><small>OWNERSHIP + MARKET REFERENCES</small></header>
-    <div aria-live="polite">{metrics.map(([label, value]) => <article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>
+    <header><span>INTERLINK AT A GLANCE</span><small>OWNERSHIP <b>•</b> $BYTES <b>•</b> FLOORS</small></header>
+    <div aria-live="polite">{metrics.map(({ label, value, detail }) => <article key={label}>
+      <span>{label}</span><strong>{value}</strong>{detail ? <span className="ct-overview-glance-ratio">{detail}</span> : null}
+    </article>)}</div>
     <p className="ct-overview-glance-note">MCAP* = CANONICAL ETHEREUM SUPPLY × CURRENT $BYTES/USD SPOT</p>
   </section>;
 }

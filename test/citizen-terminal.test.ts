@@ -464,6 +464,14 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(glance, /S1 FLOOR/);
   assert.match(glance, /S1 ELITE FLOOR/);
   assert.match(glance, /S2 FLOOR/);
+  assert.match(glance, /S1 \/ S2 FLOOR/);
+  assert.match(glance, /formatFloorRatio\(references\.s1FloorEth, references\.s2FloorEth\)/);
+  assert.match(glance, /HOLDER RATIO/);
+  assert.match(glance, /s1HolderRatio\.toFixed\(1\)/);
+  assert.match(glance, /s2HolderRatio\.toFixed\(1\)/);
+  assert.match(glance, /OWNERSHIP <b>•<\/b> \$BYTES <b>•<\/b> FLOORS/);
+  assert.match(overview, /s1HolderRatio=\{snapshot\.seasons\.s1\.ownerPercentage\}/);
+  assert.match(overview, /s2HolderRatio=\{snapshot\.seasons\.s2\.ownerPercentage\}/);
   assert.match(glance, /\/api\/citizen-terminal\/market/);
   assert.match(glance, /\/api\/bytes-metrics/);
   assert.match(glance, /metric\?\.availability === 'available'/);
@@ -499,6 +507,8 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
   assert.match(css, /\.ct-snapshot-stamp\{/);
   assert.match(css, /\.ct-snapshot-stamp\.is-complete i\{/);
+  assert.match(css, /\.ct-overview-glance>header\{[^}]*flex-direction:column[^}]*align-items:flex-start/);
+  assert.match(css, /\.ct-overview-glance article \.ct-overview-glance-ratio\{[^}]*color:var\(--cyan\)/);
   assert.match(css, /\.ct-valuation-caveat\{[^}]*font-size:10px/);
   assert.match(css, /\.ct-valuation-source\{[^}]*font-size:9px/);
   assert.match(css, /\.ct-disclaimer\{[^}]*font-size:10px[^}]*line-height:1\.65/);

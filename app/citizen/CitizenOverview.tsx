@@ -4,7 +4,10 @@ import CitizenOverviewGlance from './CitizenOverviewGlance';
 
 const snapshot = holderSnapshotValue as {
   source: { blockNumber: number; asOf: string };
-  seasons: { s1: { uniqueOwners: number }; s2: { uniqueOwners: number } };
+  seasons: {
+    s1: { uniqueOwners: number; ownerPercentage: number };
+    s2: { uniqueOwners: number; ownerPercentage: number };
+  };
 };
 
 const modules = [
@@ -54,7 +57,12 @@ export default function CitizenOverview() {
       </div>
     </section>
 
-    <CitizenOverviewGlance s1Owners={snapshot.seasons.s1.uniqueOwners} s2Owners={snapshot.seasons.s2.uniqueOwners} />
+    <CitizenOverviewGlance
+      s1Owners={snapshot.seasons.s1.uniqueOwners}
+      s1HolderRatio={snapshot.seasons.s1.ownerPercentage}
+      s2Owners={snapshot.seasons.s2.uniqueOwners}
+      s2HolderRatio={snapshot.seasons.s2.ownerPercentage}
+    />
 
     <section className="ct-module-launcher" aria-labelledby="module-heading">
       <div className="ct-section-heading"><p>CHOOSE A MODULE</p><h2 id="module-heading">One network. Four focused workspaces.</h2><span>Open the tool you need without scrolling through the entire Interlink.</span></div>

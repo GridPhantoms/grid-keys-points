@@ -438,8 +438,9 @@ test('Citizen market sources use independent conservative refresh tiers', async 
 });
 
 test('Citizen Interlink overview presents a focused hub with honest snapshot context', async () => {
-  const [overview, ui, css, page, nav, subnav, labPage, holdersPage, marketPage, legacyRedirect] = await Promise.all([
+  const [overview, glance, ui, css, page, nav, subnav, labPage, holdersPage, marketPage, legacyRedirect] = await Promise.all([
     readFile(new URL('../app/citizen/CitizenOverview.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenOverviewGlance.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),
@@ -455,8 +456,19 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(overview, /<h1 id="citizen-title">Citizen <em>Interlink<\/em><\/h1>/);
   assert.match(overview, /Inspect the code\. Price the yield\. Read the market\./);
   assert.match(overview, /ONCHAIN SNAPSHOT INDEXED/);
-  assert.match(overview, /ORIGINAL UPLOAD CITIZENS/);
-  assert.match(overview, /ORIGINAL WALLET CITIZENS/);
+  assert.match(overview, /Decode & Model/);
+  assert.match(overview, /Holders & Provenance/);
+  assert.match(overview, /Market Dashboard/);
+  assert.match(glance, /\$BYTES SPOT/);
+  assert.match(glance, /\$BYTES MCAP\*/);
+  assert.match(glance, /S1 FLOOR/);
+  assert.match(glance, /S1 ELITE FLOOR/);
+  assert.match(glance, /S2 FLOOR/);
+  assert.match(glance, /\/api\/citizen-terminal\/market/);
+  assert.match(glance, /\/api\/bytes-metrics/);
+  assert.match(glance, /metric\?\.availability === 'available'/);
+  assert.match(glance, /CANONICAL ETHEREUM SUPPLY × CURRENT \$BYTES\/USD SPOT/);
+  assert.doesNotMatch(glance, /ORIGINAL UPLOAD|ORIGINAL WALLET/);
   assert.match(overview, /Ethereum snapshot block/);
   assert.match(overview, /One network\. Four focused workspaces\./);
   assert.match(overview, /\/citizen\/lab/);
@@ -532,6 +544,7 @@ test('Citizen Interlink renders staking-corrected owner cards and top-holder spl
   assert.match(holderMap, /VIEW TOP HOLDERS/);
   assert.match(holderMap, /Current V2 collections only/);
   assert.match(holderMap, /ORIGINAL UPLOAD/);
+  assert.match(holderMap, /Two nested onchain distinctions for S1 Citizens first uploaded from original 2021-distributed parts\./);
   assert.match(holderMap, /ORIGINAL WALLET/);
   assert.match(holderMap, /Never disassembled or reassembled/);
   assert.match(holderMap, /citizen-holder-public\.json/);

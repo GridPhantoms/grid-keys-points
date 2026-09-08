@@ -56,7 +56,7 @@ function OwnerCard({ season, stats }: { season: 'S1' | 'S2'; stats: SeasonStats 
 function HistoricalDistinctionCard({ stats }: { stats: HistoricalDistinctions }) {
   return <article className="ct-origin-card">
     <header><span>S1 HISTORY</span><strong>Day 1 distinctions</strong></header>
-    <p className="ct-origin-intro">Two nested onchain distinctions for Citizens first uploaded from original 2021-distributed parts.</p>
+    <p className="ct-origin-intro">Two nested onchain distinctions for S1 Citizens first uploaded from original 2021-distributed parts.</p>
     <div className="ct-distinction-grid">
       <section className="ct-distinction-tile upload">
         <div><i><CitizenDistinctionIcon kind="upload" /></i><span>ORIGINAL UPLOAD</span></div>

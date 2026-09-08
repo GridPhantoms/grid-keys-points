@@ -101,7 +101,7 @@ export function CitizenHolderSummary() {
 
 export function CitizenHolderLeaderboard() {
   return <section className="ct-panel ct-holder-panel ct-top-holders" id="top-holders">
-    <div className="ct-section-heading"><p>05 / HOLDER LEADERBOARD</p><h2>Top Citizen holders</h2><span>The largest current V2 positions after recombining every verified wallet-held and staked Citizen.</span></div>
+    <div className="ct-section-heading"><p>02 / HOLDER LEADERBOARD</p><h2>Top Citizen holders</h2><span>The largest current V2 positions after recombining every verified wallet-held and staked Citizen.</span></div>
     <div className="ct-holder-board-grid"><Leaderboard season="S1" rows={snapshot.seasons.s1.top} /><Leaderboard season="S2" rows={snapshot.seasons.s2.top} /></div>
     <p className="ct-holder-method"><strong>Holder counting.</strong> {snapshot.methodology} Current V2 collections only; unmigrated legacy Citizens are outside these OpenSea-style collection denominators. Snapshot pinned to Ethereum block <a href={`https://etherscan.io/block/${snapshot.source.blockNumber}`} target="_blank" rel="noreferrer">{snapshot.source.blockNumber.toLocaleString()} ↗</a> · {new Date(snapshot.source.asOf).toLocaleString()}.</p>
   </section>;

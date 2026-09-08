@@ -437,30 +437,51 @@ test('Citizen market sources use independent conservative refresh tiers', async 
   assert.match(metricContract, /Current BYTES per point per day[\s\S]*1 hour/);
 });
 
-test('Citizen hero mirrors the BYTES Terminal hierarchy with an honest snapshot summary', async () => {
-  const [ui, css, page, nav] = await Promise.all([
+test('Citizen Interlink overview presents a focused hub with honest snapshot context', async () => {
+  const [overview, ui, css, page, nav, subnav, labPage, holdersPage, marketPage, legacyRedirect] = await Promise.all([
+    readFile(new URL('../app/citizen/CitizenOverview.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenSubnav.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/lab/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/holders/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/market/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenLegacyHashRedirect.tsx', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(ui, /<div className="ct-hero-title">/);
-  assert.match(ui, /<h1 id="citizen-title">Citizen <em>Interlink<\/em><\/h1>/);
-  assert.match(ui, /Inspect the code\. Price the yield\. Read the market\./);
+  assert.match(overview, /<div className="ct-hero-title">/);
+  assert.match(overview, /<h1 id="citizen-title">Citizen <em>Interlink<\/em><\/h1>/);
+  assert.match(overview, /Inspect the code\. Price the yield\. Read the market\./);
+  assert.match(overview, /ONCHAIN SNAPSHOT INDEXED/);
+  assert.match(overview, /ORIGINAL WALLET CITIZENS/);
+  assert.match(overview, /Ethereum snapshot block/);
+  assert.match(overview, /One network\. Four focused workspaces\./);
+  assert.match(overview, /\/citizen\/lab/);
+  assert.match(overview, /\/citizen\/holders/);
+  assert.match(overview, /\/citizen\/market/);
+  assert.match(overview, /\/citizen\/bytes2bytes/);
   assert.match(ui, /ct-snapshot-stamp/);
-  assert.match(ui, /INTERLINK ACTIVE/);
-  assert.match(ui, /ct-snapshot-stamp \$\{snapshotSourceTimes\.length === 6 \? 'is-complete' : ''\}/);
-  assert.match(ui, /<strong><i aria-hidden="true" \/>/);
+  assert.match(ui, /MARKET INTERLINK ACTIVE/);
   assert.match(ui, /Latest source interlinked/);
   assert.match(ui, /Oldest source/);
-  assert.match(ui, /5 min–1 hr refresh range/);
   assert.match(page, /title: 'Citizen Interlink \| Neo Tokyo Market Intelligence'/);
   assert.match(nav, /href: '\/citizen', label: 'Citizen Interlink'/);
-  assert.doesNotMatch(ui, /Citizen <em>Terminal<\/em>|MULTI-SOURCE SNAPSHOT/);
+  assert.match(subnav, /citizen-subnav-mobile/);
+  assert.match(subnav, /Holders & Provenance/);
+  assert.match(labPage, /CitizenSubnav active="lab"/);
+  assert.match(labPage, /CitizenTerminal view="lab"/);
+  assert.match(holdersPage, /CitizenSubnav active="holders"/);
+  assert.match(marketPage, /CitizenSubnav active="market"/);
+  assert.match(marketPage, /CitizenTerminal view="market"/);
+  assert.match(page, /<CitizenLegacyHashRedirect \/>/);
+  assert.match(legacyRedirect, /'#holder-map': '\/citizen\/holders#holder-map'/);
+  assert.match(legacyRedirect, /'#top-holders': '\/citizen\/holders#top-holders'/);
+  assert.doesNotMatch(overview, /Citizen <em>Terminal<\/em>|MULTI-SOURCE SNAPSHOT/);
   assert.doesNotMatch(page, /Citizen Terminal/);
   assert.doesNotMatch(nav, /label: 'Citizen Terminal'/);
-  assert.doesNotMatch(ui, /<div className="ct-kicker"><span \/>/);
+  assert.doesNotMatch(overview, /<div className="ct-kicker"><span \/>/);
   assert.match(css, /\.ct-hero\{[^}]*grid-template-columns/);
   assert.match(css, /\.ct-kicker\{[^}]*justify-content:flex-start/);
   assert.match(css, /\.ct-snapshot-stamp\{/);
@@ -490,8 +511,8 @@ test('Citizen Interlink uses the universal Grid Phantoms footer', async () => {
 });
 
 test('Citizen Interlink renders staking-corrected owner cards and top-holder splits', async () => {
-  const [overview, holderMap, snapshot, publicSnapshot, lineageAudit, cohortManifest, metricContract] = await Promise.all([
-    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+  const [holdersPage, holderMap, snapshot, publicSnapshot, lineageAudit, cohortManifest, metricContract] = await Promise.all([
+    readFile(new URL('../app/citizen/holders/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/CitizenHolderMap.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../data/citizen-holder-snapshot.json', import.meta.url), 'utf8'),
     readFile(new URL('../data/citizen-holder-public.json', import.meta.url), 'utf8'),
@@ -503,9 +524,8 @@ test('Citizen Interlink renders staking-corrected owner cards and top-holder spl
   const publicParsed = JSON.parse(publicSnapshot);
   const audit = JSON.parse(lineageAudit);
   const manifest = JSON.parse(cohortManifest);
-  assert.ok(overview.indexOf('<CitizenHolderSummary />') < overview.indexOf('INTERLINK MODULE // WALLET INTELLIGENCE'));
-  assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') > overview.indexOf('Listings can change at any time'));
-  assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') < overview.indexOf('06 / ELITE WATCH'));
+  assert.ok(holdersPage.indexOf('<CitizenHolderSummary />') < holdersPage.indexOf('<CitizenHolderLeaderboard />'));
+  assert.match(holdersPage, /CitizenSubnav active="holders"/);
   assert.match(holderMap, /Owners \(Unique\)/);
   assert.match(holderMap, /HELD \+ STAKED/);
   assert.match(holderMap, /VIEW TOP HOLDERS/);
@@ -626,12 +646,12 @@ test('Bytes2Bytes distinguishes component Vaults from separately staked Vault ID
 
 test('Citizen Interlink exposes Bytes2Bytes as a separate sub-tool and preserves the original project provenance', async () => {
   const [overview, page, api, subnav] = await Promise.all([
-    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenOverview.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/bytes2bytes/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/citizen-terminal/bytes2bytes/route.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/citizen/CitizenSubnav.tsx', import.meta.url), 'utf8'),
   ]);
-  assert.match(overview, /ENTER BYTES2BYTES/);
+  assert.match(overview, /SCAN A WALLET/);
   assert.match(page, /\$BYTES to \$BYTES/);
   assert.match(page, /bytestobytes\.com/);
   assert.match(subnav, /\/citizen\/bytes2bytes/);

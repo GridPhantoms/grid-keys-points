@@ -2,14 +2,15 @@ import type { Metadata } from 'next';
 import SiteFooter from '../components/SiteFooter';
 import SiteNav from '../components/SiteNav';
 import CitizenSubnav from './CitizenSubnav';
-import CitizenTerminal from './CitizenTerminal';
+import CitizenOverview from './CitizenOverview';
+import CitizenLegacyHashRedirect from './CitizenLegacyHashRedirect';
 import './citizen.css';
 
 export const metadata: Metadata = {
   title: 'Citizen Interlink | Neo Tokyo Market Intelligence',
-  description: 'Citizen lookup, staking scenarios, component floors and Elite S1 listings for Neo Tokyo.',
+  description: 'A connected suite of Citizen, wallet, ownership and market intelligence for Neo Tokyo.',
 };
 
 export default function CitizenTerminalPage() {
-  return <div className="ct-page"><div className="ct-topline" aria-hidden="true" /><SiteNav active="citizen" /><CitizenSubnav active="overview" /><CitizenTerminal /><SiteFooter /></div>;
+  return <div className="ct-page"><div className="ct-topline" aria-hidden="true" /><SiteNav active="citizen" /><CitizenSubnav active="overview" /><CitizenLegacyHashRedirect /><CitizenOverview /><SiteFooter /></div>;
 }

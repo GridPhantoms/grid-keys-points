@@ -13,6 +13,39 @@ import { buildBytes2BytesSummary, normalizeCitizenPosition } from '../lib/bytes-
 import { mapWithConcurrency, readResponseBuffer } from '../app/api/_lib/bounded-response.ts';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { decodeAbiString, parseMetadataUri } from '../app/api/_lib/ethereum-nft-metadata.ts';
+import { buildCitizenHolderStats } from '../lib/citizen-holders.mjs';
+
+test('Citizen holders replace staking custody with wallet-level positions and deduplicate overlap', () => {
+  const staker = '0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16';
+  const alice = '0x17553AE6eE2c014f340BD89cf120572A5AbA4fb2';
+  const bob = '0x18ED928719A8951729fBD4dbf617B7968D940c7B';
+  const directOwners = new Map([
+    ['1', alice],
+    ['2', staker],
+    ['3', bob],
+    ['4', staker],
+  ]);
+  const stakedOwners = new Map([['2', alice], ['4', bob]]);
+  const stats = buildCitizenHolderStats({ directOwners, stakedOwners, stakingContract: staker, supply: 4 });
+
+  assert.equal(stats.uniqueOwners, 2);
+  assert.equal(stats.ownerPercentage, 50);
+  assert.equal(stats.directHolderWallets, 2);
+  assert.equal(stats.activeStakerWallets, 2);
+  assert.equal(stats.directAndStakedOverlap, 2);
+  assert.equal(stats.directTokens, 2);
+  assert.equal(stats.stakedTokens, 2);
+  assert.deepEqual(stats.top.map((row: { count: number; held: number; staked: number }) => [row.count, row.held, row.staked]), [[2, 1, 1], [2, 1, 1]]);
+});
+
+test('Citizen holder calculation fails closed when staking custody IDs diverge', () => {
+  assert.throws(() => buildCitizenHolderStats({
+    directOwners: new Map([['1', '0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16']]),
+    stakedOwners: new Map([['2', '0x17553AE6eE2c014f340BD89cf120572A5AbA4fb2']]),
+    stakingContract: '0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16',
+    supply: 1,
+  }), /custody token IDs/);
+});
 
 test('Citizen image buffering rejects declared and streamed responses above the cap', async () => {
   const declared = new Response('small', { headers: { 'content-length': '6' } });
@@ -263,6 +296,33 @@ test('Citizen Interlink uses the universal Grid Phantoms footer', async () => {
     'https://manifold.xyz/@gridphantoms/id/4067746032',
     '© 2026 Grid Phantoms Ltd. All rights reserved.',
   ]) assert.ok(footer.includes(expected));
+});
+
+test('Citizen Interlink renders staking-corrected owner cards and top-holder splits', async () => {
+  const [overview, holderMap, snapshot, metricContract] = await Promise.all([
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/CitizenHolderMap.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../data/citizen-holder-snapshot.json', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/citizen-terminal-metric-contract.md', import.meta.url), 'utf8'),
+  ]);
+  const parsed = JSON.parse(snapshot);
+  assert.ok(overview.indexOf('<CitizenHolderSummary />') < overview.indexOf('INTERLINK MODULE // WALLET INTELLIGENCE'));
+  assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') > overview.indexOf('Listings can change at any time'));
+  assert.ok(overview.indexOf('<CitizenHolderLeaderboard />') < overview.indexOf('06 / ELITE WATCH'));
+  assert.match(holderMap, /Owners \(Unique\)/);
+  assert.match(holderMap, /HELD \+ STAKED/);
+  assert.match(holderMap, /VIEW TOP HOLDERS/);
+  assert.match(holderMap, /Current V2 collections only/);
+  for (const season of ['s1', 's2']) {
+    const stats = parsed.seasons[season];
+    const proof = parsed.verification[season];
+    assert.ok(Number.isSafeInteger(stats.uniqueOwners) && stats.uniqueOwners > 0);
+    assert.equal(stats.directHolderWallets + stats.activeStakerWallets - stats.directAndStakedOverlap, stats.uniqueOwners);
+    assert.equal(stats.directTokens + stats.stakedTokens, stats.supply);
+    assert.equal(proof.ownerOfVerified, stats.supply);
+    assert.equal(proof.stakingCustody, proof.activePositions);
+  }
+  assert.match(metricContract, /staking contract's custody token-ID set to equal the active position token-ID set/);
 });
 
 test('both Citizen seasons use the cached first-party image route', async () => {

@@ -1,5 +1,15 @@
 # Citizen Interlink metric contract
 
+## Citizen holder map
+
+| Metric | Class | Source | Unavailable state |
+|---|---|---|---|
+| S1/S2 Owners (Unique) | Calculated from observed ownership | Current V2 ERC-721 Transfer history plus same-block `ownerOf`; NeoTokyoStaker custody resolved through active `getStakerPositions` records | Snapshot generation fails closed |
+| Held / staked token split | Calculated from observed ownership | Current V2 token owner plus staking-position owner at one finalized Ethereum block | Snapshot generation fails closed |
+| Top holders | Calculated from observed ownership | Per-address sum of directly held and actively staked current V2 Citizens | Snapshot generation fails closed |
+
+The OpenSea-style percentage denominator is each current V2 Citizen contract's same-block `totalSupply()`. Unmigrated legacy Citizens are excluded because they are outside those current marketplace collection contracts. The collector replays every indexed ERC-721 transfer chronologically, verifies every reconstructed token owner with `ownerOf`, requires the staking contract's custody token-ID set to equal the active position token-ID set, and requires both counts to equal `balanceOf(NeoTokyoStaker)`. A wallet holding Citizens both directly and through staking is counted once per season. Counts are onchain addresses, not known people: one person using multiple addresses remains multiple owners, and unrelated custody contracts are not beneficially resolved without a verified protocol mapping.
+
 ## Citizen lookup
 
 | Metric | Class | Source | Unavailable state |

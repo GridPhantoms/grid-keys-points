@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-08T16:25:32.298Z",
+  "source": {
+    "chainId": 1,
+    "blockNumber": 25933747,
+    "blockHash": "0x99d6a1e44594942e9ce6aa8681912d85f589f0b54c2461110e35a9faea47f4a4",
+    "asOf": "2026-09-08T16:09:59.000Z"
+  },
+  "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
+  "contracts": {
+    "s1": "0xB9951B43802dCF3ef5b14567cb17adF367ed1c0F",
+    "s2": "0x4481507cc228FA19D203BD42110d679571f7912E",
+    "staker": "0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16"
+  },
+  "participantIndex": {
+    "baselineBlock": 25918899,
+    "addressesChecked": 3322,
+    "deltaEvents": 11
+  },
+  "verification": {
+    "s1": {
+      "transferEvents": 9062,
+      "transferPages": 10,
+      "reconstructedTokens": 2039,
+      "ownerOfVerified": 2039,
+      "stakingCustody": 1430,
+      "activePositions": 1430
+    },
+    "s2": {
+      "transferEvents": 12910,
+      "transferPages": 13,
+      "reconstructedTokens": 3581,
+      "ownerOfVerified": 3581,
+      "stakingCustody": 1687,
+      "activePositions": 1687
+    }
+  },
+  "seasons": {
+    "s1": {
+      "supply": 2039,
+      "uniqueOwners": 1738,
+      "ownerPercentage": 85.23786169691026,
+      "rawCustodyOwnerCount": 562,
+      "directHolderWallets": 561,
+      "activeStakerWallets": 1200,
+      "directAndStakedOverlap": 23,
+      "directTokens": 609,
+      "stakedTokens": 1430,
+      "top": [
+        {
+          "rank": 1,
+          "address": "0x17553AE6eE2c014f340BD89cf120572A5AbA4fb2",
+          "count": 14,
+          "held": 0,
+          "staked": 14
+        },
+        {
+          "rank": 2,
+          "address": "0x18ED928719A8951729fBD4dbf617B7968D940c7B",
+          "count": 11,
+          "held": 0,
+          "staked": 11
+        },
+        {
+          "rank": 3,
+          "address": "0xfbDA2adEb517Af9A2cBC8a6851EdBAE476F56a3d",
+          "count": 10,
+          "held": 0,
+          "staked": 10
+        },
+        {
+          "rank": 4,
+          "address": "0x58Cf91970B9C72e152CdfDE0Bfd2b50571443034",
+          "count": 9,
+          "held": 9,
+          "staked": 0
+        },
+        {
+          "rank": 5,
+          "address": "0x88323B94c0F2826B147B8bAffA952AeE58841360",
+          "count": 9,
+          "held": 1,
+          "staked": 8
+        },
+        {
+          "rank": 6,
+          "address": "0xbD5D70f757158Ec94a2D9571f5ABA69468975046",
+          "count": 8,
+          "held": 2,
+          "staked": 6
+        },
+        {
+          "rank": 7,
+          "address": "0xDb29883258d2deDa9ec33847C2F52816f1f88D80",
+          "count": 8,
+          "held": 0,
+          "staked": 8
+        },
+        {
+          "rank": 8,
+          "address": "0x467A68f37A139b23987533305a1436dE19ED9FDb",
+          "count": 7,
+          "held": 0,
+          "staked": 7
+        },
+        {
+          "rank": 9,
+          "address": "0x77aEA9CeA054358CF4384477F512c8460Dd06F69",
+          "count": 7,
+          "held": 0,
+          "staked": 7
+        },
+        {
+          "rank": 10,
+          "address": "0x1EEbF7d8c71c9800a9eE138e420f40FC77EDba76",
+          "count": 6,
+          "held": 0,
+          "staked": 6
+        },
+        {
+          "rank": 11,
+          "address": "0x421a9654C9b65C4138fe9B1e613bDDeF92b6507d",
+          "count": 6,
+          "held": 3,
+          "staked": 3
+        },
+        {
+          "rank": 12,
+          "address": "0x42f5b2645F898621984Ba1AEA8846D57E29673a4",
+          "count": 6,
+          "held": 4,
+          "staked": 2
+        },
+        {
+          "rank": 13,
+          "address": "0x5f95838fF8D7A11a062a87D3320087C199be9788",
+          "count": 6,
+          "held": 0,
+          "staked": 6
+        },
+        {
+          "rank": 14,
+          "address": "0xf011F97d87Ba4ac949C940a84B12E276E13f0529",
+          "count": 6,
+          "held": 4,
+          "staked": 2
+        },
+        {
+          "rank": 15,
+          "address": "0x0A20507fC1a33CBd15C5FD5197b259Ca644e7769",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 16,
+          "address": "0x4F98DcdA628ceC39f12AE96cDCEa2D85880E8318",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 17,
+          "address": "0x5A6792381ab5e3Bf3ED610B88c46A10f4364cF33",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 18,
+          "address": "0x921C8F013Fa5af007cE32c68feF140C1693a5Ce5",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 19,
+          "address": "0xB2Fc3D9bA4d0038162316f103ED43A082f515F9B",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 20,
+          "address": "0xc71e92Da18398aeA2E81d32C9D2D3b90dF09874B",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 21,
+          "address": "0x0B5Bfb355f553a267460BB4Cb1c768A8d4940687",
+          "count": 4,
+          "held": 1,
+          "staked": 3
+        },
+        {
+          "rank": 22,
+          "address": "0x1e0082290aC3DEdCfA80e95471a0d40D3a489902",
+          "count": 4,
+          "held": 0,
+          "staked": 4
+        },
+        {
+          "rank": 23,
+          "address": "0x2D94bA99c06A6a4A4571F7918E4AF161B9255115",
+          "count": 4,
+          "held": 0,
+          "staked": 4
+        },
+        {
+          "rank": 24,
+          "address": "0x32e8F6687A1AE8d41173dd2d4b215240072EB7C6",
+          "count": 4,
+          "held": 0,
+          "staked": 4
+        },
+        {
+          "rank": 25,
+          "address": "0x5806f50E34837d4585a6FBCA2a27a38beA6ca162",
+          "count": 4,
+          "held": 3,
+          "staked": 1
+        }
+      ],
+      "topDigestSha256": "0d831b02054f534be38318b411baa4675bacb29197bf397c74b92ab42ebfa778"
+    },
+    "s2": {
+      "supply": 3581,
+      "uniqueOwners": 2925,
+      "ownerPercentage": 81.68109466629433,
+      "rawCustodyOwnerCount": 1612,
+      "directHolderWallets": 1611,
+      "activeStakerWallets": 1371,
+      "directAndStakedOverlap": 57,
+      "directTokens": 1894,
+      "stakedTokens": 1687,
+      "top": [
+        {
+          "rank": 1,
+          "address": "0x010C1B559e332D8aC0796D9B49031044B3FeAdB0",
+          "count": 27,
+          "held": 27,
+          "staked": 0
+        },
+        {
+          "rank": 2,
+          "address": "0x6e7AD056f6C29A438967ddF74180184B7d0BD44E",
+          "count": 20,
+          "held": 0,
+          "staked": 20
+        },
+        {
+          "rank": 3,
+          "address": "0xdD59dd8c219d33A59a1F6Aa416411951edb89BC2",
+          "count": 19,
+          "held": 0,
+          "staked": 19
+        },
+        {
+          "rank": 4,
+          "address": "0xc71e92Da18398aeA2E81d32C9D2D3b90dF09874B",
+          "count": 15,
+          "held": 14,
+          "staked": 1
+        },
+        {
+          "rank": 5,
+          "address": "0x46D5F548E02fdee3ea7E4168B7cF896429fE6fe7",
+          "count": 12,
+          "held": 2,
+          "staked": 10
+        },
+        {
+          "rank": 6,
+          "address": "0xbE64b5F851Fd5922611459244081403495d686e2",
+          "count": 11,
+          "held": 11,
+          "staked": 0
+        },
+        {
+          "rank": 7,
+          "address": "0x217a099Ee8718521D8a7e695E1Ce53Ba9Aa24F60",
+          "count": 10,
+          "held": 0,
+          "staked": 10
+        },
+        {
+          "rank": 8,
+          "address": "0x9aDC086CE014d6Fd0f0E5d3Dc48Aef52d0733118",
+          "count": 8,
+          "held": 8,
+          "staked": 0
+        },
+        {
+          "rank": 9,
+          "address": "0x1Bd8B41B6e25acae14a77FAf3b5a46b73D80007b",
+          "count": 7,
+          "held": 7,
+          "staked": 0
+        },
+        {
+          "rank": 10,
+          "address": "0x5CD3449bA84A2fEEdc4eE837ef934b46C378823E",
+          "count": 7,
+          "held": 7,
+          "staked": 0
+        },
+        {
+          "rank": 11,
+          "address": "0x854213155D504054059c5Fb97a836F7ab6553c11",
+          "count": 7,
+          "held": 7,
+          "staked": 0
+        },
+        {
+          "rank": 12,
+          "address": "0xBC8560740D6C98bB3f9cBA469e88A2eFD0474b3D",
+          "count": 7,
+          "held": 7,
+          "staked": 0
+        },
+        {
+          "rank": 13,
+          "address": "0x62c99933e6D5f3c1480590eAd32EC6d9457dD8c1",
+          "count": 6,
+          "held": 0,
+          "staked": 6
+        },
+        {
+          "rank": 14,
+          "address": "0xAFD720765de03c117870788CC7D2abE309819976",
+          "count": 6,
+          "held": 0,
+          "staked": 6
+        },
+        {
+          "rank": 15,
+          "address": "0x2F175dE7361b988ECE18b4cD4Fa43f4bF4D0e170",
+          "count": 5,
+          "held": 1,
+          "staked": 4
+        },
+        {
+          "rank": 16,
+          "address": "0x467A68f37A139b23987533305a1436dE19ED9FDb",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 17,
+          "address": "0x5414fB1bf5b90F31BBde5e934f4d2C069D9dd8B7",
+          "count": 5,
+          "held": 5,
+          "staked": 0
+        },
+        {
+          "rank": 18,
+          "address": "0x552FE170E805b0D41EdE626c60b0423DaD3d1a4f",
+          "count": 5,
+          "held": 5,
+          "staked": 0
+        },
+        {
+          "rank": 19,
+          "address": "0x641daa44170D795982A54f05D0Fc94c3d6293c51",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 20,
+          "address": "0x718622cF96Bf6B3cD7060b4A33bEF67bb171Dc65",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 21,
+          "address": "0x9906aef940B5904bd4C93091fEe19398B1d302e7",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 22,
+          "address": "0xbDE80a74D906bF7d09E73B7074F96Cb5a301F8B4",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 23,
+          "address": "0xeA75E6B2A783866BAfC906De0E2F80dd40e55845",
+          "count": 5,
+          "held": 4,
+          "staked": 1
+        },
+        {
+          "rank": 24,
+          "address": "0xf386ef43736aF3251eb79adC839D1688A6cCBE8C",
+          "count": 5,
+          "held": 0,
+          "staked": 5
+        },
+        {
+          "rank": 25,
+          "address": "0x04129A1aeC2b7C457e497E77Ef00c4700D2aebc8",
+          "count": 4,
+          "held": 0,
+          "staked": 4
+        }
+      ],
+      "topDigestSha256": "f2b4ff22d2eee8f16829e8506415308d6024ad9170e19fd38302a9c43af65f2a"
+    }
+  }
+}

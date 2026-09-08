@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { calculateStakingPoints, getStakingBytesCap, S1_CREDIT_YIELD_POINTS, S1_LOCK_MULTIPLIERS, S1_VAULT_MULTIPLIERS, S2_LOCK_MULTIPLIERS, type CitizenSeason } from '@/lib/citizen-terminal';
 import { calculateImpliedValuation, type ValuationMethod } from '@/lib/citizen-valuation';
+import { CitizenHolderLeaderboard, CitizenHolderSummary } from './CitizenHolderMap';
 
 type Trait = { label: string; value: string };
 type Component = { label: string; tokenId: string | null; name: string; rank: number | null; rarityScore: number | null; componentScore: number | null; imageUrl: string | null; traits: Trait[] };
@@ -222,6 +223,8 @@ export default function CitizenTerminal() {
       </div>
     </section>
 
+    <CitizenHolderSummary />
+
     <section className="relative mb-[18px] overflow-hidden border border-cyan-300/25 bg-[linear-gradient(120deg,rgba(73,232,229,.1),rgba(9,17,16,.96)_58%,rgba(124,255,198,.05))] p-[clamp(22px,4vw,38px)]">
       <div className="absolute inset-y-0 right-0 w-1/3 bg-[radial-gradient(circle_at_center,rgba(73,232,229,.12),transparent_68%)]" aria-hidden="true" />
       <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
@@ -231,7 +234,7 @@ export default function CitizenTerminal() {
     </section>
 
     <section className="ct-panel ct-lookup-panel">
-      <SectionHeading eyebrow="01 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number reveals the Citizen, its traits, components, rarity and staking profile." />
+      <SectionHeading eyebrow="02 / CITIZEN LOOKUP" title="Decode any assembled Citizen" detail="One number reveals the Citizen, its traits, components, rarity and staking profile." />
       <form className="ct-lookup-form" onSubmit={performLookup}>
         <div className="ct-season-toggle" aria-label="Citizen season">
           {(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" disabled={lookupLoading} className={lookupSeason === value ? 'active' : ''} onClick={() => { setLookupSeason(value); setTokenId(value === 's1' ? '3099' : '1033'); setLookup(null); setLookupError(''); }}>{value.toUpperCase()}</button>)}
@@ -273,7 +276,7 @@ export default function CitizenTerminal() {
     </section>
 
     <section className="ct-panel ct-bank-panel">
-      <SectionHeading eyebrow="02 / BANK OF NEO TOKYO" title="Price the staking return" detail="The Citizen lookup feeds its known S1 yield and Vault multiplier directly into this calculator." />
+      <SectionHeading eyebrow="03 / BANK OF NEO TOKYO" title="Price the staking return" detail="The Citizen lookup feeds its known S1 yield and Vault multiplier directly into this calculator." />
       <div className="ct-bank-grid">
         <div className="ct-bank-controls">
           <div className="ct-season-toggle wide">{(['s1', 's2'] as CitizenSeason[]).map((value) => <button key={value} type="button" className={stakingSeason === value ? 'active' : ''} onClick={() => setStakingSeason(value)}>{value.toUpperCase()} STAKING</button>)}</div>
@@ -319,7 +322,7 @@ export default function CitizenTerminal() {
     </section>
 
     <section className="ct-panel ct-market-panel">
-      <SectionHeading eyebrow="03 / MARKET DASHBOARD" title="The Neo Tokyo market, mapped." detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
+      <SectionHeading eyebrow="04 / MARKET DASHBOARD" title="The Neo Tokyo market, mapped." detail="Live OpenSea floor references for assembled Citizens and all four S1 / three S2 component collections." />
       {marketError && <p className="ct-error">{marketError}</p>}
       <div className="ct-market-groups">
         {groupedFloors.map(({ group, rows }) => <div key={group} className="ct-market-group"><header><span>{group} FLOORS</span><p>{group === 'S1' ? 'NEO TOKYO CITY' : 'OUTERLANDS'}</p></header><div>{rows.map((row) => <a href={row.url} target="_blank" rel="noreferrer" key={row.key} className="ct-floor-card"><span>{row.label}</span><strong>{row.floorEth == null ? 'No Listings' : `${formatNumber(row.floorEth, 4)} Ξ`}</strong><small>{row.sales24h == null ? 'OpenSea' : `${row.sales24h} sales / 24h`} ↗</small></a>)}</div></div>)}
@@ -365,8 +368,10 @@ export default function CitizenTerminal() {
       {market?.asOf && <p className="ct-asof">Listings {new Date(market.sourceTimes?.listingsAsOf ?? market.asOf).toLocaleString()} · Offers {new Date(market.sourceTimes?.offersAsOf ?? market.asOf).toLocaleString()} · Ranks {new Date(market.sourceTimes?.rankingsAsOf ?? market.asOf).toLocaleString()} · Listings can change at any time</p>}
     </section>
 
+    <CitizenHolderLeaderboard />
+
     <section className="ct-panel">
-      <SectionHeading eyebrow="04 / ELITE WATCH" title="S1 Elite listings" detail="Current listed S1s whose live NeoTokyo.codes rarity rank is 500 or better." />
+      <SectionHeading eyebrow="06 / ELITE WATCH" title="S1 Elite listings" detail="Current listed S1s whose live NeoTokyo.codes rarity rank is 500 or better." />
       <div className="ct-table-wrap"><table><thead><tr><th>Citizen</th><th>Rank</th><th>Reward rate</th><th>Listing</th><th /></tr></thead><tbody>
         {market?.eliteListings.map((item) => <tr key={item.tokenId}><td><div className="ct-listing-citizen">{item.imageUrl && <Image src={item.imageUrl} alt="" width={48} height={48} unoptimized />}<strong>#{item.tokenId}</strong></div></td><td><span className="ct-rank-pill">ELITE #{item.rank}</span></td><td>{item.rewardRate ?? '—'}</td><td><strong>{item.priceEth == null ? '—' : `${formatNumber(item.priceEth, 4)} Ξ`}</strong><small>{formatUsd(item.priceUsd)}</small></td><td><a href={item.url} target="_blank" rel="noreferrer">VIEW ↗</a></td></tr>)}
         {market && market.eliteListings.length === 0 && <tr><td colSpan={5} className="ct-empty">No Elite S1 listings in the current OpenSea scan.</td></tr>}

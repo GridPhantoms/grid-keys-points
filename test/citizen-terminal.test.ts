@@ -509,6 +509,7 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(css, /\.ct-snapshot-stamp\{/);
   assert.match(css, /\.ct-snapshot-stamp\.is-complete i\{/);
   assert.match(css, /\.ct-overview-glance>header\{[^}]*flex-direction:column[^}]*align-items:flex-start/);
+  assert.match(css, /\.ct-overview-glance article strong\{[^}]*white-space:nowrap/);
   assert.match(css, /\.ct-overview-glance article \.ct-overview-glance-ratio\{[^}]*color:var\(--cyan\)/);
   assert.match(css, /\.ct-valuation-caveat\{[^}]*font-size:10px/);
   assert.match(css, /\.ct-valuation-source\{[^}]*font-size:9px/);

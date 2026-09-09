@@ -33,7 +33,11 @@ const finiteValue = (value: number | null | undefined) => typeof value === 'numb
 const availableValue = (metric: { value?: number | null; availability?: string } | undefined) => metric?.availability === 'available' ? finiteValue(metric.value) : null;
 const formatPrice = (value: number | null) => value == null ? '—' : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 4 });
 const formatMarketCap = (value: number | null) => value == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 }).format(value);
-const formatEth = (value: number | null) => value == null ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits: 4 })} Ξ`;
+const formatEth = (
+  value: number | null,
+  maximumFractionDigits = 4,
+  roundingMode: Intl.NumberFormatOptions['roundingMode'] = 'halfExpand',
+) => value == null ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits, roundingMode })} Ξ`;
 const formatFloorRatio = (s1Floor: number | null, s2Floor: number | null) => s1Floor == null || s2Floor == null || s2Floor <= 0 ? '—' : `${(s1Floor / s2Floor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 
 type CitizenOverviewGlanceProps = {
@@ -80,7 +84,7 @@ export default function CitizenOverviewGlance({ s1Owners, s1HolderRatio, s2Owner
     { label: '$BYTES MCAP*', value: formatMarketCap(references.bytesMarketCapUsd) },
     { label: 'S1 FLOOR', value: formatEth(references.s1FloorEth) },
     { label: 'S1 ELITE FLOOR', value: formatEth(references.s1EliteFloorEth) },
-    { label: 'S2 FLOOR', value: formatEth(references.s2FloorEth) },
+    { label: 'S2 FLOOR', value: formatEth(references.s2FloorEth, 3, 'trunc') },
     { label: 'S1 / S2 FLOOR', value: formatFloorRatio(references.s1FloorEth, references.s2FloorEth) },
   ];
 

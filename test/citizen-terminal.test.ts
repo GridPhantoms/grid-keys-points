@@ -464,6 +464,7 @@ test('Citizen Interlink overview presents a focused hub with honest snapshot con
   assert.match(glance, /S1 FLOOR/);
   assert.match(glance, /S1 ELITE FLOOR/);
   assert.match(glance, /S2 FLOOR/);
+  assert.match(glance, /label: 'S2 FLOOR', value: formatEth\(references\.s2FloorEth, 3, 'trunc'\)/);
   assert.match(glance, /S1 \/ S2 FLOOR/);
   assert.match(glance, /formatFloorRatio\(references\.s1FloorEth, references\.s2FloorEth\)/);
   assert.match(glance, /HOLDER RATIO/);

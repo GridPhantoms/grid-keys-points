@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-08T20:45:07.056Z",
+  "generatedAt": "2026-09-09T06:21:04.249Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 25935022,
-    "blockHash": "0x0e024ce6352b7a01a72951422f398452a23caac530d26ea877c1ae31acb028d2",
-    "asOf": "2026-09-08T20:25:59.000Z"
+    "blockNumber": 25937891,
+    "blockHash": "0x4ccfc69d780b3be345c3004f645c556ac40f90b60ac427a549c14e2876d93d76",
+    "asOf": "2026-09-09T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
@@ -57,28 +57,28 @@
         },
         {
           "rank": 6,
+          "address": "0x77aEA9CeA054358CF4384477F512c8460Dd06F69",
+          "count": 8,
+          "held": 1,
+          "staked": 7
+        },
+        {
+          "rank": 7,
           "address": "0xbD5D70f757158Ec94a2D9571f5ABA69468975046",
           "count": 8,
           "held": 2,
           "staked": 6
         },
         {
-          "rank": 7,
+          "rank": 8,
           "address": "0xDb29883258d2deDa9ec33847C2F52816f1f88D80",
           "count": 8,
           "held": 0,
           "staked": 8
         },
         {
-          "rank": 8,
-          "address": "0x467A68f37A139b23987533305a1436dE19ED9FDb",
-          "count": 7,
-          "held": 0,
-          "staked": 7
-        },
-        {
           "rank": 9,
-          "address": "0x77aEA9CeA054358CF4384477F512c8460Dd06F69",
+          "address": "0x467A68f37A139b23987533305a1436dE19ED9FDb",
           "count": 7,
           "held": 0,
           "staked": 7
@@ -196,7 +196,7 @@
           "staked": 1
         }
       ],
-      "topDigestSha256": "0d831b02054f534be38318b411baa4675bacb29197bf397c74b92ab42ebfa778"
+      "topDigestSha256": "9161f8554d47def39c70c9691b40d145f40de6c349615a567f8051532fda8690"
     },
     "s2": {
       "supply": 3581,
@@ -392,7 +392,7 @@
     "originalComponentUploads": 1935,
     "originalUpload": {
       "citizens": 1269,
-      "uniqueWallets": 1176,
+      "uniqueWallets": 1175,
       "percentageOfOriginalComponentUploads": 65.58139534883722,
       "locations": {
         "legacy": 66,

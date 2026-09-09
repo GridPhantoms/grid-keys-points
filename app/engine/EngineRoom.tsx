@@ -40,6 +40,8 @@ type EngineSources = {
 
 const SOURCE_CLASS_COUNT = 5;
 const SOURCE_TIMEOUT_MS = 12_000;
+const SOURCE_HTTP_ATTEMPTS = 3;
+const SOURCE_RETRY_DELAY_MS = 250;
 
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
@@ -152,7 +154,7 @@ function isValidTimestamp(value: unknown): value is string {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
 
-async function fetchResponse(path: string) {
+async function fetchResponseOnce(path: string) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), SOURCE_TIMEOUT_MS);
   try {
@@ -160,6 +162,15 @@ async function fetchResponse(path: string) {
   } finally {
     window.clearTimeout(timeout);
   }
+}
+
+async function fetchResponse(path: string) {
+  for (let attempt = 1; attempt <= SOURCE_HTTP_ATTEMPTS; attempt += 1) {
+    const response = await fetchResponseOnce(path);
+    if (response.status < 500 || attempt === SOURCE_HTTP_ATTEMPTS) return response;
+    await new Promise((resolve) => window.setTimeout(resolve, SOURCE_RETRY_DELAY_MS * attempt));
+  }
+  throw new Error(`Unable to load ${path}`);
 }
 
 async function fetchText(path: string) {

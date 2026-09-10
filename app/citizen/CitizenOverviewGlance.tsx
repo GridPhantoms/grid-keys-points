@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 type MarketResponse = {
+  ethUsd?: number | null;
   collections?: Array<{ key?: string; floorEth?: number | null }>;
 };
 
@@ -16,6 +17,7 @@ type BytesResponse = {
 type MarketReferences = {
   bytesPriceUsd: number | null;
   bytesMarketCapUsd: number | null;
+  ethUsd: number | null;
   s1FloorEth: number | null;
   s1EliteFloorEth: number | null;
   s2FloorEth: number | null;
@@ -24,6 +26,7 @@ type MarketReferences = {
 const emptyReferences: MarketReferences = {
   bytesPriceUsd: null,
   bytesMarketCapUsd: null,
+  ethUsd: null,
   s1FloorEth: null,
   s1EliteFloorEth: null,
   s2FloorEth: null,
@@ -31,13 +34,10 @@ const emptyReferences: MarketReferences = {
 
 const finiteValue = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const availableValue = (metric: { value?: number | null; availability?: string } | undefined) => metric?.availability === 'available' ? finiteValue(metric.value) : null;
-const formatPrice = (value: number | null) => value == null ? '—' : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 4 });
+const formatPrice = (value: number | null) => value == null ? '—' : value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const formatMarketCap = (value: number | null) => value == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 }).format(value);
-const formatEth = (
-  value: number | null,
-  maximumFractionDigits = 4,
-  roundingMode: Intl.NumberFormatOptions['roundingMode'] = 'halfExpand',
-) => value == null ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits, roundingMode })} Ξ`;
+const formatEth = (value: number | null) => value == null ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits: 3 })} Ξ`;
+const formatFloorUsd = (floorEth: number | null, ethUsd: number | null) => floorEth == null || ethUsd == null ? null : `≈ $${Math.round(floorEth * ethUsd).toLocaleString('en-US')}`;
 const formatFloorRatio = (s1Floor: number | null, s2Floor: number | null) => s1Floor == null || s2Floor == null || s2Floor <= 0 ? '—' : `${(s1Floor / s2Floor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 
 type CitizenOverviewGlanceProps = {
@@ -58,7 +58,13 @@ export default function CitizenOverviewGlance({ s1Owners, s1HolderRatio, s2Owner
         if (!response.ok) throw new Error('Market references unavailable');
         const payload = await response.json() as MarketResponse;
         const floor = (key: string) => finiteValue(payload.collections?.find((collection) => collection.key === key)?.floorEth);
-        setReferences((current) => ({ ...current, s1FloorEth: floor('s1-citizens'), s1EliteFloorEth: floor('s1-elite'), s2FloorEth: floor('s2-citizens') }));
+        setReferences((current) => ({
+          ...current,
+          ethUsd: finiteValue(payload.ethUsd),
+          s1FloorEth: floor('s1-citizens'),
+          s1EliteFloorEth: floor('s1-elite'),
+          s2FloorEth: floor('s2-citizens'),
+        }));
       })
       .catch(() => undefined);
 
@@ -82,9 +88,9 @@ export default function CitizenOverviewGlance({ s1Owners, s1HolderRatio, s2Owner
     { label: 'S2 OWNERS', value: s2Owners.toLocaleString(), detail: `${s2HolderRatio.toFixed(1)}% HOLDER RATIO` },
     { label: '$BYTES SPOT', value: formatPrice(references.bytesPriceUsd) },
     { label: '$BYTES MCAP*', value: formatMarketCap(references.bytesMarketCapUsd) },
-    { label: 'S1 FLOOR', value: formatEth(references.s1FloorEth) },
-    { label: 'S1 ELITE FLOOR', value: formatEth(references.s1EliteFloorEth) },
-    { label: 'S2 FLOOR', value: formatEth(references.s2FloorEth, 3, 'trunc') },
+    { label: 'S1 FLOOR', value: formatEth(references.s1FloorEth), detail: formatFloorUsd(references.s1FloorEth, references.ethUsd) },
+    { label: 'S1 ELITE FLOOR', value: formatEth(references.s1EliteFloorEth), detail: formatFloorUsd(references.s1EliteFloorEth, references.ethUsd) },
+    { label: 'S2 FLOOR', value: formatEth(references.s2FloorEth), detail: formatFloorUsd(references.s2FloorEth, references.ethUsd) },
     { label: 'S1 / S2 FLOOR', value: formatFloorRatio(references.s1FloorEth, references.s2FloorEth) },
   ];
 

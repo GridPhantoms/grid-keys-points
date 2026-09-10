@@ -343,6 +343,15 @@ test('S1 and S2 Citizen acquisition prices are independently editable with live-
   assert.match(ui, /Historical ETH purchases use today&apos;s ETH\/USD/);
 });
 
+test('S1 Elite listings keep the compact four-column market layout', async () => {
+  const ui = await readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8');
+
+  assert.match(ui, /<th>Citizen<\/th><th>Listing<\/th><th>Rank<\/th><th>Reward Rate<\/th>/);
+  assert.match(ui, /className="ct-listing-view"[^>]*aria-label={`View Citizen #\$\{item\.tokenId\} listing`}/);
+  assert.doesNotMatch(ui, />VIEW ↗<\/a>/);
+  assert.match(ui, /colSpan=\{4\}/);
+});
+
 test('OpenSea estimated rank parser validates the requested item', () => {
   const contract = '0x4481507cc228FA19D203BD42110d679571f7912E';
   const html = '<script>{"itemByIdentifier":{"contractAddress":"0x4481507cc228fa19d203bd42110d679571f7912e","tokenId":"739","rarity":{"rank":680,"category":"RARE"}}}</script>';

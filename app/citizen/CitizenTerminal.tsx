@@ -368,10 +368,10 @@ export default function CitizenTerminal({ view }: { view: 'lab' | 'market' }) {
 
     <section className="ct-panel">
       <SectionHeading eyebrow="02 / ELITE WATCH" title="S1 Elite listings" detail="Current listed S1s whose live NeoTokyo.codes rarity rank is 500 or better." />
-      <div className="ct-table-wrap"><table><thead><tr><th>Citizen</th><th>Rank</th><th>Reward rate</th><th>Listing</th><th /></tr></thead><tbody>
-        {market?.eliteListings.map((item) => <tr key={item.tokenId}><td><div className="ct-listing-citizen">{item.imageUrl && <Image src={item.imageUrl} alt="" width={48} height={48} unoptimized />}<strong>#{item.tokenId}</strong></div></td><td><span className="ct-rank-pill">ELITE #{item.rank}</span></td><td>{item.rewardRate ?? '—'}</td><td><strong>{item.priceEth == null ? '—' : `${formatNumber(item.priceEth, 4)} Ξ`}</strong><small>{formatUsd(item.priceUsd)}</small></td><td><a href={item.url} target="_blank" rel="noreferrer">VIEW ↗</a></td></tr>)}
-        {market && market.eliteListings.length === 0 && <tr><td colSpan={5} className="ct-empty">No Elite S1 listings in the current OpenSea scan.</td></tr>}
-        {!market && !marketError && <tr><td colSpan={5} className="ct-empty">Scanning current listings…</td></tr>}
+      <div className="ct-table-wrap"><table><thead><tr><th>Citizen</th><th>Listing</th><th>Rank</th><th>Reward Rate</th></tr></thead><tbody>
+        {market?.eliteListings.map((item) => <tr key={item.tokenId}><td><div className="ct-listing-citizen">{item.imageUrl && <Image src={item.imageUrl} alt="" width={48} height={48} unoptimized />}<span className="ct-listing-identity"><strong>#{item.tokenId}</strong><a className="ct-listing-view" href={item.url} target="_blank" rel="noreferrer" aria-label={`View Citizen #${item.tokenId} listing`}><span aria-hidden="true">↗</span></a></span></div></td><td><strong>{item.priceEth == null ? '—' : `${formatNumber(item.priceEth, 4)} Ξ`}</strong><small>{formatUsd(item.priceUsd)}</small></td><td><span className="ct-rank-pill">ELITE #{item.rank}</span></td><td>{item.rewardRate ?? '—'}</td></tr>)}
+        {market && market.eliteListings.length === 0 && <tr><td colSpan={4} className="ct-empty">No Elite S1 listings in the current OpenSea scan.</td></tr>}
+        {!market && !marketError && <tr><td colSpan={4} className="ct-empty">Scanning current listings…</td></tr>}
       </tbody></table></div>
       <p className="ct-asof">Scans up to the 50 lowest current S1 listings and matches token numbers against current rarity ranks.</p>
     </section>

@@ -344,10 +344,15 @@ test('S1 and S2 Citizen acquisition prices are independently editable with live-
 });
 
 test('S1 Elite listings keep the compact four-column market layout', async () => {
-  const ui = await readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8');
+  const [ui, css] = await Promise.all([
+    readFile(new URL('../app/citizen/CitizenTerminal.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/citizen/citizen.css', import.meta.url), 'utf8'),
+  ]);
 
   assert.match(ui, /<th>Citizen<\/th><th>Listing<\/th><th>Rank<\/th><th>Reward Rate<\/th>/);
-  assert.match(ui, /className="ct-listing-view"[^>]*aria-label={`View Citizen #\$\{item\.tokenId\} listing`}/);
+  assert.match(ui, /className="ct-listing-view"[^>]*aria-label={`View Citizen #\$\{item\.tokenId\} listing`}><span aria-hidden="true">↗<\/span><\/a>/);
+  assert.match(css, /\.ct-listing-view\{[^}]*width:24px;[^}]*height:24px;[^}]*border:0;[^}]*background:transparent;/);
+  assert.doesNotMatch(css, /\.ct-listing-view-icon\{/);
   assert.doesNotMatch(ui, />VIEW ↗<\/a>/);
   assert.match(ui, /colSpan=\{4\}/);
 });

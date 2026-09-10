@@ -1,11 +1,11 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-09-09T06:21:04.249Z",
+  "generatedAt": "2026-09-10T06:20:31.765Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 25937891,
-    "blockHash": "0x4ccfc69d780b3be345c3004f645c556ac40f90b60ac427a549c14e2876d93d76",
-    "asOf": "2026-09-09T06:01:59.000Z"
+    "blockNumber": 25945066,
+    "blockHash": "0x8630f182cee36494eb54731d6f69a4aadef858054016cf0ed896905e1265acff",
+    "asOf": "2026-09-10T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "contracts": {
@@ -21,11 +21,11 @@
   "participantIndex": {
     "baselineBlock": 25918899,
     "addressesChecked": 3322,
-    "deltaEvents": 19
+    "deltaEvents": 21
   },
   "verification": {
     "s1": {
-      "transferEvents": 9066,
+      "transferEvents": 9068,
       "transferPages": 10,
       "reconstructedTokens": 2039,
       "ownerOfVerified": 2039,
@@ -33,7 +33,7 @@
       "activePositions": 1430
     },
     "s2": {
-      "transferEvents": 12910,
+      "transferEvents": 12911,
       "transferPages": 13,
       "reconstructedTokens": 3581,
       "ownerOfVerified": 3581,
@@ -3874,7 +3874,7 @@
       "disassembledOrReassembled": 666,
       "inactiveOrUnresolved": 0
     },
-    "rowsDigestSha256": "5c7d4ebd358c275baded25b4a294da6b4a50e94b5067e1673f1528054b295541",
+    "rowsDigestSha256": "009ed830bd603104253430af3af1b427e76bcc6075e1e1deacef042556d9af07",
     "definition": "Original Upload requires every constituent NFT used in the first S1 upload to come from its original 2021 claim distribution, excluding bought and later-issued components, and the Citizen never to have been disassembled or reassembled. Original Wallet is the Original Upload subset whose first assembly wallet remains the uninterrupted beneficial owner. Verified legacy-to-V2 migration and NeoTokyoStaker custody preserve both distinctions; ordinary wallet changes and transfer-backs break Original Wallet permanently."
   }
 }

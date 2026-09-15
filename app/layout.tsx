@@ -10,11 +10,34 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "GRID PHANTOMS APP",
-  description: "Tools for Grid Phantoms Keyholders",
+  metadataBase: new URL('https://gridphantoms.app'),
+  title: 'Grid Phantoms | Keyholder Governance, Intelligence and Utility',
+  description: 'Enter the Grid: Keyholder governance, treasury transparency, adopted $BYTES utility intelligence, Citizen market tools and read-only Key data.',
+  applicationName: 'Grid Phantoms',
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName: 'Grid Phantoms',
+    title: 'Grid Phantoms | Keyholder Governance, Intelligence and Utility',
+    description: 'Keyholder governance, treasury transparency, $BYTES utility intelligence and Citizen market tools.',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Grid Phantoms keyholder governance, intelligence and utility',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Grid Phantoms | Keyholder Governance, Intelligence and Utility',
+    description: 'Keyholder governance, treasury transparency, $BYTES utility intelligence and Citizen market tools.',
+    images: ['/opengraph-image'],
+  },
   icons: {
-    icon: "/favicons/favicon.ico",
-    apple: "/favicons/apple-touch-icon.png",
+    icon: '/favicons/favicon.ico',
+    apple: '/favicons/apple-touch-icon.png',
   },
 };
 

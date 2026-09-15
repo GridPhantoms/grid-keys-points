@@ -97,6 +97,36 @@ test('legacy routes use the shared footer and descriptive route metadata', async
   }
 });
 
+test('public discovery and social-share surfaces are defined', async () => {
+  const [layout, robots, sitemap, notFound, ogImage] = await Promise.all([
+    read('../app/layout.tsx'),
+    read('../app/robots.ts'),
+    read('../app/sitemap.ts'),
+    read('../app/not-found.tsx'),
+    read('../app/opengraph-image.tsx'),
+  ]);
+
+  assert.match(layout, /metadataBase: new URL\('https:\/\/gridphantoms\.app'\)/);
+  assert.match(layout, /openGraph:/);
+  assert.match(layout, /twitter:/);
+
+  assert.match(robots, /sitemap: `\$\{SITE_URL\}\/sitemap\.xml`/);
+  assert.match(robots, /disallow: '\/beta\/'/);
+
+  for (const route of ['/', '/engine', '/bytes', '/citizen', '/leaderboard']) {
+    assert.match(sitemap, new RegExp(route.replaceAll('/', '\\/')));
+  }
+  assert.doesNotMatch(sitemap, /\/beta\/grid-home-0823/);
+
+  assert.match(notFound, /404 \/\/ SIGNAL LOST/);
+  assert.match(notFound, /RETURN TO THE GRID/);
+  assert.match(notFound, /<SiteFooter \/>/);
+
+  assert.match(ogImage, /width: 1200/);
+  assert.match(ogImage, /height: 630/);
+  assert.match(ogImage, /GRID PHANTOMS/);
+});
+
 test('raffle has one H1 and Trait Charts provide semantic point data', async () => {
   const [raffle, traits] = await Promise.all([
     read('../app/raffle/page.tsx'),

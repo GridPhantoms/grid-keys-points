@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-14T06:21:01.169Z",
+  "generatedAt": "2026-09-15T06:20:27.798Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 25973766,
-    "blockHash": "0x4128674bf91d6a04c665b428cda0fd4908abb9d054c77245b1b7b2c01d09e2e9",
-    "asOf": "2026-09-14T06:01:59.000Z"
+    "blockNumber": 25980940,
+    "blockHash": "0x192811309f119118752756aff3206558a0689fd10124144deac22372d0cc40d2",
+    "asOf": "2026-09-15T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {

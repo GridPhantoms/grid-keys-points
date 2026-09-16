@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-15T06:20:27.798Z",
+  "generatedAt": "2026-09-16T06:21:04.335Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 25980940,
-    "blockHash": "0x192811309f119118752756aff3206558a0689fd10124144deac22372d0cc40d2",
-    "asOf": "2026-09-15T06:01:59.000Z"
+    "blockNumber": 25988113,
+    "blockHash": "0x56d2042aed1cbca167ba886f2c60a00e19d99197d750b6a96cd8ef3d4b4ea8b3",
+    "asOf": "2026-09-16T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
     "s1": {
       "supply": 2039,
-      "uniqueOwners": 1738,
-      "ownerPercentage": 85.23786169691026,
-      "rawCustodyOwnerCount": 562,
-      "directHolderWallets": 561,
+      "uniqueOwners": 1737,
+      "ownerPercentage": 85.18881804806277,
+      "rawCustodyOwnerCount": 561,
+      "directHolderWallets": 560,
       "activeStakerWallets": 1198,
       "directAndStakedOverlap": 21,
       "directTokens": 609,
@@ -169,34 +169,34 @@
         },
         {
           "rank": 22,
+          "address": "0x1Bd8B41B6e25acae14a77FAf3b5a46b73D80007b",
+          "count": 4,
+          "held": 4,
+          "staked": 0
+        },
+        {
+          "rank": 23,
           "address": "0x1e0082290aC3DEdCfA80e95471a0d40D3a489902",
           "count": 4,
           "held": 0,
           "staked": 4
         },
         {
-          "rank": 23,
+          "rank": 24,
           "address": "0x2D94bA99c06A6a4A4571F7918E4AF161B9255115",
           "count": 4,
           "held": 0,
           "staked": 4
         },
         {
-          "rank": 24,
+          "rank": 25,
           "address": "0x32e8F6687A1AE8d41173dd2d4b215240072EB7C6",
           "count": 4,
           "held": 0,
           "staked": 4
-        },
-        {
-          "rank": 25,
-          "address": "0x5806f50E34837d4585a6FBCA2a27a38beA6ca162",
-          "count": 4,
-          "held": 3,
-          "staked": 1
         }
       ],
-      "topDigestSha256": "24d231d431c70b3b410103e088131f3e05039bbce33c2b986850d94858016f59"
+      "topDigestSha256": "6f46d9cb40547cb2e0c70292a6f8a0a105bc397abf1103e6a994554b53fd0386"
     },
     "s2": {
       "supply": 3581,

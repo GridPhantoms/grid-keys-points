@@ -1,11 +1,11 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-09-16T06:21:04.335Z",
+  "generatedAt": "2026-09-17T06:21:04.415Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 25988113,
-    "blockHash": "0x56d2042aed1cbca167ba886f2c60a00e19d99197d750b6a96cd8ef3d4b4ea8b3",
-    "asOf": "2026-09-16T06:01:59.000Z"
+    "blockNumber": 25995285,
+    "blockHash": "0x210d04336c3ff813af3c0efe690d8a2a33114671ffd0284d5e67b5c278ef1762",
+    "asOf": "2026-09-17T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "contracts": {
@@ -21,7 +21,7 @@
   "participantIndex": {
     "baselineBlock": 25967511,
     "addressesChecked": 3322,
-    "deltaEvents": 14
+    "deltaEvents": 17
   },
   "verification": {
     "s1": {
@@ -33,12 +33,12 @@
       "activePositions": 1430
     },
     "s2": {
-      "transferEvents": 12915,
+      "transferEvents": 12917,
       "transferPages": 13,
       "reconstructedTokens": 3581,
       "ownerOfVerified": 3581,
-      "stakingCustody": 1686,
-      "activePositions": 1686
+      "stakingCustody": 1687,
+      "activePositions": 1687
     },
     "s1HistoricalDistinctions": {
       "componentManifestDigestSha256": "2fcbe574ba3343dae1294947ddcc67a6ebc28526b51d3d321a520f1e3de4c351",
@@ -250,12 +250,12 @@
       "supply": 3581,
       "uniqueOwners": 2924,
       "ownerPercentage": 81.65316950572465,
-      "rawCustodyOwnerCount": 1612,
-      "directHolderWallets": 1611,
-      "activeStakerWallets": 1370,
+      "rawCustodyOwnerCount": 1611,
+      "directHolderWallets": 1610,
+      "activeStakerWallets": 1371,
       "directAndStakedOverlap": 57,
-      "directTokens": 1895,
-      "stakedTokens": 1686,
+      "directTokens": 1894,
+      "stakedTokens": 1687,
       "top": [
         {
           "rank": 1,

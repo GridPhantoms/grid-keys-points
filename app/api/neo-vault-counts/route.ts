@@ -127,21 +127,25 @@ function parseOnchainMetadata(tokenUri: string) {
 
 async function getOwnedCoattailTokenIds() {
   const tokenIds = new Set<string>(COATTAIL_FALLBACK_TOKEN_IDS);
-  const logs = await robinhoodJsonRpc<unknown[]>('eth_getLogs', [{
-    address: COATTAIL_BROKERS.address,
-    fromBlock: '0x0',
-    toBlock: 'latest',
-    topics: [TRANSFER_TOPIC, null, `0x${VAULT_WALLET.slice(2).padStart(64, '0')}`],
-  }]);
-  if (!Array.isArray(logs)) throw new Error('Robinhood transfer-log response was invalid');
-  logs.forEach((log) => {
-    if (!log || typeof log !== 'object' || !Array.isArray((log as { topics?: unknown }).topics)) return;
-    const topics = (log as { topics: unknown[] }).topics;
-    const tokenTopic = topics[3];
-    if (typeof tokenTopic === 'string' && /^0x[0-9a-fA-F]{64}$/.test(tokenTopic)) {
-      tokenIds.add(BigInt(tokenTopic).toString());
-    }
-  });
+  try {
+    const logs = await robinhoodJsonRpc<unknown[]>('eth_getLogs', [{
+      address: COATTAIL_BROKERS.address,
+      fromBlock: '0x0',
+      toBlock: 'latest',
+      topics: [TRANSFER_TOPIC, null, `0x${VAULT_WALLET.slice(2).padStart(64, '0')}`],
+    }]);
+    if (!Array.isArray(logs)) throw new Error('Robinhood transfer-log response was invalid');
+    logs.forEach((log) => {
+      if (!log || typeof log !== 'object' || !Array.isArray((log as { topics?: unknown }).topics)) return;
+      const topics = (log as { topics: unknown[] }).topics;
+      const tokenTopic = topics[3];
+      if (typeof tokenTopic === 'string' && /^0x[0-9a-fA-F]{64}$/.test(tokenTopic)) {
+        tokenIds.add(BigInt(tokenTopic).toString());
+      }
+    });
+  } catch {
+    console.error('Coattail transfer-log discovery failed; using known token fallback');
+  }
 
   return [...tokenIds].sort((a, b) => Number(a) - Number(b));
 }

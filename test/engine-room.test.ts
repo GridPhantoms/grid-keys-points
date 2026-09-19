@@ -221,7 +221,8 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /const SOURCE_HTTP_ATTEMPTS = 3/);
   assert.match(ui, /response\.status < 500 \|\| attempt === SOURCE_HTTP_ATTEMPTS/);
   assert.match(ui, /SOURCE_RETRY_DELAY_MS \* attempt/);
-  assert.match(ui, /!window\.requestAnimationFrame \|\| window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches \|\| targetValue <= 0/);
+  assert.match(ui, /document\.hidden/);
+  assert.match(ui, /skipAnimation/);
   assert.match(ui, /new AbortController\(\)/);
   assert.match(ui, /controller\.abort\(\)/);
   assert.match(ui, /loadSource\('vault'/);

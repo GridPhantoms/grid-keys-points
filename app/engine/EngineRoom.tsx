@@ -364,8 +364,12 @@ function AnimatedNumber({
     }
 
     const targetValue = Number.isFinite(value) ? Math.max(0, value) : 0;
+    const skipAnimation = !window.requestAnimationFrame
+      || document.hidden
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      || targetValue <= 0;
 
-    if (!window.requestAnimationFrame || window.matchMedia('(prefers-reduced-motion: reduce)').matches || targetValue <= 0) {
+    if (skipAnimation) {
       hasAnimatedRef.current = true;
       setAnimatedDisplay(targetValue);
       return;

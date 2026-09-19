@@ -221,6 +221,7 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /const SOURCE_HTTP_ATTEMPTS = 3/);
   assert.match(ui, /response\.status < 500 \|\| attempt === SOURCE_HTTP_ATTEMPTS/);
   assert.match(ui, /SOURCE_RETRY_DELAY_MS \* attempt/);
+  assert.match(ui, /!window\.requestAnimationFrame \|\| window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches \|\| targetValue <= 0/);
   assert.match(ui, /new AbortController\(\)/);
   assert.match(ui, /controller\.abort\(\)/);
   assert.match(ui, /loadSource\('vault'/);
@@ -286,6 +287,11 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(alchemy, /pageKey\?: unknown/);
   assert.match(alchemy, /url\.searchParams\.set\('pageKey', pageKey\)/);
   assert.match(alchemy, /if \(!Array\.isArray\(data\.ownedNfts\)\) throw new AlchemyServerError\(\)/);
+  assert.match(alchemy, /const FETCH_ATTEMPTS = 3/);
+  assert.match(alchemy, /isRetryableStatus/);
+  assert.match(alchemy, /fetchJsonOnce/);
+  assert.match(neoRoute, /const RPC_ATTEMPTS = 3/);
+  assert.match(neoRoute, /robinhoodJsonRpc/);
   assert.match(holderGenerator, /holders-snapshot\.meta\.json/);
   assert.match(holderGenerator, /capturedAt: new Date\(\)\.toISOString\(\)/);
   assert.match(vaultGenerator, /vault-snapshot\.meta\.json/);

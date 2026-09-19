@@ -4,9 +4,12 @@ const ALCHEMY_ORIGIN = 'https://eth-mainnet.g.alchemy.com';
 const REQUEST_TIMEOUT_MS = 10_000;
 
 export class AlchemyServerError extends Error {
-  constructor() {
+  retryable: boolean;
+
+  constructor(retryable = true) {
     super('Alchemy server request failed');
     this.name = 'AlchemyServerError';
+    this.retryable = retryable;
   }
 }
 
@@ -16,7 +19,18 @@ function apiKey() {
   return value;
 }
 
-async function fetchJsonWithTimeout<T>(url: URL, init?: RequestInit): Promise<T> {
+const FETCH_ATTEMPTS = 3;
+const FETCH_RETRY_DELAY_MS = 250;
+
+function isRetryableStatus(status: number) {
+  return status === 429 || status >= 500;
+}
+
+async function wait(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchJsonOnce<T>(url: URL, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -26,13 +40,29 @@ async function fetchJsonWithTimeout<T>(url: URL, init?: RequestInit): Promise<T>
       cache: 'no-store',
       signal: controller.signal,
     });
-    if (!response.ok) throw new AlchemyServerError();
+    if (!response.ok) throw new AlchemyServerError(isRetryableStatus(response.status));
     return await response.json() as T;
-  } catch {
+  } catch (error) {
+    if (error instanceof AlchemyServerError) throw error;
     throw new AlchemyServerError();
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchJsonWithTimeout<T>(url: URL, init?: RequestInit): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      return await fetchJsonOnce<T>(url, init);
+    } catch (error) {
+      lastError = error;
+      const retryable = error instanceof AlchemyServerError ? error.retryable : true;
+      if (!retryable || attempt === FETCH_ATTEMPTS) throw error instanceof AlchemyServerError ? error : new AlchemyServerError();
+      await wait(FETCH_RETRY_DELAY_MS * attempt);
+    }
+  }
+  throw lastError instanceof AlchemyServerError ? lastError : new AlchemyServerError();
 }
 
 export type AlchemyOwnedNft = {

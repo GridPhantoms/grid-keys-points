@@ -15,6 +15,16 @@ const OWNER_OF_SELECTOR = '6352211e';
 const TOKEN_URI_SELECTOR = 'c87b56dd';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const RPC_TIMEOUT_MS = 10_000;
+const RPC_ATTEMPTS = 3;
+const RPC_RETRY_DELAY_MS = 250;
+
+function isRetryableStatus(status: number) {
+  return status === 429 || status >= 500;
+}
+
+async function wait(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 type EthereumNftCountName = keyof typeof NFT_COLLECTIONS;
 type NftCountName = EthereumNftCountName | 'coattail';
@@ -56,25 +66,42 @@ function tokenCallData(selector: string, tokenId: string) {
   return `0x${selector}${encodedTokenId}`;
 }
 
+async function robinhoodJsonRpc<T>(method: string, params: unknown[]): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= RPC_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(ROBINHOOD_RPC, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        if (isRetryableStatus(response.status) && attempt < RPC_ATTEMPTS) {
+          await wait(RPC_RETRY_DELAY_MS * attempt);
+          continue;
+        }
+        throw new Error('Robinhood RPC request failed');
+      }
+      const payload = await response.json() as { result?: T; error?: unknown };
+      if (payload.error || payload.result === undefined) throw new Error('Robinhood RPC returned invalid data');
+      return payload.result;
+    } catch (error) {
+      lastError = error;
+      if (attempt === RPC_ATTEMPTS) throw error;
+      await wait(RPC_RETRY_DELAY_MS * attempt);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Robinhood RPC request failed');
+}
+
 async function robinhoodEthCall(data: string) {
-  const response = await fetch(ROBINHOOD_RPC, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'eth_call',
-      params: [{ to: COATTAIL_BROKERS.address, data }, 'latest'],
-    }),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error('Robinhood RPC request failed');
-  const payload = await response.json() as { result?: unknown; error?: unknown };
-  if (payload.error || typeof payload.result !== 'string' || !/^0x[0-9a-fA-F]*$/.test(payload.result)) {
+  const result = await robinhoodJsonRpc<string>('eth_call', [{ to: COATTAIL_BROKERS.address, data }, 'latest']);
+  if (typeof result !== 'string' || !/^0x[0-9a-fA-F]*$/.test(result)) {
     throw new Error('Robinhood RPC returned invalid data');
   }
-  return payload.result;
+  return result;
 }
 
 function decodeAbiString(encoded: string) {
@@ -100,27 +127,14 @@ function parseOnchainMetadata(tokenUri: string) {
 
 async function getOwnedCoattailTokenIds() {
   const tokenIds = new Set<string>(COATTAIL_FALLBACK_TOKEN_IDS);
-  const response = await fetch(ROBINHOOD_RPC, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'eth_getLogs',
-      params: [{
-        address: COATTAIL_BROKERS.address,
-        fromBlock: '0x0',
-        toBlock: 'latest',
-        topics: [TRANSFER_TOPIC, null, `0x${VAULT_WALLET.slice(2).padStart(64, '0')}`],
-      }],
-    }),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error('Robinhood transfer-log request failed');
-  const payload = await response.json() as { result?: unknown; error?: unknown };
-  if (payload.error || !Array.isArray(payload.result)) throw new Error('Robinhood transfer-log response was invalid');
-  payload.result.forEach((log) => {
+  const logs = await robinhoodJsonRpc<unknown[]>('eth_getLogs', [{
+    address: COATTAIL_BROKERS.address,
+    fromBlock: '0x0',
+    toBlock: 'latest',
+    topics: [TRANSFER_TOPIC, null, `0x${VAULT_WALLET.slice(2).padStart(64, '0')}`],
+  }]);
+  if (!Array.isArray(logs)) throw new Error('Robinhood transfer-log response was invalid');
+  logs.forEach((log) => {
     if (!log || typeof log !== 'object' || !Array.isArray((log as { topics?: unknown }).topics)) return;
     const topics = (log as { topics: unknown[] }).topics;
     const tokenTopic = topics[3];

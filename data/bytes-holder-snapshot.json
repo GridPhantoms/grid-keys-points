@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-13T09:22:26.462Z",
+  "generatedAt": "2026-09-20T09:21:48.086Z",
   "methodology": "Positive ERC-20 balances only. Ethereum is reconstructed from every finalized Transfer event. Avalanche uses the Routescan positive-balance ledger only after exact totalSupply parity and a direct finalized-chain check finds no Transfer events after Routescan’s latest indexed token transfer. Addresses are normalized to lowercase only for cross-chain union and hashing; wallet lists are not published.",
   "chains": {
     "ethereum": {
       "chainId": 1,
       "tokenContract": "0xa19f5264F7D7Be11c451C093D8f92592820Bea86",
       "method": "finalized-transfer-log-reconstruction",
-      "sourceBlock": 25967511,
-      "sourceBlockHash": "0xb4feb888142bc79f5a8a13b5d34d817da96c240db84c806641013879f1793fd7",
-      "asOf": "2026-09-13T09:07:35.000Z",
+      "sourceBlock": 26017723,
+      "sourceBlockHash": "0x7e0d5f7722d2b5093b6c54718bcf6405f22bdb029cef51ff70cf2f134f899fa4",
+      "asOf": "2026-09-20T09:07:35.000Z",
       "deploymentBlock": 17487665,
-      "holderCount": 8131,
-      "addressesSha256": "0b13f466f9cf415f7c2315f4c1c6aa7eecc139bf4b418e37370554760482c0bc",
-      "totalSupplyRaw": "5237355863483077274066877",
-      "balanceSumRaw": "5237355863483077274066877",
+      "holderCount": 8130,
+      "addressesSha256": "e96735f280e42556f8d425efe9ad22ccc08ec4c806d2ee6b8fdfb6094c24b3d8",
+      "totalSupplyRaw": "5238978706327935337756946",
+      "balanceSumRaw": "5238978706327935337756946",
       "evidence": {
-        "transferEventCount": 208844,
-        "logQueryCalls": 170,
+        "transferEventCount": 209080,
+        "logQueryCalls": 171,
         "logQueryRetries": 0
       }
     },
@@ -25,16 +25,16 @@
       "chainId": 43114,
       "tokenContract": "0x13af0Fe9eB35e91758B467f95cbc78e16FdD8B6b",
       "method": "routescan-positive-balance-ledger-with-direct-chain-parity-and-gap-check",
-      "sourceBlock": 95169926,
-      "sourceBlockHash": "0x4abfb0a8514212fc2d3e0cc3ecf12406c203f6f71ddc02bcdf926e7013785c19",
-      "asOf": "2026-09-13T09:21:19.000Z",
-      "holderCount": 936,
-      "addressesSha256": "f084c8e70e8f4cda35863bffdf0bc364b96a529e1f609a8fadb7d45e94ab86c2",
-      "totalSupplyRaw": "247784915708888773411587",
-      "balanceSumRaw": "247784915708888773411587",
-      "latestIndexedTransferBlock": 95169217,
-      "latestIndexedTransferBlockHash": "0x40bc424c4c5faecbe9594d9143929e44086008568a23daaab7734525b0274742",
-      "latestIndexedTransferAt": "2026-09-13T09:08:34.000Z",
+      "sourceBlock": 95739908,
+      "sourceBlockHash": "0xe0275e0310696a5abcc4e30fc65fd35431379dcd7b05c5f0d6bacdd6bc8131be",
+      "asOf": "2026-09-20T09:20:50.000Z",
+      "holderCount": 938,
+      "addressesSha256": "bcfb7f8f0bfb8bf3e132a04d6d58c11cd222ec973653032bbe51ed62a9b83479",
+      "totalSupplyRaw": "243653770462565043390416",
+      "balanceSumRaw": "243653770462565043390416",
+      "latestIndexedTransferBlock": 95734576,
+      "latestIndexedTransferBlockHash": "0x464615a375832de742d15aabd4caef50dc5668f3f1f437b61b5096cc989a324f",
+      "latestIndexedTransferAt": "2026-09-20T07:44:21.000Z",
       "evidence": {
         "pageCount": 10,
         "excludedNonpositiveRows": 0
@@ -42,9 +42,9 @@
     }
   },
   "crossChain": {
-    "uniqueHolderCount": 8792,
+    "uniqueHolderCount": 8793,
     "overlapCount": 275,
-    "addressesSha256": "bdc1cce7e6d44c524b8aa9205154547d17d945cca5b0dc09bc9fc2f442d165cd",
+    "addressesSha256": "5ba63db60763207a543954e6e9750f065c3bd857e059abbf694e845198d78c3c",
     "method": "lowercase Ethereum address union across the two validated positive-balance ledgers"
   }
 }

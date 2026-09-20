@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-19T06:20:37.220Z",
+  "generatedAt": "2026-09-20T06:21:02.637Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26009638,
-    "blockHash": "0x5ee24e7eab2fd0319ecd402b145367443e3dc415c3ce78a871137dff9102ebde",
-    "asOf": "2026-09-19T06:01:59.000Z"
+    "blockNumber": 26016798,
+    "blockHash": "0x4cbc84e88c02d8bd87fe30379b6bfe20610207228799958ee3d60d8f800c25fc",
+    "asOf": "2026-09-20T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
@@ -316,76 +316,76 @@
         },
         {
           "rank": 16,
+          "address": "0x36B465c53E9095EFA3B6cB023786B66413cBb3B5",
+          "count": 5,
+          "held": 5,
+          "staked": 0
+        },
+        {
+          "rank": 17,
           "address": "0x467A68f37A139b23987533305a1436dE19ED9FDb",
           "count": 5,
           "held": 0,
           "staked": 5
         },
         {
-          "rank": 17,
+          "rank": 18,
           "address": "0x5414fB1bf5b90F31BBde5e934f4d2C069D9dd8B7",
           "count": 5,
           "held": 5,
           "staked": 0
         },
         {
-          "rank": 18,
+          "rank": 19,
           "address": "0x552FE170E805b0D41EdE626c60b0423DaD3d1a4f",
           "count": 5,
           "held": 5,
           "staked": 0
         },
         {
-          "rank": 19,
+          "rank": 20,
           "address": "0x641daa44170D795982A54f05D0Fc94c3d6293c51",
           "count": 5,
           "held": 0,
           "staked": 5
         },
         {
-          "rank": 20,
+          "rank": 21,
           "address": "0x718622cF96Bf6B3cD7060b4A33bEF67bb171Dc65",
           "count": 5,
           "held": 0,
           "staked": 5
         },
         {
-          "rank": 21,
+          "rank": 22,
           "address": "0x9906aef940B5904bd4C93091fEe19398B1d302e7",
           "count": 5,
           "held": 0,
           "staked": 5
         },
         {
-          "rank": 22,
+          "rank": 23,
           "address": "0xbDE80a74D906bF7d09E73B7074F96Cb5a301F8B4",
           "count": 5,
           "held": 0,
           "staked": 5
         },
         {
-          "rank": 23,
+          "rank": 24,
           "address": "0xeA75E6B2A783866BAfC906De0E2F80dd40e55845",
           "count": 5,
           "held": 4,
           "staked": 1
         },
         {
-          "rank": 24,
+          "rank": 25,
           "address": "0xf386ef43736aF3251eb79adC839D1688A6cCBE8C",
           "count": 5,
           "held": 0,
           "staked": 5
-        },
-        {
-          "rank": 25,
-          "address": "0x04129A1aeC2b7C457e497E77Ef00c4700D2aebc8",
-          "count": 4,
-          "held": 0,
-          "staked": 4
         }
       ],
-      "topDigestSha256": "f2b4ff22d2eee8f16829e8506415308d6024ad9170e19fd38302a9c43af65f2a"
+      "topDigestSha256": "a579b2d5e0207750cf1f3deb0cf4dcc3820e096901772fb753c9203476e1f959"
     }
   },
   "s1HistoricalDistinctions": {

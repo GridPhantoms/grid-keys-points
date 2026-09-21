@@ -215,14 +215,14 @@ export default function RaffleTracker() {
           </>) : null}
         </div>
 
-        <div className="text-center mb-10 space-y-4">
-          <p className="text-zinc-300">Haven&apos;t entered?</p>
+        <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8 mb-10 text-center">
+          <h2 className="text-2xl font-semibold mb-6">Haven&apos;t entered?</h2>
           <p className="text-lg text-white">1 Exodus Key mint = 1 ticket</p>
           <a
             href="https://manifold.xyz/@gridphantoms/id/4067746032"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
+            className="text-cyan-400 hover:text-cyan-300 text-lg mt-4 inline-block"
           >
             Mint Exodus Key →
           </a>
@@ -231,7 +231,7 @@ export default function RaffleTracker() {
               href="https://discord.com/channels/1396395056587477012/1444817291286937735"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
+              className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
             >
               More details in Discord →
             </a>

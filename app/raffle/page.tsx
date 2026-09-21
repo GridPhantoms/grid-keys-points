@@ -245,15 +245,27 @@ export default function RaffleTracker() {
           </div>
         </div>
 
-        <div className="text-center mt-12">
-          <a 
-            href="https://x.com/gridphantoms/status/2062588855375544557?s=46" 
-            target="_blank" 
+        <div className="text-center mt-12 space-y-4">
+          <p className="text-zinc-300">Haven&apos;t entered?</p>
+          <p className="text-lg text-white">1 Exodus Key mint = 1 ticket</p>
+          <a
+            href="https://manifold.xyz/@gridphantoms/id/4067746032"
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline"
+            className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
           >
-            Raffle entry requirements can be found here →
+            Mint Exodus Key →
           </a>
+          <div>
+            <a 
+              href="https://x.com/gridphantoms/status/2062588855375544557?s=46" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 underline"
+            >
+              Raffle entry requirements can be found here →
+            </a>
+          </div>
         </div>
       </div>
 

@@ -215,6 +215,29 @@ export default function RaffleTracker() {
           </>) : null}
         </div>
 
+        <div className="text-center mb-10 space-y-4">
+          <p className="text-zinc-300">Haven&apos;t entered?</p>
+          <p className="text-lg text-white">1 Exodus Key mint = 1 ticket</p>
+          <a
+            href="https://manifold.xyz/@gridphantoms/id/4067746032"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
+          >
+            Mint Exodus Key →
+          </a>
+          <div>
+            <a
+              href="https://discord.com/channels/1396395056587477012/1444817291286937735"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
+            >
+              More details in Discord →
+            </a>
+          </div>
+        </div>
+
         {/* Entrant Ledger */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-1">Entrant Ledger</h2>
@@ -242,39 +265,6 @@ export default function RaffleTracker() {
                 </div>
               ))
             ) : null}
-          </div>
-        </div>
-
-        <div className="text-center mt-12 space-y-4">
-          <p className="text-zinc-300">Haven&apos;t entered?</p>
-          <p className="text-lg text-white">1 Exodus Key mint = 1 ticket</p>
-          <a
-            href="https://manifold.xyz/@gridphantoms/id/4067746032"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
-          >
-            Mint Exodus Key →
-          </a>
-          <div>
-            <a
-              href="https://discord.com/channels/1396395056587477012/1444817291286937735"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
-            >
-              More details in Discord →
-            </a>
-          </div>
-          <div>
-            <a 
-              href="https://x.com/gridphantoms/status/2062588855375544557?s=46" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-cyan-400 hover:text-cyan-300 underline"
-            >
-              Raffle entry requirements can be found here →
-            </a>
           </div>
         </div>
       </div>

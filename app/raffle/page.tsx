@@ -257,6 +257,16 @@ export default function RaffleTracker() {
             Mint Exodus Key →
           </a>
           <div>
+            <a
+              href="https://discord.com/channels/1396395056587477012/1444817291286937735"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 text-lg inline-block"
+            >
+              More details in Discord →
+            </a>
+          </div>
+          <div>
             <a 
               href="https://x.com/gridphantoms/status/2062588855375544557?s=46" 
               target="_blank" 

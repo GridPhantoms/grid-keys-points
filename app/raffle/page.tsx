@@ -105,11 +105,11 @@ export default function RaffleTracker() {
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 flex-1">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">Grid Phantoms Raffle Tracker</h1>
-        {/* Two Prizes Side-by-Side */}
+        {/* Prize cards */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8">Up for Raffle</h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* First Prize */}
             <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
               <Image 
@@ -151,6 +151,28 @@ export default function RaffleTracker() {
                 className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
               >
                 View on OpenSea →
+              </a>
+            </div>
+
+            {/* Prizes 3–7 */}
+            <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
+              <Image 
+                src="/images/third-prize-jack-8.jpg" 
+                alt="Five Jack Butcher $8 mints" 
+                width={1206} 
+                height={1127} 
+                className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+                priority
+              />
+              <p className="mt-6 font-semibold text-lg">Prizes 3–7</p>
+              <p className="text-xl">Jack Butcher $8 mint ×5</p>
+              <a 
+                href="https://x.com/ktrap/status/2101871759431491948?s=46" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
+              >
+                View on X →
               </a>
             </div>
           </div>

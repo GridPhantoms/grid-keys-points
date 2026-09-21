@@ -1,11 +1,11 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-09-20T06:21:02.637Z",
+  "generatedAt": "2026-09-21T06:21:01.393Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26016798,
-    "blockHash": "0x4cbc84e88c02d8bd87fe30379b6bfe20610207228799958ee3d60d8f800c25fc",
-    "asOf": "2026-09-20T06:01:59.000Z"
+    "blockNumber": 26023969,
+    "blockHash": "0x1cba8b0950cdaf3193636ffaf2d8898c6fcaafec9bc87c62a94d46b96f269d34",
+    "asOf": "2026-09-21T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "contracts": {
@@ -19,9 +19,9 @@
     "staker": "0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16"
   },
   "participantIndex": {
-    "baselineBlock": 25967511,
+    "baselineBlock": 26017691,
     "addressesChecked": 3322,
-    "deltaEvents": 24
+    "deltaEvents": 0
   },
   "verification": {
     "s1": {
@@ -33,7 +33,7 @@
       "activePositions": 1430
     },
     "s2": {
-      "transferEvents": 12922,
+      "transferEvents": 12925,
       "transferPages": 13,
       "reconstructedTokens": 3581,
       "ownerOfVerified": 3581,
@@ -248,10 +248,10 @@
     },
     "s2": {
       "supply": 3581,
-      "uniqueOwners": 2924,
-      "ownerPercentage": 81.65316950572465,
-      "rawCustodyOwnerCount": 1611,
-      "directHolderWallets": 1610,
+      "uniqueOwners": 2925,
+      "ownerPercentage": 81.68109466629433,
+      "rawCustodyOwnerCount": 1612,
+      "directHolderWallets": 1611,
       "activeStakerWallets": 1371,
       "directAndStakedOverlap": 57,
       "directTokens": 1894,

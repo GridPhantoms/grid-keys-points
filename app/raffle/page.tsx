@@ -5,7 +5,84 @@ import SiteFooter from '../components/SiteFooter';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
-type RaffleEntrant = { wallet: string; tickets: number; odds: number };
+type RaffleEntrant = {
+  wallet: string;
+  tickets: number;
+  firstPrizeOdds: number;
+  anyPrizeOdds: number;
+};
+
+const RAFFLE_PRIZE_COUNT = 7;
+
+// Exact wallet inclusion odds for sequential ticket draws. Wallets with the
+// same ticket count are symmetric; grouping them keeps the calculation small
+// while preserving the one-wallet-one-prize removal rule.
+function calculateAnyPrizeOdds(ticketCounts: number[], prizeCount: number) {
+  const groupedCounts = new Map<number, number>();
+
+  ticketCounts.forEach((tickets) => {
+    groupedCounts.set(tickets, (groupedCounts.get(tickets) || 0) + 1);
+  });
+
+  const classes = [...groupedCounts.entries()]
+    .map(([tickets, wallets]) => ({ tickets, wallets }))
+    .sort((a, b) => a.tickets - b.tickets);
+
+  type OddsState = { selected: number[]; probability: number };
+  let states = new Map<string, OddsState>();
+  const initialSelected = classes.map(() => 0);
+  states.set(initialSelected.join(','), { selected: initialSelected, probability: 1 });
+
+  const draws = Math.min(prizeCount, ticketCounts.length);
+
+  for (let draw = 0; draw < draws; draw += 1) {
+    const nextStates = new Map<string, OddsState>();
+
+    states.forEach(({ selected, probability }) => {
+      const remainingTicketWeight = classes.reduce(
+        (sum, ticketClass, index) =>
+          sum + (ticketClass.wallets - selected[index]) * ticketClass.tickets,
+        0
+      );
+
+      classes.forEach((ticketClass, index) => {
+        const remainingWallets = ticketClass.wallets - selected[index];
+        if (remainingWallets <= 0 || remainingTicketWeight <= 0) return;
+
+        const nextSelected = [...selected];
+        nextSelected[index] += 1;
+        const key = nextSelected.join(',');
+        const transitionProbability =
+          (remainingWallets * ticketClass.tickets) / remainingTicketWeight;
+        const nextProbability = probability * transitionProbability;
+        const existing = nextStates.get(key);
+
+        nextStates.set(key, {
+          selected: nextSelected,
+          probability: (existing?.probability || 0) + nextProbability,
+        });
+      });
+    });
+
+    states = nextStates;
+  }
+
+  const oddsByTicketCount = new Map<number, number>();
+
+  classes.forEach((ticketClass, index) => {
+    let expectedWinningWallets = 0;
+    states.forEach(({ selected, probability }) => {
+      expectedWinningWallets += selected[index] * probability;
+    });
+
+    oddsByTicketCount.set(
+      ticketClass.tickets,
+      (expectedWinningWallets / ticketClass.wallets) * 100
+    );
+  });
+
+  return oddsByTicketCount;
+}
 
 export default function RaffleTracker() {
   const [totalTickets, setTotalTickets] = useState<number | null>(null);
@@ -42,11 +119,17 @@ export default function RaffleTracker() {
 
         const total = Object.values(ownerMap).reduce((sum, qty) => sum + qty, 0);
 
+        const anyPrizeOddsByTicketCount = calculateAnyPrizeOdds(
+          Object.values(ownerMap),
+          RAFFLE_PRIZE_COUNT
+        );
+
         const sortedEntrants = Object.entries(ownerMap)
           .map(([wallet, tickets]) => ({
             wallet,
             tickets,
-            odds: total > 0 ? (tickets / total) * 100 : 0
+            firstPrizeOdds: total > 0 ? (tickets / total) * 100 : 0,
+            anyPrizeOdds: anyPrizeOddsByTicketCount.get(tickets) || 0,
           }))
           .sort((a, b) => b.tickets - a.tickets);
 
@@ -241,7 +324,17 @@ export default function RaffleTracker() {
         {/* Entrant Ledger */}
         <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-1">Entrant Ledger</h2>
-          <p className="text-sm text-zinc-500 mb-6">Snapshot: {lastSnapshot}</p>
+          <p className="text-sm text-zinc-500 mb-5">Snapshot: {lastSnapshot}</p>
+
+          <div className="border border-zinc-800 rounded-2xl p-4 mb-6 text-sm">
+            <p className="font-semibold text-white mb-1">Live wallet odds · 7 unique winners</p>
+            <p className="text-zinc-400">
+              “1st prize” is the wallet&apos;s chance in the first drawing. “Any prize” is its chance of winning once across all seven drawings. One wallet can win only one prize; after winning, all of its remaining tickets are removed.
+            </p>
+            <p className="text-xs text-zinc-500 mt-2">
+              Odds reflect the current snapshot and update as new tickets enter. Final odds are not locked until the raffle closes.
+            </p>
+          </div>
           
           <div className="space-y-4">
             {loading ? (
@@ -256,11 +349,20 @@ export default function RaffleTracker() {
                   <div className="font-mono text-sm text-zinc-400 break-all">
                     {entrant.wallet}
                   </div>
-                  <div className="flex flex-col items-end md:items-start">
+                  <div className="w-full md:w-auto md:min-w-[290px]">
                     <p className="text-3xl font-bold text-white">
                       {entrant.tickets} {entrant.tickets === 1 ? 'ticket' : 'tickets'}
                     </p>
-                    <p className="text-xs text-cyan-400">{entrant.odds.toFixed(2)}% odds</p>
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <div className="border border-zinc-800 rounded-xl px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wider text-zinc-500">1st prize</p>
+                        <p className="text-lg font-semibold text-white">{entrant.firstPrizeOdds.toFixed(2)}%</p>
+                      </div>
+                      <div className="border border-cyan-950 rounded-xl px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wider text-zinc-500">Any prize</p>
+                        <p className="text-lg font-semibold text-cyan-400">{entrant.anyPrizeOdds.toFixed(2)}%</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))

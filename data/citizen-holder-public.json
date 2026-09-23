@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-22T06:20:39.797Z",
+  "generatedAt": "2026-09-23T06:20:55.658Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26031111,
-    "blockHash": "0xf7ece11960a546e580a3bd4467b217011ef897568b8b439d022d34fbf7ca63a8",
-    "asOf": "2026-09-22T06:01:59.000Z"
+    "blockNumber": 26038263,
+    "blockHash": "0xdd7cc95043bcdde1c14cda536750a53acea8dbba4dc14883939fe322e8c46a0f",
+    "asOf": "2026-09-23T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
@@ -13,12 +13,12 @@
       "supply": 2039,
       "uniqueOwners": 1737,
       "ownerPercentage": 85.18881804806277,
-      "rawCustodyOwnerCount": 561,
-      "directHolderWallets": 560,
-      "activeStakerWallets": 1198,
+      "rawCustodyOwnerCount": 562,
+      "directHolderWallets": 561,
+      "activeStakerWallets": 1197,
       "directAndStakedOverlap": 21,
-      "directTokens": 609,
-      "stakedTokens": 1430,
+      "directTokens": 610,
+      "stakedTokens": 1429,
       "top": [
         {
           "rank": 1,
@@ -200,14 +200,14 @@
     },
     "s2": {
       "supply": 3581,
-      "uniqueOwners": 2924,
-      "ownerPercentage": 81.65316950572465,
-      "rawCustodyOwnerCount": 1612,
-      "directHolderWallets": 1611,
-      "activeStakerWallets": 1370,
+      "uniqueOwners": 2925,
+      "ownerPercentage": 81.68109466629433,
+      "rawCustodyOwnerCount": 1614,
+      "directHolderWallets": 1613,
+      "activeStakerWallets": 1369,
       "directAndStakedOverlap": 57,
-      "directTokens": 1895,
-      "stakedTokens": 1686,
+      "directTokens": 1896,
+      "stakedTokens": 1685,
       "top": [
         {
           "rank": 1,
@@ -396,8 +396,8 @@
       "percentageOfOriginalComponentUploads": 65.58139534883722,
       "locations": {
         "legacy": 66,
-        "v2": 323,
-        "staked": 880
+        "v2": 324,
+        "staked": 879
       }
     },
     "originalWallet": {

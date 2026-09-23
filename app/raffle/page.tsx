@@ -244,7 +244,15 @@ export default function RaffleTracker() {
                 alt="Five Jack Butcher CREDITS held by the Grid Phantoms Vault"
                 width={1206}
                 height={804}
-                className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
+                className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl md:hidden"
+                priority
+              />
+              <Image
+                src="/images/third-prize-credits-desktop.jpg"
+                alt="Five Jack Butcher CREDITS held by the Grid Phantoms Vault"
+                width={1206}
+                height={1508}
+                className="hidden md:block w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
                 priority
               />
               <p className="mt-6 font-semibold text-lg">Prizes 3–7</p>

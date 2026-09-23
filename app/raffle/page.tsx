@@ -239,23 +239,23 @@ export default function RaffleTracker() {
 
             {/* Prizes 3–7 */}
             <div className="text-center bg-zinc-950 border border-zinc-900 rounded-3xl p-6">
-              <Image 
-                src="/images/third-prize-jack-8.jpg" 
-                alt="Five Jack Butcher $8 mints" 
-                width={1206} 
-                height={1127} 
+              <Image
+                src="/images/third-prize-credits.jpg"
+                alt="Five Jack Butcher CREDITS held by the Grid Phantoms Vault"
+                width={1206}
+                height={804}
                 className="w-full max-w-[280px] mx-auto h-auto rounded-3xl shadow-2xl"
                 priority
               />
               <p className="mt-6 font-semibold text-lg">Prizes 3–7</p>
-              <p className="text-xl">Jack Butcher $8 mint ×5</p>
-              <a 
-                href="https://x.com/ktrap/status/2101871759431491948?s=46" 
-                target="_blank" 
+              <p className="text-xl">Jack Butcher CREDITS ×5</p>
+              <a
+                href="https://opensea.io/0x6a1bc919e847c12725904965e05971b818b47ad0"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:text-cyan-300 text-lg mt-2 inline-block"
               >
-                View on X →
+                View Vault on OpenSea →
               </a>
             </div>
           </div>

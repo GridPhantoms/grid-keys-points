@@ -40,7 +40,7 @@ type NftAsset = {
   image: string;
   openseaUrl: string;
 };
-type NftHoldings = { s1: number; s2: number; items: number; genesis: number; coattail: number; assets: NftAsset[] };
+type NftHoldings = { s1: number; s2: number; items: number; genesis: number; credits: number; coattail: number; assets: NftAsset[] };
 type KeySupply = { exodusMinted: number };
 type HolderSnapshot = { holderCount: number };
 type RewardArchive = {
@@ -245,6 +245,7 @@ function parseVaultSnapshot(text: string): VaultSnapshot {
     'neo_s2_floor_usd',
     'neo_items_cache_floor_usd',
     'grid_genesis_floor_usd',
+    'credits_floor_usd',
     'coattail_brokers_floor_usd',
     'coattail_broker_wallet_usd',
     'coattail_broker_wallet_token_count',
@@ -530,7 +531,7 @@ export default function EngineRoom() {
         loadSource('solana', async () => parseSolanaSnapshot(await fetchJson('/solana-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('nft', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
-          const counts = [data.s1, data.s2, data.items, data.genesis, data.coattail];
+          const counts = [data.s1, data.s2, data.items, data.genesis, data.credits, data.coattail];
           if (counts.some((count) => !Number.isInteger(count) || Number(count) < 0) || !Array.isArray(data.assets) || !isValidTimestamp(data.readAt)) {
             throw new Error('Invalid NFT holdings response');
           }
@@ -540,7 +541,7 @@ export default function EngineRoom() {
             return ['tokenId', 'collection', 'name', 'image', 'openseaUrl'].every((key) => typeof candidate[key] === 'string');
           });
           return {
-            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items), genesis: Number(data.genesis), coattail: Number(data.coattail), assets },
+            data: { s1: Number(data.s1), s2: Number(data.s2), items: Number(data.items), genesis: Number(data.genesis), credits: Number(data.credits), coattail: Number(data.coattail), assets },
             asOf: data.readAt,
           };
         }),
@@ -628,6 +629,7 @@ export default function EngineRoom() {
   const neoS2Count = nftHoldings?.s2 ?? 0;
   const neoItemsCount = nftHoldings?.items ?? 0;
   const genesisCount = nftHoldings?.genesis ?? 0;
+  const creditsCount = nftHoldings?.credits ?? 0;
   const coattailCount = nftHoldings?.coattail ?? 0;
   const nftAssets = nftHoldings?.assets ?? [];
   const nftValue =
@@ -635,6 +637,7 @@ export default function EngineRoom() {
     (neoS2Count * (snapshot.neo_s2_floor_usd || 0)) +
     (neoItemsCount * (snapshot.neo_items_cache_floor_usd || 0)) +
     (genesisCount * (snapshot.grid_genesis_floor_usd || 0)) +
+    (creditsCount * (snapshot.credits_floor_usd || 0)) +
     (coattailCount * (snapshot.coattail_brokers_floor_usd || 0));
 
   const coattailWalletValue = snapshot.coattail_broker_wallet_usd || 0;

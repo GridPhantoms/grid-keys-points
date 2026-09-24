@@ -69,12 +69,14 @@ test('Engine Room renders a sanitized, extensible NFT portfolio as responsive li
   assert.match(neoRoute, /s2: \{[^\n]+brand: 'NEO TOKYO S2'/);
   assert.match(neoRoute, /items: \{[^\n]+brand: 'S1 ITEM CACHE'/);
   assert.match(neoRoute, /genesis: \{[^\n]+brand: 'GRID PHANTOMS'/);
+  assert.match(neoRoute, /credits: \{[^\n]+address: '0x97630aa70ab14ed9883b41dafccbc11349723043'[^\n]+brand: 'CREDITS'[^\n]+owner: VAULT_WALLET/);
+  assert.doesNotMatch(neoRoute, /CREDITS_WALLET/);
   assert.match(neoRoute, /const COATTAIL_BROKERS = \{[^\n]+brand: 'COATTAIL BROKERS'/);
   assert.match(neoRoute, /COATTAIL_FALLBACK_TOKEN_IDS = \['1381', '1664'\]/);
   assert.match(neoRoute, /source: 'alchemy_eth_plus_robinhood_transfer_logs_and_rpc_verification'/);
   assert.match(neoRoute, /https:\/\/opensea\.io\/item\/robinhood\//);
   assert.match(neoRoute, /Genesis Key Card #\$\{tokenId\}/);
-  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3, coattail: 4 \}/);
+  assert.match(neoRoute, /const COLLECTION_ORDER = \{ s1: 0, s2: 1, items: 2, genesis: 3, credits: 4, coattail: 5 \}/);
   assert.match(neoRoute, /COLLECTION_ORDER\[a\.name\] - COLLECTION_ORDER\[b\.name\]/);
   assert.match(neoRoute, /const tokenId = cleanText\(nft\.tokenId\)/);
   assert.match(neoRoute, /collection: collection\.brand/);
@@ -94,11 +96,13 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
 
   assert.match(ui, /genesisCount \* \(snapshot\.grid_genesis_floor_usd \|\| 0\)/);
   assert.match(ui, /coattailCount \* \(snapshot\.coattail_brokers_floor_usd \|\| 0\)/);
+  assert.match(ui, /creditsCount \* \(snapshot\.credits_floor_usd \|\| 0\)/);
   assert.match(ui, /const coattailWalletValue = snapshot\.coattail_broker_wallet_usd \|\| 0/);
   assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ solanaTotalValue \+ nftValue \+ coattailWalletValue/);
   assert.match(ui, /finalized Solana wallet balances/);
   assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
   assert.match(generator, /coattail_brokers_floor_usd: 'coattailbrokers'/);
+  assert.match(generator, /credits_floor_usd: 'credits'/);
   assert.match(generator, /const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b'/);
   assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/assets/);
   assert.match(generator, /https:\/\/api\.robinhood\.com\/rhj\/prices\//);
@@ -111,6 +115,7 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(generator, /currentMultiplier/);
   assert.match(generator, /\['grid_genesis_floor_usd', formatValue\(values\.grid_genesis_floor_usd, 2\)\]/);
   assert.match(generator, /\['coattail_brokers_floor_usd', formatValue\(values\.coattail_brokers_floor_usd, 2\)\]/);
+  assert.match(generator, /\['credits_floor_usd', formatValue\(values\.credits_floor_usd, 2\)\]/);
   assert.match(generator, /\['coattail_broker_wallet_usd', formatValue\(values\.coattail_broker_wallet_usd, 2\)\]/);
   assert.match(generator, /\['coattail_broker_wallet_token_count', formatValue\(values\.coattail_broker_wallet_token_count, 0\)\]/);
   assert.match(ui, /const vaultValuePerKey = TOTAL_KEYS > 0 \? totalVaultValue \/ TOTAL_KEYS : 0/);

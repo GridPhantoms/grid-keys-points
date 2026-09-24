@@ -68,6 +68,7 @@ const OPENSEA_COLLECTIONS = {
   neo_s2_floor_usd: 'neotokyo-outer-citizens',
   neo_items_cache_floor_usd: 'neo-tokyo-part-3-item-caches',
   grid_genesis_floor_usd: 'grid-phantoms-genesis-keys',
+  credits_floor_usd: 'credits',
   coattail_brokers_floor_usd: 'coattailbrokers',
 };
 
@@ -520,6 +521,7 @@ function toCsv(values) {
     ['neo_s2_floor_usd', formatValue(values.neo_s2_floor_usd, 2)],
     ['neo_items_cache_floor_usd', formatValue(values.neo_items_cache_floor_usd, 2)],
     ['grid_genesis_floor_usd', formatValue(values.grid_genesis_floor_usd, 2)],
+    ['credits_floor_usd', formatValue(values.credits_floor_usd, 2)],
     ['coattail_brokers_floor_usd', formatValue(values.coattail_brokers_floor_usd, 2)],
     ['coattail_broker_wallet_usd', formatValue(values.coattail_broker_wallet_usd, 2)],
     ['coattail_broker_wallet_token_count', formatValue(values.coattail_broker_wallet_token_count, 0)],
@@ -645,6 +647,7 @@ async function main() {
   console.log(`neo_s2_floor_usd=${formatValue(values.neo_s2_floor_usd, 2)}`);
   console.log(`neo_items_cache_floor_usd=${formatValue(values.neo_items_cache_floor_usd, 2)}`);
   console.log(`grid_genesis_floor_usd=${formatValue(values.grid_genesis_floor_usd, 2)}`);
+  console.log(`credits_floor_usd=${formatValue(values.credits_floor_usd, 2)}`);
   console.log(`coattail_brokers_floor_usd=${formatValue(values.coattail_brokers_floor_usd, 2)}`);
   console.log(`coattail_broker_wallet_usd=${formatValue(values.coattail_broker_wallet_usd, 2)}`);
   console.log(`coattail_broker_wallet_token_count=${formatValue(values.coattail_broker_wallet_token_count, 0)}`);

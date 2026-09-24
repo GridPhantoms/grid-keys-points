@@ -3,10 +3,11 @@ import { getNftsForOwner } from '../_lib/alchemy-server';
 
 const VAULT_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
 const NFT_COLLECTIONS = {
-  s1: { address: '0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f', brand: 'NEO TOKYO S1' },
-  s2: { address: '0x4481507cc228fa19d203bd42110d679571f7912e', brand: 'NEO TOKYO S2' },
-  items: { address: '0xe7489ea1847395d7eead33e9c85fe327d513d249', brand: 'S1 ITEM CACHE' },
-  genesis: { address: '0xf26e168d053f6779f7172a1d0b0a6cd8d7446493', brand: 'GRID PHANTOMS' },
+  s1: { address: '0xb9951b43802dcf3ef5b14567cb17adf367ed1c0f', brand: 'NEO TOKYO S1', owner: VAULT_WALLET },
+  s2: { address: '0x4481507cc228fa19d203bd42110d679571f7912e', brand: 'NEO TOKYO S2', owner: VAULT_WALLET },
+  items: { address: '0xe7489ea1847395d7eead33e9c85fe327d513d249', brand: 'S1 ITEM CACHE', owner: VAULT_WALLET },
+  genesis: { address: '0xf26e168d053f6779f7172a1d0b0a6cd8d7446493', brand: 'GRID PHANTOMS', owner: VAULT_WALLET },
+  credits: { address: '0x97630aa70ab14ed9883b41dafccbc11349723043', brand: 'CREDITS', owner: VAULT_WALLET },
 } as const;
 const COATTAIL_BROKERS = { address: '0x1122db21998707f8c2ed8182734356c947fa5e98', brand: 'COATTAIL BROKERS' } as const;
 const COATTAIL_FALLBACK_TOKEN_IDS = ['1381', '1664'] as const;
@@ -36,7 +37,7 @@ type NftAsset = {
   openseaUrl: string;
 };
 type NftEntry = { name: NftCountName; count: number; assets: NftAsset[] };
-const COLLECTION_ORDER = { s1: 0, s2: 1, items: 2, genesis: 3, coattail: 4 } as const;
+const COLLECTION_ORDER = { s1: 0, s2: 1, items: 2, genesis: 3, credits: 4, coattail: 5 } as const;
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -57,6 +58,7 @@ function assetName(name: NftCountName, tokenId: string, metadataName: unknown) {
   if (name === 's1') return `Citizen #${tokenId}`;
   if (name === 's2') return `Outer Citizen #${tokenId}`;
   if (name === 'items') return cleanText(metadataName) || `Item Cache #${tokenId}`;
+  if (name === 'credits') return `Credit #${tokenId}`;
   if (name === 'coattail') return cleanText(metadataName) || `Coattail Broker #${tokenId}`;
   return `Genesis Key Card #${tokenId}`;
 }
@@ -175,7 +177,7 @@ export async function GET() {
   try {
     const ethereumEntries = (Object.entries(NFT_COLLECTIONS) as Array<[EthereumNftCountName, (typeof NFT_COLLECTIONS)[EthereumNftCountName]]>).map(
       async ([name, collection]): Promise<NftEntry> => {
-        const ownedNfts = await getNftsForOwner(VAULT_WALLET, collection.address, 100, true);
+        const ownedNfts = await getNftsForOwner(collection.owner, collection.address, 100, true);
         return {
           name,
           count: safeCount(ownedNfts.length),

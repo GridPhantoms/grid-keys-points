@@ -14,6 +14,25 @@ type SourceResult<T> = {
 };
 
 type VaultSnapshot = Record<string, number>;
+type SolanaAsset = {
+  assetId: string;
+  symbol: string;
+  displayName: string;
+  assetType: 'native' | 'spl';
+  contractOrMint: string;
+  quantity: number;
+  priceUsd: number;
+  marketValueUsd: number;
+  costBasisUsd: number;
+  basisQuantity: number;
+  averageEntryUsd: number | null;
+  verificationStatus: 'independently-verified';
+};
+type SolanaSnapshot = {
+  walletAddress: string;
+  totalUsd: number;
+  assets: SolanaAsset[];
+};
 type NftAsset = {
   tokenId: string;
   collection: string;
@@ -32,19 +51,27 @@ type RewardArchive = {
 
 type EngineSources = {
   vault: SourceResult<VaultSnapshot>;
+  solana: SourceResult<SolanaSnapshot>;
   nft: SourceResult<NftHoldings>;
   supply: SourceResult<KeySupply>;
   holders: SourceResult<HolderSnapshot>;
   rewards: SourceResult<RewardArchive>;
 };
 
-const SOURCE_CLASS_COUNT = 5;
+const SOURCE_CLASS_COUNT = 6;
 const SOURCE_TIMEOUT_MS = 12_000;
 const SOURCE_HTTP_ATTEMPTS = 3;
 const SOURCE_RETRY_DELAY_MS = 250;
 
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
+const SOLANA_WALLET = '3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S';
+const SOLANA_MINTS = new Map([
+  ['SOL', 'native'],
+  ['JUP', 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'],
+  ['PENGU', '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv'],
+  ['USDC', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
+]);
 const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
 
 
@@ -52,6 +79,7 @@ const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: nul
 
 const INITIAL_SOURCES: EngineSources = {
   vault: loadingSource<VaultSnapshot>(),
+  solana: loadingSource<SolanaSnapshot>(),
   nft: loadingSource<NftHoldings>(),
   supply: loadingSource<KeySupply>(),
   holders: loadingSource<HolderSnapshot>(),
@@ -124,6 +152,13 @@ function formatUsd(value: number) {
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: value > 0 && value < 1 ? 6 : 2,
+  });
+}
+
+function formatAssetQuantity(value: number) {
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: value >= 1000 ? 2 : value >= 1 ? 6 : 8,
   });
 }
 
@@ -216,6 +251,62 @@ function parseVaultSnapshot(text: string): VaultSnapshot {
   ];
   if (required.some((key) => !Number.isFinite(snapshot[key]))) throw new Error('Incomplete vault snapshot');
   return snapshot;
+}
+
+function parseSolanaSnapshot(data: Record<string, unknown>): { data: SolanaSnapshot; asOf: string } {
+  if (data.schemaVersion !== 1 || data.chain !== 'solana' || data.network !== 'mainnet-beta' || data.walletAddress !== SOLANA_WALLET) {
+    throw new Error('Invalid Solana snapshot identity');
+  }
+  if (!isValidTimestamp(data.capturedAt) || data.verificationStatus !== 'independently-verified' || !Array.isArray(data.assets)) {
+    throw new Error('Invalid Solana snapshot metadata');
+  }
+
+  const assets = data.assets.map((rawAsset) => {
+    if (!rawAsset || typeof rawAsset !== 'object' || Array.isArray(rawAsset)) throw new Error('Invalid Solana asset row');
+    const asset = rawAsset as Record<string, unknown>;
+    const symbol = typeof asset.symbol === 'string' ? asset.symbol : '';
+    const expectedMint = SOLANA_MINTS.get(symbol);
+    const quantity = Number(asset.quantity);
+    const priceUsd = Number(asset.priceUsd);
+    const marketValueUsd = Number(asset.marketValueUsd);
+    const costBasisUsd = Number(asset.costBasisUsd);
+    const basisQuantity = Number(asset.basisQuantity);
+    const averageEntryUsd = asset.averageEntryUsd === null ? null : Number(asset.averageEntryUsd);
+    if (!expectedMint || asset.contractOrMint !== expectedMint || !['native', 'spl'].includes(String(asset.assetType))) {
+      throw new Error('Unexpected Solana asset identifier');
+    }
+    if (![quantity, priceUsd, marketValueUsd, costBasisUsd, basisQuantity].every((value) => Number.isFinite(value) && value >= 0)) {
+      throw new Error('Invalid Solana asset value');
+    }
+    if (averageEntryUsd !== null && (!Number.isFinite(averageEntryUsd) || averageEntryUsd < 0)) throw new Error('Invalid Solana acquisition basis');
+    if (asset.verificationStatus !== 'independently-verified' || Math.abs((quantity * priceUsd) - marketValueUsd) > Math.max(0.02, marketValueUsd * 0.001)) {
+      throw new Error('Unverified or inconsistent Solana asset');
+    }
+    return {
+      assetId: String(asset.assetId),
+      symbol,
+      displayName: String(asset.displayName),
+      assetType: asset.assetType as 'native' | 'spl',
+      contractOrMint: String(asset.contractOrMint),
+      quantity,
+      priceUsd,
+      marketValueUsd,
+      costBasisUsd,
+      basisQuantity,
+      averageEntryUsd,
+      verificationStatus: 'independently-verified' as const,
+    };
+  });
+
+  if (assets.length !== SOLANA_MINTS.size || new Set(assets.map((asset) => asset.symbol)).size !== SOLANA_MINTS.size) {
+    throw new Error('Incomplete Solana asset allowlist');
+  }
+  const totalUsd = Number(data.totalUsd);
+  const calculatedTotal = assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0);
+  if (!Number.isFinite(totalUsd) || totalUsd < 0 || Math.abs(totalUsd - calculatedTotal) > Math.max(0.02, totalUsd * 0.001)) {
+    throw new Error('Invalid Solana snapshot total');
+  }
+  return { data: { walletAddress: SOLANA_WALLET, totalUsd, assets }, asOf: data.capturedAt };
 }
 
 function parseHolderSnapshot(text: string): HolderSnapshot {
@@ -427,7 +518,7 @@ export default function EngineRoom() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [vault, nft, supply, holders, rewards] = await Promise.all([
+      const [vault, solana, nft, supply, holders, rewards] = await Promise.all([
         loadSource('vault', async () => {
           const [text, metadata] = await Promise.all([
             fetchText('/vault-snapshot.csv'),
@@ -436,6 +527,7 @@ export default function EngineRoom() {
           if (!isValidTimestamp(metadata.capturedAt)) throw new Error('Invalid vault capture metadata');
           return { data: parseVaultSnapshot(text), asOf: metadata.capturedAt };
         }, 48 * 60 * 60 * 1000),
+        loadSource('solana', async () => parseSolanaSnapshot(await fetchJson('/solana-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('nft', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
           const counts = [data.s1, data.s2, data.items, data.genesis, data.coattail];
@@ -473,7 +565,7 @@ export default function EngineRoom() {
         })),
       ]);
 
-      if (!cancelled) setSources({ vault, nft, supply, holders, rewards });
+      if (!cancelled) setSources({ vault, solana, nft, supply, holders, rewards });
     };
 
     loadData();
@@ -481,6 +573,9 @@ export default function EngineRoom() {
   }, []);
 
   const snapshot = sources.vault.data ?? {};
+  const solanaSnapshot = sources.solana.data;
+  const solanaAssets = solanaSnapshot?.assets ?? [];
+  const solanaTotalValue = solanaSnapshot?.totalUsd ?? 0;
   const nftHoldings = sources.nft.data;
   const exodusMinted = sources.supply.data?.exodusMinted ?? 0;
   const liberatedSlaves = sources.holders.data?.holderCount ?? 0;
@@ -490,9 +585,9 @@ export default function EngineRoom() {
 
   // Dynamic Total Keys (on-demand Exodus minted count plus fixed Genesis supply)
   const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
-  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.nft);
+  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.solana, sources.nft);
   const totalKeysStatus = sources.supply.status;
-  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.nft, sources.supply);
+  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.solana, sources.nft, sources.supply);
   const rewardTotalStatus = sources.rewards.status;
   const rewardReferenceStatus = combineSourceStatuses(sources.rewards, sources.vault);
   const holderStatus = sources.holders.status;
@@ -543,7 +638,7 @@ export default function EngineRoom() {
     (coattailCount * (snapshot.coattail_brokers_floor_usd || 0));
 
   const coattailWalletValue = snapshot.coattail_broker_wallet_usd || 0;
-  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + nftValue + coattailWalletValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
+  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + solanaTotalValue + nftValue + coattailWalletValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
 
   const vaultValuePerKey = TOTAL_KEYS > 0 ? totalVaultValue / TOTAL_KEYS : 0;
 
@@ -587,6 +682,7 @@ export default function EngineRoom() {
           <summary><span>VIEW SOURCE &amp; EVIDENCE DETAILS</span><i aria-hidden="true">+</i></summary>
           <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
             <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
+            <SourceCard label="SOLANA WALLET" mode="FINALIZED RPC + JUPITER" timeKind="CAPTURED" source={sources.solana} />
             <SourceCard label="NFT HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.nft} />
             <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
             <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
@@ -609,7 +705,7 @@ export default function EngineRoom() {
             <article className="engine-metric engine-metric-primary">
               <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
-              <p className="engine-metric-note">DeBank portfolio, NFT floor values, Broker wallet tokenized stocks and the veBLACK position.</p>
+              <p className="engine-metric-note">DeBank EVM portfolio, finalized Solana wallet balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
               <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>
@@ -621,6 +717,29 @@ export default function EngineRoom() {
               <p className="engine-metric-value"><MetricState status={vaultValuePerKeyStatus}><AnimatedNumber value={vaultValuePerKey} prefix="$" duration={1600} decimals={true} ready={isSourceUsable(vaultValuePerKeyStatus)} /></MetricState></p>
               <p className="engine-metric-unit">TOTAL VALUE / TOTAL KEYS</p>
             </article>
+          </div>
+          <div className="engine-solana-wallet" aria-label="Solana wallet asset breakdown">
+            <div className="engine-solana-head">
+              <div><span>SOLANA WALLET</span><strong><MetricState status={sources.solana.status}>{formatUsd(solanaTotalValue)}</MetricState></strong></div>
+              <a href={`https://solscan.io/account/${SOLANA_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a>
+            </div>
+            {sources.solana.status === 'loading' ? (
+              <div className="engine-solana-state">LOADING FINALIZED BALANCES…</div>
+            ) : sources.solana.status === 'unavailable' ? (
+              <div className="engine-solana-state is-unavailable">SOLANA WALLET SNAPSHOT UNAVAILABLE</div>
+            ) : (
+              <div className="engine-solana-assets">
+                {solanaAssets.map((asset) => (
+                  <article key={asset.assetId}>
+                    <span>{asset.symbol}<small>{asset.assetType === 'native' ? 'NATIVE' : 'SPL'}</small></span>
+                    <strong>{formatAssetQuantity(asset.quantity)}</strong>
+                    <small>{formatUsd(asset.priceUsd)} EACH</small>
+                    <b>{formatUsd(asset.marketValueUsd)}</b>
+                  </article>
+                ))}
+              </div>
+            )}
+            <p>Finalized read-only balances · canonical mint allowlist · live Jupiter prices · independently verified</p>
           </div>
         </section>
 

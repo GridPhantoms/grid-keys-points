@@ -5,6 +5,7 @@ const { Interface } = require('ethers');
 
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
+const SOLANA_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'solana-vault-snapshot.json');
 const VEBLACK_BALANCE = 109840.99;
 const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b';
 const ROBINHOOD_CHAIN_ID = 4663;
@@ -16,6 +17,39 @@ const BALANCE_OF_SELECTOR = '70a08231';
 const MULTICALL3_INTERFACE = new Interface([
   'function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)',
 ]);
+
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const SOLANA_RPC_FALLBACK_URL = 'https://solana-rpc.publicnode.com';
+const SOLANA_MAINNET_GENESIS_HASH = '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
+const SOLANA_TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const SOLANA_WALLET = '3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S';
+const JUPITER_PRICE_URL = 'https://api.jup.ag/price/v3';
+const JUPITER_PRICE_FALLBACK_URL = 'https://lite-api.jup.ag/price/v3';
+const SOLANA_ASSETS = [
+  {
+    id: 'solana-native-sol', symbol: 'SOL', displayName: 'Solana', assetType: 'native',
+    contractOrMint: 'native', priceId: 'So11111111111111111111111111111111111111112',
+    basisQuantity: 17.479034959, costBasisUsd: 1979.192038, stage: 1, targetUsd: 1979.192038,
+  },
+  {
+    id: 'solana-spl-jup', symbol: 'JUP', displayName: 'Jupiter', assetType: 'spl',
+    contractOrMint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+    priceId: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+    basisQuantity: 1558.15795, costBasisUsd: 439.9, stage: 1, targetUsd: 439.9,
+  },
+  {
+    id: 'solana-spl-pengu', symbol: 'PENGU', displayName: 'Pudgy Penguins', assetType: 'spl',
+    contractOrMint: '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv',
+    priceId: '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv',
+    basisQuantity: 90862.36, costBasisUsd: 879.79, stage: 1, targetUsd: 879.79,
+  },
+  {
+    id: 'solana-spl-usdc', symbol: 'USDC', displayName: 'USD Coin', assetType: 'spl',
+    contractOrMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    priceId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    basisQuantity: 0, costBasisUsd: 0, stage: null, targetUsd: null,
+  },
+];
 
 const SOURCES = {
   black: 'https://api.dexscreener.com/latest/dex/pairs/avalanche/0x0d9fd6dd9b1ff55fb0a9bb0e5f1b6a2d65b741a3',
@@ -130,6 +164,144 @@ async function fetchText(url, label) {
     },
   });
   return res.text();
+}
+
+async function solanaRpc(method, params = []) {
+  const urls = [...new Set([SOLANA_RPC_URL, SOLANA_RPC_FALLBACK_URL])];
+  let lastError;
+  for (const [index, url] of urls.entries()) {
+    try {
+      const payload = await fetchJson(url, `Solana RPC ${method}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+      });
+      if (payload?.error || payload?.result === undefined) {
+        throw new Error(`Solana RPC ${method} returned an invalid response`);
+      }
+      return payload.result;
+    } catch (error) {
+      lastError = error;
+      if (index < urls.length - 1) console.warn(`Primary Solana RPC unavailable for ${method}; using the deterministic fallback.`);
+    }
+  }
+  throw lastError;
+}
+
+async function getJupiterPrices(priceIds) {
+  const query = `?ids=${priceIds.join(',')}`;
+  try {
+    return {
+      prices: await fetchJson(`${JUPITER_PRICE_URL}${query}`, 'Jupiter Solana prices'),
+      provider: 'Jupiter Price API V3',
+    };
+  } catch {
+    console.warn('Primary Jupiter Price API unavailable; using the compatible Lite API fallback.');
+    return {
+      prices: await fetchJson(`${JUPITER_PRICE_FALLBACK_URL}${query}`, 'Jupiter Lite Solana prices'),
+      provider: 'Jupiter Price API V3 (Lite fallback)',
+    };
+  }
+}
+
+function parseSolanaTokenBalances(result) {
+  const balances = new Map(SOLANA_ASSETS.filter((asset) => asset.assetType === 'spl').map((asset) => [asset.contractOrMint, 0]));
+  if (!Number.isSafeInteger(result?.context?.slot) || !Array.isArray(result?.value)) {
+    throw new Error('Solana token-account response is incomplete');
+  }
+
+  for (const account of result.value) {
+    const info = account?.account?.data?.parsed?.info;
+    const mint = info?.mint;
+    if (!balances.has(mint)) continue;
+    const quantity = Number.parseFloat(info?.tokenAmount?.uiAmountString);
+    if (!Number.isFinite(quantity) || quantity < 0) throw new Error(`Invalid Solana token balance for ${mint}`);
+    balances.set(mint, balances.get(mint) + quantity);
+  }
+  return { balances, slot: result.context.slot };
+}
+
+async function getSolanaVaultSnapshot() {
+  const genesisHash = await solanaRpc('getGenesisHash');
+  if (genesisHash !== SOLANA_MAINNET_GENESIS_HASH) throw new Error('Solana RPC is not mainnet-beta');
+
+  const tokenAccounts = await solanaRpc('getTokenAccountsByOwner', [
+    SOLANA_WALLET,
+    { programId: SOLANA_TOKEN_PROGRAM },
+    { encoding: 'jsonParsed', commitment: 'finalized' },
+  ]);
+  const parsedTokens = parseSolanaTokenBalances(tokenAccounts);
+  const nativeBalance = await solanaRpc('getBalance', [
+    SOLANA_WALLET,
+    { commitment: 'finalized' },
+  ]);
+  if (!Number.isSafeInteger(nativeBalance?.context?.slot) || !Number.isSafeInteger(nativeBalance?.value) || nativeBalance.value < 0) {
+    throw new Error('Solana native-balance response is incomplete');
+  }
+
+  const priceIds = SOLANA_ASSETS.map((asset) => asset.priceId);
+  const priceResult = await getJupiterPrices(priceIds);
+  const prices = priceResult.prices;
+  const highestBalanceSlot = Math.max(parsedTokens.slot, nativeBalance.context.slot);
+  const assets = SOLANA_ASSETS.map((asset) => {
+    const quote = prices?.[asset.priceId];
+    const priceUsd = Number(quote?.usdPrice);
+    const priceBlockId = Number(quote?.blockId);
+    if (!Number.isFinite(priceUsd) || priceUsd <= 0 || !Number.isSafeInteger(priceBlockId) || priceBlockId <= 0) {
+      throw new Error(`Jupiter price missing or invalid for ${asset.symbol}`);
+    }
+    if (highestBalanceSlot - priceBlockId > 10_000) throw new Error(`Jupiter price is stale for ${asset.symbol}`);
+
+    const quantity = asset.assetType === 'native'
+      ? nativeBalance.value / 1_000_000_000
+      : parsedTokens.balances.get(asset.contractOrMint) || 0;
+    return {
+      assetId: asset.id,
+      symbol: asset.symbol,
+      displayName: asset.displayName,
+      chain: 'solana',
+      network: 'mainnet-beta',
+      assetType: asset.assetType,
+      walletAddress: SOLANA_WALLET,
+      contractOrMint: asset.contractOrMint,
+      quantity,
+      priceUsd,
+      marketValueUsd: quantity * priceUsd,
+      costBasisUsd: asset.costBasisUsd,
+      basisQuantity: asset.basisQuantity,
+      averageEntryUsd: asset.basisQuantity > 0 ? asset.costBasisUsd / asset.basisQuantity : null,
+      verificationStatus: 'independently-verified',
+      balanceSource: 'solana-json-rpc-finalized',
+      priceSource: 'jupiter-price-v3',
+      priceBlockId,
+      stage: asset.stage,
+      targetUsd: asset.targetUsd,
+      deploymentProgress: asset.targetUsd ? Math.min(asset.costBasisUsd / asset.targetUsd, 1) : null,
+    };
+  });
+
+  return {
+    schemaVersion: 1,
+    chain: 'solana',
+    network: 'mainnet-beta',
+    walletAddress: SOLANA_WALLET,
+    capturedAt: '',
+    verificationStatus: 'independently-verified',
+    balanceSource: {
+      provider: 'Solana JSON-RPC',
+      commitment: 'finalized',
+      genesisHash,
+      tokenAccountsSlot: parsedTokens.slot,
+      nativeBalanceSlot: nativeBalance.context.slot,
+    },
+    priceSource: {
+      provider: priceResult.provider,
+      minBlockId: Math.min(...assets.map((asset) => asset.priceBlockId)),
+      maxBlockId: Math.max(...assets.map((asset) => asset.priceBlockId)),
+    },
+    assets,
+    totalUsd: assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0),
+  };
 }
 
 async function getDexScreenerPrice(url, label) {
@@ -323,6 +495,20 @@ function readExistingSnapshot() {
   return fs.readFileSync(VAULT_SNAPSHOT_PATH, 'utf8').replace(/\r\n/g, '\n').trim();
 }
 
+function readExistingSolanaSnapshot() {
+  if (!fs.existsSync(SOLANA_SNAPSHOT_PATH)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(SOLANA_SNAPSHOT_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function comparableSolanaSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return '';
+  return JSON.stringify({ ...snapshot, capturedAt: '' });
+}
+
 function toCsv(values) {
   const rows = [
     ['stat', 'value'],
@@ -384,7 +570,10 @@ async function collectValues(debankValue) {
       return [key, floorEth * ethUsd, floorEth];
     })
   );
-  const brokerWallet = await getCoattailBrokerWalletValue();
+  const [brokerWallet, solanaSnapshot] = await Promise.all([
+    getCoattailBrokerWalletValue(),
+    getSolanaVaultSnapshot(),
+  ]);
 
   const values = {
     debank_portfolio_usd: debankValue,
@@ -401,14 +590,14 @@ async function collectValues(debankValue) {
     floorsEth[key] = eth;
   }
 
-  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings };
+  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings, solanaSnapshot };
 }
 
 async function main() {
   const args = parseArgs(process.argv);
   const debank = args.debank ? parseNumber(args.debank, 'debank_portfolio_usd') : null;
 
-  const { values, ethUsd, floorsEth, brokerWalletHoldings } = await collectValues(debank ?? 0);
+  const { values, ethUsd, floorsEth, brokerWalletHoldings, solanaSnapshot } = await collectValues(debank ?? 0);
 
   if (args.preview || debank === null) {
     console.log('Vault snapshot source preview. No files were changed.');
@@ -423,6 +612,10 @@ async function main() {
     for (const holding of brokerWalletHoldings) {
       console.log(`  ${holding.symbol}: balance=${formatValue(holding.balance, 8)} price_usd=${formatValue(holding.priceUsd, 4)} value_usd=${formatValue(holding.valueUsd, 2)}`);
     }
+    console.log(`solana_wallet_usd=${formatValue(solanaSnapshot.totalUsd, 2)} (${solanaSnapshot.assets.length} allowlisted assets)`);
+    for (const asset of solanaSnapshot.assets) {
+      console.log(`  ${asset.symbol}: balance=${formatValue(asset.quantity, 9)} price_usd=${formatValue(asset.priceUsd, 8)} value_usd=${formatValue(asset.marketValueUsd, 2)}`);
+    }
     if (debank === null) {
       console.log('Missing debank_portfolio_usd. Re-run with --debank <usd_value> to update public/vault-snapshot.csv.');
     }
@@ -431,17 +624,21 @@ async function main() {
 
   const nextCsv = toCsv(values);
   const existingCsv = readExistingSnapshot();
-  if (existingCsv === nextCsv.trim()) {
+  const existingSolanaSnapshot = readExistingSolanaSnapshot();
+  if (existingCsv === nextCsv.trim() && comparableSolanaSnapshot(existingSolanaSnapshot) === comparableSolanaSnapshot(solanaSnapshot)) {
     console.log('No vault snapshot data changes; leaving Engine Room snapshot time unchanged.');
     return;
   }
 
-  fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
   const snapshotTime = formatUtcSnapshot();
+  solanaSnapshot.capturedAt = snapshotTime;
+  fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
+  fs.writeFileSync(SOLANA_SNAPSHOT_PATH, `${JSON.stringify(solanaSnapshot, null, 2)}\n`);
   updateVaultSnapshotMetadata(snapshotTime);
 
   console.log(`Updated ${path.relative(process.cwd(), VAULT_SNAPSHOT_PATH)}`);
   console.log(`Updated ${path.relative(process.cwd(), VAULT_METADATA_PATH)} capture time to ${snapshotTime}`);
+  console.log(`Updated ${path.relative(process.cwd(), SOLANA_SNAPSHOT_PATH)} at finalized Solana slot ${Math.max(solanaSnapshot.balanceSource.tokenAccountsSlot, solanaSnapshot.balanceSource.nativeBalanceSlot)}`);
   console.log(`black_price_usd=${formatValue(values.black_price_usd, 8)}`);
   console.log(`bytes_price_usd=${formatValue(values.bytes_price_usd, 8)}`);
   console.log(`neo_s1_floor_usd=${formatValue(values.neo_s1_floor_usd, 2)}`);

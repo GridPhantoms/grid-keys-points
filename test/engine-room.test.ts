@@ -95,8 +95,8 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(ui, /genesisCount \* \(snapshot\.grid_genesis_floor_usd \|\| 0\)/);
   assert.match(ui, /coattailCount \* \(snapshot\.coattail_brokers_floor_usd \|\| 0\)/);
   assert.match(ui, /const coattailWalletValue = snapshot\.coattail_broker_wallet_usd \|\| 0/);
-  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ nftValue \+ coattailWalletValue/);
-  assert.match(ui, /Broker wallet tokenized stocks/);
+  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ solanaTotalValue \+ nftValue \+ coattailWalletValue/);
+  assert.match(ui, /finalized Solana wallet balances/);
   assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
   assert.match(generator, /coattail_brokers_floor_usd: 'coattailbrokers'/);
   assert.match(generator, /const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b'/);
@@ -180,12 +180,13 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
 
   assert.match(ui, /type SourceStatus = 'loading' \| 'available' \| 'stale' \| 'unavailable'/);
   assert.match(ui, /type EvidenceClass = 'Observed' \| 'Calculated' \| 'Estimated' \| 'Projected'/);
-  assert.match(ui, /const SOURCE_CLASS_COUNT = 5/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 6/);
   assert.match(ui, /MIXED-SOURCE STATUS/);
   assert.match(ui, /SOURCE CLASSES LOADED/);
   assert.match(ui, /PAGE-LOAD SNAPSHOT/);
   assert.match(ui, /Reload to request updated source reads\./);
   assert.match(ui, /VAULT REFERENCES/);
+  assert.match(ui, /SOLANA WALLET/);
   assert.match(ui, /NFT HOLDINGS/);
   assert.match(ui, /KEY SUPPLY/);
   assert.match(ui, /HOLDER SNAPSHOT/);
@@ -213,6 +214,36 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
   assert.match(exodusRoute, /readAt: new Date\(\)\.toISOString\(\)/);
 });
 
+test('Engine Room Solana snapshot is canonical, finalized and acquisition-aware', async () => {
+  const [ui, generator, snapshotText] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../generate-vault-snapshot.js'),
+    read('../public/solana-vault-snapshot.json'),
+  ]);
+  const snapshot = JSON.parse(snapshotText);
+
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.chain, 'solana');
+  assert.equal(snapshot.network, 'mainnet-beta');
+  assert.equal(snapshot.walletAddress, '3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S');
+  assert.equal(snapshot.verificationStatus, 'independently-verified');
+  assert.equal(snapshot.balanceSource.commitment, 'finalized');
+  assert.equal(snapshot.balanceSource.genesisHash, '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d');
+  assert.match(snapshot.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  assert.deepEqual(snapshot.assets.map((asset: { symbol: string }) => asset.symbol), ['SOL', 'JUP', 'PENGU', 'USDC']);
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'JUP')?.contractOrMint, 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'PENGU')?.contractOrMint, '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'USDC')?.contractOrMint, 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+  assert.ok(snapshot.assets.every((asset: { quantity: number; priceUsd: number; marketValueUsd: number }) => asset.quantity >= 0 && asset.priceUsd > 0 && asset.marketValueUsd >= 0));
+  assert.ok(snapshot.assets.filter((asset: { symbol: string }) => asset.symbol !== 'USDC').every((asset: { costBasisUsd: number; basisQuantity: number }) => asset.costBasisUsd > 0 && asset.basisQuantity > 0));
+  assert.match(generator, /getTokenAccountsByOwner/);
+  assert.match(generator, /commitment: 'finalized'/);
+  assert.match(generator, /Jupiter Price API V3/);
+  assert.match(ui, /parseSolanaSnapshot/);
+  assert.match(ui, /solana-vault-snapshot\.json/);
+  assert.match(ui, /https:\/\/solscan\.io\/account\//);
+});
+
 test('Engine Room Phase 3 validates each source independently and fails metrics closed', async () => {
   const ui = await read('../app/engine/EngineRoom.tsx');
 
@@ -226,6 +257,7 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /new AbortController\(\)/);
   assert.match(ui, /controller\.abort\(\)/);
   assert.match(ui, /loadSource\('vault'/);
+  assert.match(ui, /loadSource\('solana'/);
   assert.match(ui, /loadSource\('nft'/);
   assert.match(ui, /loadSource\('supply'/);
   assert.match(ui, /loadSource\('holders'/);
@@ -338,7 +370,7 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
   assert.match(css, /\.engine-output-heading\{[^}]*margin-bottom:14px/);
   assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
-  assert.match(ui, /DeBank portfolio, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
+  assert.match(ui, /DeBank EVM portfolio, finalized Solana wallet balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
   assert.doesNotMatch(ui, /Neo Tokyo asset references/);
 });
 

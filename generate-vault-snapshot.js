@@ -6,6 +6,7 @@ const { Interface } = require('ethers');
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
 const SOLANA_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'solana-vault-snapshot.json');
+const HYPERCORE_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'hypercore-vault-snapshot.json');
 const VEBLACK_BALANCE = 109840.99;
 const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b';
 const ROBINHOOD_CHAIN_ID = 4663;
@@ -48,6 +49,21 @@ const SOLANA_ASSETS = [
     contractOrMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     priceId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     basisQuantity: 0, costBasisUsd: 0, stage: null, targetUsd: null,
+  },
+];
+
+const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
+const HYPERCORE_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
+const HYPE_TOKEN_INDEX = 150;
+const HYPE_SPOT_MARKET = '@107';
+const HYPERCORE_ASSETS = [
+  {
+    id: 'hypercore-spot-hype', symbol: 'HYPE', displayName: 'Hyperliquid', tokenIndex: HYPE_TOKEN_INDEX,
+    basisQuantity: 11.71549952, costBasisUsd: 1095.82, stage: 1, targetUsd: 1099.74,
+  },
+  {
+    id: 'hypercore-spot-usdc', symbol: 'USDC', displayName: 'USD Coin', tokenIndex: 0,
+    basisQuantity: 1.56, costBasisUsd: 1.56, stage: null, targetUsd: null,
   },
 ];
 
@@ -305,6 +321,97 @@ async function getSolanaVaultSnapshot() {
   };
 }
 
+async function hyperliquidInfo(type, payload = {}) {
+  return fetchJson(HYPERLIQUID_INFO_URL, `Hyperliquid ${type}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type, ...payload }),
+  });
+}
+
+async function getHypercoreVaultSnapshot() {
+  const [state, metadataResponse, mids] = await Promise.all([
+    hyperliquidInfo('spotClearinghouseState', { user: HYPERCORE_WALLET }),
+    hyperliquidInfo('spotMetaAndAssetCtxs'),
+    hyperliquidInfo('allMids'),
+  ]);
+
+  if (!Array.isArray(state?.balances) || !Array.isArray(metadataResponse) || metadataResponse.length < 2 || !mids || typeof mids !== 'object') {
+    throw new Error('Hyperliquid spot response is incomplete');
+  }
+  const metadata = metadataResponse[0];
+  const hypeToken = Array.isArray(metadata?.tokens)
+    ? metadata.tokens.find((token) => token?.index === HYPE_TOKEN_INDEX)
+    : null;
+  if (hypeToken?.name !== 'HYPE' || hypeToken?.fullName !== 'Hyperliquid') {
+    throw new Error('Hyperliquid HYPE token identity mismatch');
+  }
+  const hypeMarket = Array.isArray(metadata?.universe)
+    ? metadata.universe.find((market) => market?.name === HYPE_SPOT_MARKET)
+    : null;
+  if (!hypeMarket || !Array.isArray(hypeMarket.tokens) || hypeMarket.tokens.length !== 2 || hypeMarket.tokens[0] !== HYPE_TOKEN_INDEX || hypeMarket.tokens[1] !== 0) {
+    throw new Error('Hyperliquid HYPE/USDC market identity mismatch');
+  }
+
+  const hypeMid = Number.parseFloat(mids[HYPE_SPOT_MARKET]);
+  if (!Number.isFinite(hypeMid) || hypeMid <= 0) throw new Error('Hyperliquid HYPE midpoint is invalid');
+
+  const assets = HYPERCORE_ASSETS.map((asset) => {
+    const balance = state.balances.find((row) => row?.coin === asset.symbol && row?.token === asset.tokenIndex);
+    const quantity = Number.parseFloat(balance?.total);
+    const hold = Number.parseFloat(balance?.hold);
+    if (!Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(hold) || hold < 0 || hold > quantity) {
+      throw new Error(`Hyperliquid ${asset.symbol} balance is invalid`);
+    }
+    const priceUsd = asset.symbol === 'HYPE' ? hypeMid : 1;
+    return {
+      assetId: asset.id,
+      symbol: asset.symbol,
+      displayName: asset.displayName,
+      venue: 'hypercore',
+      network: 'mainnet',
+      assetType: 'spot',
+      walletAddress: HYPERCORE_WALLET,
+      tokenIndex: asset.tokenIndex,
+      quantity,
+      hold,
+      available: quantity - hold,
+      priceUsd,
+      marketValueUsd: quantity * priceUsd,
+      costBasisUsd: asset.costBasisUsd,
+      basisQuantity: asset.basisQuantity,
+      averageEntryUsd: asset.basisQuantity > 0 ? asset.costBasisUsd / asset.basisQuantity : null,
+      verificationStatus: 'independently-verified',
+      balanceSource: 'hyperliquid-spot-clearinghouse-state',
+      priceSource: asset.symbol === 'HYPE' ? `hyperliquid-all-mids-${HYPE_SPOT_MARKET}` : 'usd-par',
+      stage: asset.stage,
+      targetUsd: asset.targetUsd,
+      deploymentProgress: asset.targetUsd ? Math.min(asset.costBasisUsd / asset.targetUsd, 1) : null,
+    };
+  });
+
+  return {
+    schemaVersion: 1,
+    venue: 'hypercore',
+    network: 'mainnet',
+    walletAddress: HYPERCORE_WALLET,
+    capturedAt: '',
+    verificationStatus: 'independently-verified',
+    balanceSource: {
+      provider: 'Hyperliquid Info API',
+      requestType: 'spotClearinghouseState',
+    },
+    priceSource: {
+      provider: 'Hyperliquid Info API',
+      requestType: 'allMids',
+      market: HYPE_SPOT_MARKET,
+      quoteAsset: 'USDC',
+    },
+    assets,
+    totalUsd: assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0),
+  };
+}
+
 async function getDexScreenerPrice(url, label) {
   const json = await fetchJson(url, label);
   const price = Number.parseFloat(json?.pair?.priceUsd);
@@ -505,7 +612,16 @@ function readExistingSolanaSnapshot() {
   }
 }
 
-function comparableSolanaSnapshot(snapshot) {
+function readExistingHypercoreSnapshot() {
+  if (!fs.existsSync(HYPERCORE_SNAPSHOT_PATH)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(HYPERCORE_SNAPSHOT_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function comparableTimedSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return '';
   return JSON.stringify({ ...snapshot, capturedAt: '' });
 }
@@ -572,9 +688,10 @@ async function collectValues(debankValue) {
       return [key, floorEth * ethUsd, floorEth];
     })
   );
-  const [brokerWallet, solanaSnapshot] = await Promise.all([
+  const [brokerWallet, solanaSnapshot, hypercoreSnapshot] = await Promise.all([
     getCoattailBrokerWalletValue(),
     getSolanaVaultSnapshot(),
+    getHypercoreVaultSnapshot(),
   ]);
 
   const values = {
@@ -592,14 +709,14 @@ async function collectValues(debankValue) {
     floorsEth[key] = eth;
   }
 
-  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings, solanaSnapshot };
+  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings, solanaSnapshot, hypercoreSnapshot };
 }
 
 async function main() {
   const args = parseArgs(process.argv);
   const debank = args.debank ? parseNumber(args.debank, 'debank_portfolio_usd') : null;
 
-  const { values, ethUsd, floorsEth, brokerWalletHoldings, solanaSnapshot } = await collectValues(debank ?? 0);
+  const { values, ethUsd, floorsEth, brokerWalletHoldings, solanaSnapshot, hypercoreSnapshot } = await collectValues(debank ?? 0);
 
   if (args.preview || debank === null) {
     console.log('Vault snapshot source preview. No files were changed.');
@@ -618,6 +735,10 @@ async function main() {
     for (const asset of solanaSnapshot.assets) {
       console.log(`  ${asset.symbol}: balance=${formatValue(asset.quantity, 9)} price_usd=${formatValue(asset.priceUsd, 8)} value_usd=${formatValue(asset.marketValueUsd, 2)}`);
     }
+    console.log(`hypercore_wallet_usd=${formatValue(hypercoreSnapshot.totalUsd, 2)} (${hypercoreSnapshot.assets.length} verified spot assets)`);
+    for (const asset of hypercoreSnapshot.assets) {
+      console.log(`  ${asset.symbol}: balance=${formatValue(asset.quantity, 9)} hold=${formatValue(asset.hold, 9)} price_usd=${formatValue(asset.priceUsd, 8)} value_usd=${formatValue(asset.marketValueUsd, 2)}`);
+    }
     if (debank === null) {
       console.log('Missing debank_portfolio_usd. Re-run with --debank <usd_value> to update public/vault-snapshot.csv.');
     }
@@ -627,20 +748,28 @@ async function main() {
   const nextCsv = toCsv(values);
   const existingCsv = readExistingSnapshot();
   const existingSolanaSnapshot = readExistingSolanaSnapshot();
-  if (existingCsv === nextCsv.trim() && comparableSolanaSnapshot(existingSolanaSnapshot) === comparableSolanaSnapshot(solanaSnapshot)) {
+  const existingHypercoreSnapshot = readExistingHypercoreSnapshot();
+  if (
+    existingCsv === nextCsv.trim()
+    && comparableTimedSnapshot(existingSolanaSnapshot) === comparableTimedSnapshot(solanaSnapshot)
+    && comparableTimedSnapshot(existingHypercoreSnapshot) === comparableTimedSnapshot(hypercoreSnapshot)
+  ) {
     console.log('No vault snapshot data changes; leaving Engine Room snapshot time unchanged.');
     return;
   }
 
   const snapshotTime = formatUtcSnapshot();
   solanaSnapshot.capturedAt = snapshotTime;
+  hypercoreSnapshot.capturedAt = snapshotTime;
   fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
   fs.writeFileSync(SOLANA_SNAPSHOT_PATH, `${JSON.stringify(solanaSnapshot, null, 2)}\n`);
+  fs.writeFileSync(HYPERCORE_SNAPSHOT_PATH, `${JSON.stringify(hypercoreSnapshot, null, 2)}\n`);
   updateVaultSnapshotMetadata(snapshotTime);
 
   console.log(`Updated ${path.relative(process.cwd(), VAULT_SNAPSHOT_PATH)}`);
   console.log(`Updated ${path.relative(process.cwd(), VAULT_METADATA_PATH)} capture time to ${snapshotTime}`);
   console.log(`Updated ${path.relative(process.cwd(), SOLANA_SNAPSHOT_PATH)} at finalized Solana slot ${Math.max(solanaSnapshot.balanceSource.tokenAccountsSlot, solanaSnapshot.balanceSource.nativeBalanceSlot)}`);
+  console.log(`Updated ${path.relative(process.cwd(), HYPERCORE_SNAPSHOT_PATH)} with ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').quantity, 8)} HYPE at ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').priceUsd, 4)} USD`);
   console.log(`black_price_usd=${formatValue(values.black_price_usd, 8)}`);
   console.log(`bytes_price_usd=${formatValue(values.bytes_price_usd, 8)}`);
   console.log(`neo_s1_floor_usd=${formatValue(values.neo_s1_floor_usd, 2)}`);

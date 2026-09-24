@@ -33,6 +33,26 @@ type SolanaSnapshot = {
   totalUsd: number;
   assets: SolanaAsset[];
 };
+type HypercoreAsset = {
+  assetId: string;
+  symbol: string;
+  displayName: string;
+  assetType: 'spot';
+  tokenIndex: number;
+  quantity: number;
+  hold: number;
+  priceUsd: number;
+  marketValueUsd: number;
+  costBasisUsd: number;
+  basisQuantity: number;
+  averageEntryUsd: number | null;
+  verificationStatus: 'independently-verified';
+};
+type HypercoreSnapshot = {
+  walletAddress: string;
+  totalUsd: number;
+  assets: HypercoreAsset[];
+};
 type NftAsset = {
   tokenId: string;
   collection: string;
@@ -52,13 +72,14 @@ type RewardArchive = {
 type EngineSources = {
   vault: SourceResult<VaultSnapshot>;
   solana: SourceResult<SolanaSnapshot>;
+  hypercore: SourceResult<HypercoreSnapshot>;
   nft: SourceResult<NftHoldings>;
   supply: SourceResult<KeySupply>;
   holders: SourceResult<HolderSnapshot>;
   rewards: SourceResult<RewardArchive>;
 };
 
-const SOURCE_CLASS_COUNT = 6;
+const SOURCE_CLASS_COUNT = 7;
 const SOURCE_TIMEOUT_MS = 12_000;
 const SOURCE_HTTP_ATTEMPTS = 3;
 const SOURCE_RETRY_DELAY_MS = 250;
@@ -66,11 +87,16 @@ const SOURCE_RETRY_DELAY_MS = 250;
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
 const SOLANA_WALLET = '3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S';
+const HYPERCORE_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
 const SOLANA_MINTS = new Map([
   ['SOL', 'native'],
   ['JUP', 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'],
   ['PENGU', '2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv'],
   ['USDC', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
+]);
+const HYPERCORE_TOKENS = new Map([
+  ['HYPE', 150],
+  ['USDC', 0],
 ]);
 const GENESIS_LAUNCH = new Date('2025-10-09T16:03:47Z').getTime();
 
@@ -80,6 +106,7 @@ const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: nul
 const INITIAL_SOURCES: EngineSources = {
   vault: loadingSource<VaultSnapshot>(),
   solana: loadingSource<SolanaSnapshot>(),
+  hypercore: loadingSource<HypercoreSnapshot>(),
   nft: loadingSource<NftHoldings>(),
   supply: loadingSource<KeySupply>(),
   holders: loadingSource<HolderSnapshot>(),
@@ -310,6 +337,65 @@ function parseSolanaSnapshot(data: Record<string, unknown>): { data: SolanaSnaps
   return { data: { walletAddress: SOLANA_WALLET, totalUsd, assets }, asOf: data.capturedAt };
 }
 
+function parseHypercoreSnapshot(data: Record<string, unknown>): { data: HypercoreSnapshot; asOf: string } {
+  if (data.schemaVersion !== 1 || data.venue !== 'hypercore' || data.network !== 'mainnet' || data.walletAddress !== HYPERCORE_WALLET) {
+    throw new Error('Invalid HyperCore snapshot identity');
+  }
+  if (!isValidTimestamp(data.capturedAt) || data.verificationStatus !== 'independently-verified' || !Array.isArray(data.assets)) {
+    throw new Error('Invalid HyperCore snapshot metadata');
+  }
+
+  const assets = data.assets.map((rawAsset) => {
+    if (!rawAsset || typeof rawAsset !== 'object' || Array.isArray(rawAsset)) throw new Error('Invalid HyperCore asset row');
+    const asset = rawAsset as Record<string, unknown>;
+    const symbol = typeof asset.symbol === 'string' ? asset.symbol : '';
+    const expectedTokenIndex = HYPERCORE_TOKENS.get(symbol);
+    const tokenIndex = Number(asset.tokenIndex);
+    const quantity = Number(asset.quantity);
+    const hold = Number(asset.hold);
+    const priceUsd = Number(asset.priceUsd);
+    const marketValueUsd = Number(asset.marketValueUsd);
+    const costBasisUsd = Number(asset.costBasisUsd);
+    const basisQuantity = Number(asset.basisQuantity);
+    const averageEntryUsd = asset.averageEntryUsd === null ? null : Number(asset.averageEntryUsd);
+    if (expectedTokenIndex === undefined || tokenIndex !== expectedTokenIndex || asset.assetType !== 'spot') {
+      throw new Error('Unexpected HyperCore asset identifier');
+    }
+    if (![quantity, hold, priceUsd, marketValueUsd, costBasisUsd, basisQuantity].every((value) => Number.isFinite(value) && value >= 0) || priceUsd <= 0 || hold > quantity) {
+      throw new Error('Invalid HyperCore asset value');
+    }
+    if (averageEntryUsd !== null && (!Number.isFinite(averageEntryUsd) || averageEntryUsd < 0)) throw new Error('Invalid HyperCore acquisition basis');
+    if (asset.verificationStatus !== 'independently-verified' || Math.abs((quantity * priceUsd) - marketValueUsd) > Math.max(0.02, marketValueUsd * 0.001)) {
+      throw new Error('Unverified or inconsistent HyperCore asset');
+    }
+    return {
+      assetId: String(asset.assetId),
+      symbol,
+      displayName: String(asset.displayName),
+      assetType: 'spot' as const,
+      tokenIndex,
+      quantity,
+      hold,
+      priceUsd,
+      marketValueUsd,
+      costBasisUsd,
+      basisQuantity,
+      averageEntryUsd,
+      verificationStatus: 'independently-verified' as const,
+    };
+  });
+
+  if (assets.length !== HYPERCORE_TOKENS.size || new Set(assets.map((asset) => asset.symbol)).size !== HYPERCORE_TOKENS.size) {
+    throw new Error('Incomplete HyperCore asset allowlist');
+  }
+  const totalUsd = Number(data.totalUsd);
+  const calculatedTotal = assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0);
+  if (!Number.isFinite(totalUsd) || totalUsd < 0 || Math.abs(totalUsd - calculatedTotal) > Math.max(0.02, totalUsd * 0.001)) {
+    throw new Error('Invalid HyperCore snapshot total');
+  }
+  return { data: { walletAddress: HYPERCORE_WALLET, totalUsd, assets }, asOf: data.capturedAt };
+}
+
 function parseHolderSnapshot(text: string): HolderSnapshot {
   const lines = text.trim().split('\n').filter(Boolean);
   if (lines[0]?.trim() !== 'wallet,genesis_qty,exodus_qty') throw new Error('Invalid holder snapshot header');
@@ -519,7 +605,7 @@ export default function EngineRoom() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [vault, solana, nft, supply, holders, rewards] = await Promise.all([
+      const [vault, solana, hypercore, nft, supply, holders, rewards] = await Promise.all([
         loadSource('vault', async () => {
           const [text, metadata] = await Promise.all([
             fetchText('/vault-snapshot.csv'),
@@ -529,6 +615,7 @@ export default function EngineRoom() {
           return { data: parseVaultSnapshot(text), asOf: metadata.capturedAt };
         }, 48 * 60 * 60 * 1000),
         loadSource('solana', async () => parseSolanaSnapshot(await fetchJson('/solana-vault-snapshot.json')), 48 * 60 * 60 * 1000),
+        loadSource('hypercore', async () => parseHypercoreSnapshot(await fetchJson('/hypercore-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('nft', async () => {
           const data = await fetchJson('/api/neo-vault-counts');
           const counts = [data.s1, data.s2, data.items, data.genesis, data.credits, data.coattail];
@@ -566,7 +653,7 @@ export default function EngineRoom() {
         })),
       ]);
 
-      if (!cancelled) setSources({ vault, solana, nft, supply, holders, rewards });
+      if (!cancelled) setSources({ vault, solana, hypercore, nft, supply, holders, rewards });
     };
 
     loadData();
@@ -577,6 +664,9 @@ export default function EngineRoom() {
   const solanaSnapshot = sources.solana.data;
   const solanaAssets = solanaSnapshot?.assets ?? [];
   const solanaTotalValue = solanaSnapshot?.totalUsd ?? 0;
+  const hypercoreSnapshot = sources.hypercore.data;
+  const hypercoreAssets = hypercoreSnapshot?.assets ?? [];
+  const hypercoreTotalValue = hypercoreSnapshot?.totalUsd ?? 0;
   const nftHoldings = sources.nft.data;
   const exodusMinted = sources.supply.data?.exodusMinted ?? 0;
   const liberatedSlaves = sources.holders.data?.holderCount ?? 0;
@@ -586,9 +676,9 @@ export default function EngineRoom() {
 
   // Dynamic Total Keys (on-demand Exodus minted count plus fixed Genesis supply)
   const TOTAL_KEYS = TOTAL_GENESIS_KEYS + exodusMinted;
-  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.solana, sources.nft);
+  const vaultValueStatus = combineSourceStatuses(sources.vault, sources.solana, sources.hypercore, sources.nft);
   const totalKeysStatus = sources.supply.status;
-  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.solana, sources.nft, sources.supply);
+  const vaultValuePerKeyStatus = combineSourceStatuses(sources.vault, sources.solana, sources.hypercore, sources.nft, sources.supply);
   const rewardTotalStatus = sources.rewards.status;
   const rewardReferenceStatus = combineSourceStatuses(sources.rewards, sources.vault);
   const holderStatus = sources.holders.status;
@@ -641,7 +731,7 @@ export default function EngineRoom() {
     (coattailCount * (snapshot.coattail_brokers_floor_usd || 0));
 
   const coattailWalletValue = snapshot.coattail_broker_wallet_usd || 0;
-  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + solanaTotalValue + nftValue + coattailWalletValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
+  const totalVaultValue = (snapshot.debank_portfolio_usd || 0) + solanaTotalValue + hypercoreTotalValue + nftValue + coattailWalletValue + ((snapshot.veblack_balance || 0) * (snapshot.black_price_usd || 0));
 
   const vaultValuePerKey = TOTAL_KEYS > 0 ? totalVaultValue / TOTAL_KEYS : 0;
 
@@ -686,6 +776,7 @@ export default function EngineRoom() {
           <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
             <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
             <SourceCard label="SOLANA WALLET" mode="FINALIZED RPC + JUPITER" timeKind="CAPTURED" source={sources.solana} />
+            <SourceCard label="HYPERCORE WALLET" mode="HYPERLIQUID SPOT API" timeKind="CAPTURED" source={sources.hypercore} />
             <SourceCard label="NFT HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.nft} />
             <SourceCard label="KEY SUPPLY" mode="ON-DEMAND ONCHAIN INDEX" timeKind="CHECKED" source={sources.supply} />
             <SourceCard label="HOLDER SNAPSHOT" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.holders} />
@@ -708,7 +799,7 @@ export default function EngineRoom() {
             <article className="engine-metric engine-metric-primary">
               <div className="engine-metric-topline"><span>VALUE OF SAKURA&apos;S VAULT</span><EvidenceBadge classification="Estimated" /></div>
               <p className="engine-metric-value engine-cyan"><MetricState status={vaultValueStatus}><AnimatedNumber value={totalVaultValue} prefix="$" duration={1800} decimals={true} ready={isSourceUsable(vaultValueStatus)} /></MetricState></p>
-              <p className="engine-metric-note">DeBank EVM portfolio, finalized Solana wallet balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position.</p>
+              <p className="engine-metric-note">DeBank EVM portfolio, finalized Solana wallet balances, HyperCore spot balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position.</p>
             </article>
             <article className="engine-metric">
               <div className="engine-metric-topline"><span>TOTAL KEYS</span><EvidenceBadge classification="Calculated" /></div>
@@ -743,6 +834,29 @@ export default function EngineRoom() {
               </div>
             )}
             <p>Finalized read-only balances · canonical mint allowlist · live Jupiter prices · independently verified</p>
+          </div>
+          <div className="engine-solana-wallet" aria-label="HyperCore spot asset breakdown">
+            <div className="engine-solana-head">
+              <div><span>HYPERCORE SPOT WALLET</span><strong><MetricState status={sources.hypercore.status}>{formatUsd(hypercoreTotalValue)}</MetricState></strong></div>
+              <a href={`https://app.hyperliquid.xyz/portfolio/${HYPERCORE_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a>
+            </div>
+            {sources.hypercore.status === 'loading' ? (
+              <div className="engine-solana-state">LOADING VERIFIED SPOT BALANCES…</div>
+            ) : sources.hypercore.status === 'unavailable' ? (
+              <div className="engine-solana-state is-unavailable">HYPERCORE WALLET SNAPSHOT UNAVAILABLE</div>
+            ) : (
+              <div className="engine-solana-assets">
+                {hypercoreAssets.map((asset) => (
+                  <article key={asset.assetId}>
+                    <span>{asset.symbol}<small>SPOT · TOKEN {asset.tokenIndex}</small></span>
+                    <strong>{formatAssetQuantity(asset.quantity)}</strong>
+                    <small>{formatUsd(asset.priceUsd)} EACH</small>
+                    <b>{formatUsd(asset.marketValueUsd)}</b>
+                  </article>
+                ))}
+              </div>
+            )}
+            <p>Read-only Hyperliquid spot clearinghouse balances · HYPE token index 150 · HYPE/USDC market @107 · independently verified</p>
           </div>
         </section>
 

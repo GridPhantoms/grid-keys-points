@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "venue": "hypercore",
+  "network": "mainnet",
+  "walletAddress": "0x6a1bc919e847c12725904965e05971b818b47ad0",
+  "capturedAt": "2026-09-24T17:24:40Z",
+  "verificationStatus": "independently-verified",
+  "balanceSource": {
+    "provider": "Hyperliquid Info API",
+    "requestType": "spotClearinghouseState"
+  },
+  "priceSource": {
+    "provider": "Hyperliquid Info API",
+    "requestType": "allMids",
+    "market": "@107",
+    "quoteAsset": "USDC"
+  },
+  "assets": [
+    {
+      "assetId": "hypercore-spot-hype",
+      "symbol": "HYPE",
+      "displayName": "Hyperliquid",
+      "venue": "hypercore",
+      "network": "mainnet",
+      "assetType": "spot",
+      "walletAddress": "0x6a1bc919e847c12725904965e05971b818b47ad0",
+      "tokenIndex": 150,
+      "quantity": 11.71549952,
+      "hold": 0,
+      "available": 11.71549952,
+      "priceUsd": 93.7485,
+      "marketValueUsd": 1098.3105067507202,
+      "costBasisUsd": 1095.82,
+      "basisQuantity": 11.71549952,
+      "averageEntryUsd": 93.53591779243229,
+      "verificationStatus": "independently-verified",
+      "balanceSource": "hyperliquid-spot-clearinghouse-state",
+      "priceSource": "hyperliquid-all-mids-@107",
+      "stage": 1,
+      "targetUsd": 1099.74,
+      "deploymentProgress": 0.9964355211231745
+    },
+    {
+      "assetId": "hypercore-spot-usdc",
+      "symbol": "USDC",
+      "displayName": "USD Coin",
+      "venue": "hypercore",
+      "network": "mainnet",
+      "assetType": "spot",
+      "walletAddress": "0x6a1bc919e847c12725904965e05971b818b47ad0",
+      "tokenIndex": 0,
+      "quantity": 1.56,
+      "hold": 0,
+      "available": 1.56,
+      "priceUsd": 1,
+      "marketValueUsd": 1.56,
+      "costBasisUsd": 1.56,
+      "basisQuantity": 1.56,
+      "averageEntryUsd": 1,
+      "verificationStatus": "independently-verified",
+      "balanceSource": "hyperliquid-spot-clearinghouse-state",
+      "priceSource": "usd-par",
+      "stage": null,
+      "targetUsd": null,
+      "deploymentProgress": null
+    }
+  ],
+  "totalUsd": 1099.87050675072
+}

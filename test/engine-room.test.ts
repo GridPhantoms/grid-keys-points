@@ -98,7 +98,7 @@ test('Engine Room preserves calculations and adopts responsive metric and simula
   assert.match(ui, /coattailCount \* \(snapshot\.coattail_brokers_floor_usd \|\| 0\)/);
   assert.match(ui, /creditsCount \* \(snapshot\.credits_floor_usd \|\| 0\)/);
   assert.match(ui, /const coattailWalletValue = snapshot\.coattail_broker_wallet_usd \|\| 0/);
-  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ solanaTotalValue \+ nftValue \+ coattailWalletValue/);
+  assert.match(ui, /const totalVaultValue = \(snapshot\.debank_portfolio_usd \|\| 0\) \+ solanaTotalValue \+ hypercoreTotalValue \+ nftValue \+ coattailWalletValue/);
   assert.match(ui, /finalized Solana wallet balances/);
   assert.match(generator, /grid_genesis_floor_usd: 'grid-phantoms-genesis-keys'/);
   assert.match(generator, /coattail_brokers_floor_usd: 'coattailbrokers'/);
@@ -185,7 +185,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
 
   assert.match(ui, /type SourceStatus = 'loading' \| 'available' \| 'stale' \| 'unavailable'/);
   assert.match(ui, /type EvidenceClass = 'Observed' \| 'Calculated' \| 'Estimated' \| 'Projected'/);
-  assert.match(ui, /const SOURCE_CLASS_COUNT = 6/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 7/);
   assert.match(ui, /MIXED-SOURCE STATUS/);
   assert.match(ui, /SOURCE CLASSES LOADED/);
   assert.match(ui, /PAGE-LOAD SNAPSHOT/);
@@ -263,6 +263,7 @@ test('Engine Room Phase 3 validates each source independently and fails metrics 
   assert.match(ui, /controller\.abort\(\)/);
   assert.match(ui, /loadSource\('vault'/);
   assert.match(ui, /loadSource\('solana'/);
+  assert.match(ui, /loadSource\('hypercore'/);
   assert.match(ui, /loadSource\('nft'/);
   assert.match(ui, /loadSource\('supply'/);
   assert.match(ui, /loadSource\('holders'/);
@@ -375,7 +376,7 @@ test('Engine Room evidence pills stand apart from titles and preserve rebellion 
   assert.doesNotMatch(css, /\.engine-metric-topline\{display:block/);
   assert.match(css, /\.engine-output-heading\{[^}]*margin-bottom:14px/);
   assert.match(css, /\.engine-output-total\{align-items:flex-start;flex-direction:column;gap:14px\}/);
-  assert.match(ui, /DeBank EVM portfolio, finalized Solana wallet balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
+  assert.match(ui, /DeBank EVM portfolio, finalized Solana wallet balances, HyperCore spot balances, NFT floor values, Broker wallet tokenized stocks and the veBLACK position\./);
   assert.doesNotMatch(ui, /Neo Tokyo asset references/);
 });
 
@@ -394,4 +395,36 @@ test('Vault NFT route discovers current Coattail holdings from transfer logs ins
   assert.match(route, /getOwnedCoattailTokenIds/);
   assert.match(route, /ownerResult/);
   assert.doesNotMatch(route, /tokenIds: \['1381'\]/);
+});
+
+test('Engine Room accounts for HyperCore spot balances without double-counting DeBank assets', async () => {
+  const [ui, generator, snapshotText] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../generate-vault-snapshot.js'),
+    read('../public/hypercore-vault-snapshot.json'),
+  ]);
+  const snapshot = JSON.parse(snapshotText);
+
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.venue, 'hypercore');
+  assert.equal(snapshot.network, 'mainnet');
+  assert.equal(snapshot.walletAddress, '0x6a1bc919e847c12725904965e05971b818b47ad0');
+  assert.equal(snapshot.verificationStatus, 'independently-verified');
+  assert.equal(snapshot.balanceSource.provider, 'Hyperliquid Info API');
+  assert.equal(snapshot.priceSource.market, '@107');
+  assert.deepEqual(snapshot.assets.map((asset: { symbol: string }) => asset.symbol), ['HYPE', 'USDC']);
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'HYPE')?.tokenIndex, 150);
+  assert.ok(snapshot.assets.every((asset: { quantity: number; priceUsd: number; marketValueUsd: number }) => asset.quantity >= 0 && asset.priceUsd > 0 && asset.marketValueUsd >= 0));
+
+  assert.match(generator, /spotClearinghouseState/);
+  assert.match(generator, /spotMetaAndAssetCtxs/);
+  assert.match(generator, /allMids/);
+  assert.match(generator, /HYPERCORE_SNAPSHOT_PATH/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 7/);
+  assert.match(ui, /loadSource\('hypercore'/);
+  assert.match(ui, /hypercore-vault-snapshot\.json/);
+  assert.match(ui, /\+ hypercoreTotalValue/);
+  assert.match(ui, /HYPERCORE WALLET/);
+  assert.match(ui, /HYPERLIQUID SPOT API/);
+  assert.match(ui, /HyperCore spot balances/);
 });

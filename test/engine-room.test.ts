@@ -185,7 +185,7 @@ test('Engine Room Phase 3 exposes a closed evidence and mixed-source status cont
 
   assert.match(ui, /type SourceStatus = 'loading' \| 'available' \| 'stale' \| 'unavailable'/);
   assert.match(ui, /type EvidenceClass = 'Observed' \| 'Calculated' \| 'Estimated' \| 'Projected'/);
-  assert.match(ui, /const SOURCE_CLASS_COUNT = 7/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 8/);
   assert.match(ui, /MIXED-SOURCE STATUS/);
   assert.match(ui, /SOURCE CLASSES LOADED/);
   assert.match(ui, /PAGE-LOAD SNAPSHOT/);
@@ -420,11 +420,69 @@ test('Engine Room accounts for HyperCore spot balances without double-counting D
   assert.match(generator, /spotMetaAndAssetCtxs/);
   assert.match(generator, /allMids/);
   assert.match(generator, /HYPERCORE_SNAPSHOT_PATH/);
-  assert.match(ui, /const SOURCE_CLASS_COUNT = 7/);
+  assert.match(ui, /const SOURCE_CLASS_COUNT = 8/);
   assert.match(ui, /loadSource\('hypercore'/);
   assert.match(ui, /hypercore-vault-snapshot\.json/);
   assert.match(ui, /\+ hypercoreTotalValue/);
   assert.match(ui, /HYPERCORE WALLET/);
   assert.match(ui, /HYPERLIQUID SPOT API/);
   assert.match(ui, /HyperCore spot balances/);
+});
+
+test('Engine Room exposes a non-additive first-party Ethereum wallet look-through in collapsed source shelves', async () => {
+  const [ui, css, generator, snapshotText, vaultCsv] = await Promise.all([
+    read('../app/engine/EngineRoom.tsx'),
+    read('../app/engine/engine.css'),
+    read('../generate-vault-snapshot.js'),
+    read('../public/evm-vault-snapshot.json'),
+    read('../public/vault-snapshot.csv'),
+  ]);
+  const snapshot = JSON.parse(snapshotText);
+  const debankValue = Number(vaultCsv.match(/^debank_portfolio_usd,([^\n]+)$/m)?.[1]);
+
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.chain, 'ethereum');
+  assert.equal(snapshot.chainId, 1);
+  assert.equal(snapshot.network, 'mainnet');
+  assert.equal(snapshot.walletAddress, '0x6a1bc919e847c12725904965e05971b818b47ad0');
+  assert.equal(snapshot.valuationRole, 'direct-wallet-look-through');
+  assert.equal(snapshot.accountingTreatment, 'included-in-debank-not-added-to-total');
+  assert.equal(snapshot.verificationStatus, 'independently-verified');
+  assert.equal(snapshot.balanceSource.finality, 'finalized');
+  assert.match(snapshot.balanceSource.blockHash, /^0x[0-9a-f]{64}$/);
+  assert.match(snapshot.balanceSource.blockTimestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  assert.match(snapshot.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  assert.deepEqual(snapshot.assets.map((asset: { symbol: string }) => asset.symbol), ['ETH', 'USDC', 'WBTC', 'UNI', 'wTAO', 'BYTES']);
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'USDC')?.contractAddress.toLowerCase(), '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'WBTC')?.contractAddress.toLowerCase(), '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'UNI')?.contractAddress.toLowerCase(), '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'wTAO')?.contractAddress.toLowerCase(), '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44');
+  assert.equal(snapshot.assets.find((asset: { symbol: string }) => asset.symbol === 'BYTES')?.contractAddress.toLowerCase(), '0xa19f5264f7d7be11c451c093d8f92592820bea86');
+  assert.ok(snapshot.assets.every((asset: { rawBalance: string }) => /^\d+$/.test(asset.rawBalance)));
+  assert.ok(snapshot.assets.every((asset: { quantity: number; priceUsd: number; marketValueUsd: number }) => asset.quantity >= 0 && asset.priceUsd > 0 && asset.marketValueUsd >= 0));
+  const directTotal = snapshot.assets.reduce((sum: number, asset: { marketValueUsd: number }) => sum + asset.marketValueUsd, 0);
+  assert.ok(Math.abs(snapshot.directWalletTotalUsd - directTotal) <= 0.02);
+  assert.equal(snapshot.debankReferenceUsd, debankValue);
+  assert.ok(Math.abs(snapshot.unattributedDeBankUsd - (debankValue - snapshot.directWalletTotalUsd)) <= 0.02);
+
+  assert.match(generator, /EVM_SNAPSHOT_PATH/);
+  assert.match(generator, /eth_chainId/);
+  assert.match(generator, /eth_getBlockByNumber/);
+  assert.match(generator, /'finalized'/);
+  assert.match(generator, /Ethereum block changed during balance collection/);
+  assert.match(generator, /included-in-debank-not-added-to-total/);
+  assert.match(ui, /loadSource\('evm'/);
+  assert.match(ui, /evm-vault-snapshot\.json/);
+  assert.match(ui, /EVM DIRECT WALLET/);
+  assert.match(ui, /DIRECT WALLET LOOK-THROUGH/);
+  assert.match(ui, /INCLUDED IN DEBANK · NOT ADDED AGAIN/);
+  assert.match(ui, /<details className="engine-wallet-shelf"/);
+  assert.doesNotMatch(ui, /<details className="engine-wallet-shelf"[^>]*\sopen(?:=|\s|>)/);
+  assert.doesNotMatch(ui, /\+ evmDirectWalletTotal/);
+  assert.match(ui, /quantityFromRawBalance\(rawBalance, expected\.decimals\)/);
+  assert.match(ui, /asset\.assetId !== expected\.assetId/);
+  assert.match(ui, /timestamp <= Date\.now\(\) \+ \(5 \* 60 \* 1000\)/);
+  assert.match(ui, /evm\.data\.debankReferenceUsd - \(vault\.data\.debank_portfolio_usd \|\| 0\)/);
+  assert.match(css, /\.engine-wallet-shelf>summary:focus-visible/);
+  assert.match(css, /\.engine-wallet-assets\{/);
 });

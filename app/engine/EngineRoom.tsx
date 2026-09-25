@@ -14,6 +14,29 @@ type SourceResult<T> = {
 };
 
 type VaultSnapshot = Record<string, number>;
+type EvmAsset = {
+  assetId: string;
+  symbol: string;
+  displayName: string;
+  assetType: 'native' | 'erc20';
+  contractAddress: string | null;
+  decimals: number;
+  rawBalance: string;
+  quantity: number;
+  priceUsd: number;
+  marketValueUsd: number;
+  costBasisUsd: number;
+  basisQuantity: number;
+  averageEntryUsd: number | null;
+  verificationStatus: 'independently-verified';
+};
+type EvmSnapshot = {
+  walletAddress: string;
+  directWalletTotalUsd: number;
+  debankReferenceUsd: number;
+  unattributedDeBankUsd: number;
+  assets: EvmAsset[];
+};
 type SolanaAsset = {
   assetId: string;
   symbol: string;
@@ -71,6 +94,7 @@ type RewardArchive = {
 
 type EngineSources = {
   vault: SourceResult<VaultSnapshot>;
+  evm: SourceResult<EvmSnapshot>;
   solana: SourceResult<SolanaSnapshot>;
   hypercore: SourceResult<HypercoreSnapshot>;
   nft: SourceResult<NftHoldings>;
@@ -79,15 +103,24 @@ type EngineSources = {
   rewards: SourceResult<RewardArchive>;
 };
 
-const SOURCE_CLASS_COUNT = 7;
+const SOURCE_CLASS_COUNT = 8;
 const SOURCE_TIMEOUT_MS = 12_000;
 const SOURCE_HTTP_ATTEMPTS = 3;
 const SOURCE_RETRY_DELAY_MS = 250;
 
 const TOTAL_GENESIS_KEYS = 555;
 const TOTAL_EXODUS_SUPPLY = 3333;
+const EVM_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
 const SOLANA_WALLET = '3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S';
 const HYPERCORE_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
+const EVM_ASSET_IDENTITIES = new Map([
+  ['ETH', { assetId: 'ethereum-native-eth', displayName: 'Ethereum', contractAddress: null, decimals: 18, assetType: 'native' }],
+  ['USDC', { assetId: 'ethereum-usdc', displayName: 'USD Coin', contractAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', decimals: 6, assetType: 'erc20' }],
+  ['WBTC', { assetId: 'ethereum-wbtc', displayName: 'Wrapped Bitcoin', contractAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', decimals: 8, assetType: 'erc20' }],
+  ['UNI', { assetId: 'ethereum-uni', displayName: 'Uniswap', contractAddress: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', decimals: 18, assetType: 'erc20' }],
+  ['wTAO', { assetId: 'ethereum-wtao', displayName: 'Wrapped TAO', contractAddress: '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44', decimals: 9, assetType: 'erc20' }],
+  ['BYTES', { assetId: 'ethereum-bytes', displayName: 'Neo Tokyo BYTES', contractAddress: '0xa19f5264f7d7be11c451c093d8f92592820bea86', decimals: 18, assetType: 'erc20' }],
+]);
 const SOLANA_MINTS = new Map([
   ['SOL', 'native'],
   ['JUP', 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'],
@@ -105,6 +138,7 @@ const loadingSource = <T,>(): SourceResult<T> => ({ status: 'loading', data: nul
 
 const INITIAL_SOURCES: EngineSources = {
   vault: loadingSource<VaultSnapshot>(),
+  evm: loadingSource<EvmSnapshot>(),
   solana: loadingSource<SolanaSnapshot>(),
   hypercore: loadingSource<HypercoreSnapshot>(),
   nft: loadingSource<NftHoldings>(),
@@ -213,7 +247,16 @@ function formatUtcTime(value: string) {
 }
 
 function isValidTimestamp(value: unknown): value is string {
-  return typeof value === 'string' && Number.isFinite(Date.parse(value));
+  if (typeof value !== 'string') return false;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && timestamp <= Date.now() + (5 * 60 * 1000);
+}
+
+function quantityFromRawBalance(rawBalance: string, decimals: number) {
+  const padded = rawBalance.padStart(decimals + 1, '0');
+  const whole = decimals ? padded.slice(0, -decimals) : padded;
+  const fractional = decimals ? padded.slice(-decimals).replace(/0+$/, '') : '';
+  return Number(fractional ? `${whole}.${fractional}` : whole);
 }
 
 async function fetchResponseOnce(path: string) {
@@ -279,6 +322,120 @@ function parseVaultSnapshot(text: string): VaultSnapshot {
   ];
   if (required.some((key) => !Number.isFinite(snapshot[key]))) throw new Error('Incomplete vault snapshot');
   return snapshot;
+}
+
+function parseEvmSnapshot(data: Record<string, unknown>): { data: EvmSnapshot; asOf: string } {
+  if (
+    data.schemaVersion !== 1
+    || data.chain !== 'ethereum'
+    || data.chainId !== 1
+    || data.network !== 'mainnet'
+    || data.walletAddress !== EVM_WALLET
+    || data.valuationRole !== 'direct-wallet-look-through'
+    || data.accountingTreatment !== 'included-in-debank-not-added-to-total'
+  ) {
+    throw new Error('Invalid EVM snapshot identity');
+  }
+  if (!isValidTimestamp(data.capturedAt) || data.verificationStatus !== 'independently-verified' || !Array.isArray(data.assets)) {
+    throw new Error('Invalid EVM snapshot metadata');
+  }
+  const balanceSource = data.balanceSource;
+  if (!balanceSource || typeof balanceSource !== 'object' || Array.isArray(balanceSource)) throw new Error('Invalid EVM balance provenance');
+  const source = balanceSource as Record<string, unknown>;
+  if (
+    source.provider !== 'Ethereum JSON-RPC'
+    || source.finality !== 'finalized'
+    || !Number.isSafeInteger(source.blockNumber)
+    || Number(source.blockNumber) <= 0
+    || !/^0x[0-9a-f]{64}$/.test(String(source.blockHash))
+    || !isValidTimestamp(source.blockTimestamp)
+    || Date.parse(source.blockTimestamp as string) > Date.parse(data.capturedAt)
+  ) {
+    throw new Error('Invalid EVM finalized block provenance');
+  }
+
+  const assets = data.assets.map((rawAsset) => {
+    if (!rawAsset || typeof rawAsset !== 'object' || Array.isArray(rawAsset)) throw new Error('Invalid EVM asset row');
+    const asset = rawAsset as Record<string, unknown>;
+    const symbol = typeof asset.symbol === 'string' ? asset.symbol : '';
+    const expected = EVM_ASSET_IDENTITIES.get(symbol);
+    const contractAddress = asset.contractAddress === null ? null : String(asset.contractAddress).toLowerCase();
+    const rawBalance = String(asset.rawBalance);
+    const quantity = Number(asset.quantity);
+    const expectedQuantity = expected ? quantityFromRawBalance(rawBalance, expected.decimals) : Number.NaN;
+    const priceUsd = Number(asset.priceUsd);
+    const marketValueUsd = Number(asset.marketValueUsd);
+    const costBasisUsd = Number(asset.costBasisUsd);
+    const basisQuantity = Number(asset.basisQuantity);
+    const averageEntryUsd = asset.averageEntryUsd === null ? null : Number(asset.averageEntryUsd);
+    if (
+      !expected
+      || asset.assetId !== expected.assetId
+      || asset.displayName !== expected.displayName
+      || contractAddress !== expected.contractAddress
+      || asset.decimals !== expected.decimals
+      || asset.assetType !== expected.assetType
+      || asset.chain !== 'ethereum'
+      || asset.chainId !== 1
+      || asset.network !== 'mainnet'
+      || asset.walletAddress !== EVM_WALLET
+      || !/^\d+$/.test(rawBalance)
+    ) {
+      throw new Error('Unexpected EVM asset identifier');
+    }
+    if (![quantity, priceUsd, marketValueUsd, costBasisUsd, basisQuantity].every((value) => Number.isFinite(value) && value >= 0) || priceUsd <= 0) {
+      throw new Error('Invalid EVM asset value');
+    }
+    if (averageEntryUsd !== null && (!Number.isFinite(averageEntryUsd) || averageEntryUsd < 0)) throw new Error('Invalid EVM acquisition basis');
+    if (
+      asset.verificationStatus !== 'independently-verified'
+      || asset.accountingTreatment !== 'included-in-debank-not-added-to-total'
+      || !Number.isFinite(expectedQuantity)
+      || Math.abs(expectedQuantity - quantity) > Math.max(1e-12, expectedQuantity * 1e-12)
+      || Math.abs((quantity * priceUsd) - marketValueUsd) > Math.max(0.02, marketValueUsd * 0.001)
+    ) {
+      throw new Error('Unverified or inconsistent EVM asset');
+    }
+    return {
+      assetId: String(asset.assetId),
+      symbol,
+      displayName: String(asset.displayName),
+      assetType: asset.assetType as 'native' | 'erc20',
+      contractAddress,
+      decimals: expected.decimals,
+      rawBalance,
+      quantity,
+      priceUsd,
+      marketValueUsd,
+      costBasisUsd,
+      basisQuantity,
+      averageEntryUsd,
+      verificationStatus: 'independently-verified' as const,
+    };
+  });
+
+  if (assets.length !== EVM_ASSET_IDENTITIES.size || new Set(assets.map((asset) => asset.symbol)).size !== EVM_ASSET_IDENTITIES.size) {
+    throw new Error('Incomplete EVM asset allowlist');
+  }
+  const directWalletTotalUsd = Number(data.directWalletTotalUsd);
+  const debankReferenceUsd = Number(data.debankReferenceUsd);
+  const unattributedDeBankUsd = Number(data.unattributedDeBankUsd);
+  const calculatedTotal = assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0);
+  if (
+    !Number.isFinite(directWalletTotalUsd)
+    || directWalletTotalUsd < 0
+    || !Number.isFinite(debankReferenceUsd)
+    || debankReferenceUsd < 0
+    || !Number.isFinite(unattributedDeBankUsd)
+    || Math.abs(directWalletTotalUsd - calculatedTotal) > Math.max(0.02, directWalletTotalUsd * 0.001)
+    || Math.abs(unattributedDeBankUsd - (debankReferenceUsd - directWalletTotalUsd)) > 0.02
+  ) {
+    throw new Error('Invalid EVM snapshot reconciliation');
+  }
+  return {
+    data: { walletAddress: EVM_WALLET, directWalletTotalUsd, debankReferenceUsd, unattributedDeBankUsd, assets },
+    asOf: data.capturedAt,
+  };
 }
 
 function parseSolanaSnapshot(data: Record<string, unknown>): { data: SolanaSnapshot; asOf: string } {
@@ -605,7 +762,7 @@ export default function EngineRoom() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [vault, solana, hypercore, nft, supply, holders, rewards] = await Promise.all([
+      const [vault, evm, solana, hypercore, nft, supply, holders, rewards] = await Promise.all([
         loadSource('vault', async () => {
           const [text, metadata] = await Promise.all([
             fetchText('/vault-snapshot.csv'),
@@ -614,6 +771,7 @@ export default function EngineRoom() {
           if (!isValidTimestamp(metadata.capturedAt)) throw new Error('Invalid vault capture metadata');
           return { data: parseVaultSnapshot(text), asOf: metadata.capturedAt };
         }, 48 * 60 * 60 * 1000),
+        loadSource('evm', async () => parseEvmSnapshot(await fetchJson('/evm-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('solana', async () => parseSolanaSnapshot(await fetchJson('/solana-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('hypercore', async () => parseHypercoreSnapshot(await fetchJson('/hypercore-vault-snapshot.json')), 48 * 60 * 60 * 1000),
         loadSource('nft', async () => {
@@ -653,7 +811,12 @@ export default function EngineRoom() {
         })),
       ]);
 
-      if (!cancelled) setSources({ vault, solana, hypercore, nft, supply, holders, rewards });
+      const reconciledEvm: SourceResult<EvmSnapshot> = vault.data && evm.data
+        && Math.abs(evm.data.debankReferenceUsd - (vault.data.debank_portfolio_usd || 0)) > 0.01
+        ? { status: 'unavailable', data: null, asOf: evm.asOf }
+        : evm;
+
+      if (!cancelled) setSources({ vault, evm: reconciledEvm, solana, hypercore, nft, supply, holders, rewards });
     };
 
     loadData();
@@ -661,6 +824,9 @@ export default function EngineRoom() {
   }, []);
 
   const snapshot = sources.vault.data ?? {};
+  const evmSnapshot = sources.evm.data;
+  const evmAssets = evmSnapshot?.assets ?? [];
+  const evmDirectWalletTotal = evmSnapshot?.directWalletTotalUsd ?? 0;
   const solanaSnapshot = sources.solana.data;
   const solanaAssets = solanaSnapshot?.assets ?? [];
   const solanaTotalValue = solanaSnapshot?.totalUsd ?? 0;
@@ -775,6 +941,7 @@ export default function EngineRoom() {
           <summary><span>VIEW SOURCE &amp; EVIDENCE DETAILS</span><i aria-hidden="true">+</i></summary>
           <div className="engine-source-ledger" aria-label="Engine Room source timestamps">
             <SourceCard label="VAULT REFERENCES" mode="SCHEDULED ARTIFACT" timeKind="CAPTURED" source={sources.vault} />
+            <SourceCard label="EVM DIRECT WALLET" mode="FINALIZED ETHEREUM RPC" timeKind="CAPTURED" source={sources.evm} />
             <SourceCard label="SOLANA WALLET" mode="FINALIZED RPC + JUPITER" timeKind="CAPTURED" source={sources.solana} />
             <SourceCard label="HYPERCORE WALLET" mode="HYPERLIQUID SPOT API" timeKind="CAPTURED" source={sources.hypercore} />
             <SourceCard label="NFT HOLDINGS" mode="ON-DEMAND LOOKUP" timeKind="CHECKED" source={sources.nft} />
@@ -812,51 +979,101 @@ export default function EngineRoom() {
               <p className="engine-metric-unit">TOTAL VALUE / TOTAL KEYS</p>
             </article>
           </div>
-          <div className="engine-solana-wallet" aria-label="Solana wallet asset breakdown">
-            <div className="engine-solana-head">
-              <div><span>SOLANA WALLET</span><strong><MetricState status={sources.solana.status}>{formatUsd(solanaTotalValue)}</MetricState></strong></div>
-              <a href={`https://solscan.io/account/${SOLANA_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a>
-            </div>
-            {sources.solana.status === 'loading' ? (
-              <div className="engine-solana-state">LOADING FINALIZED BALANCES…</div>
-            ) : sources.solana.status === 'unavailable' ? (
-              <div className="engine-solana-state is-unavailable">SOLANA WALLET SNAPSHOT UNAVAILABLE</div>
-            ) : (
-              <div className="engine-solana-assets">
-                {solanaAssets.map((asset) => (
-                  <article key={asset.assetId}>
-                    <span>{asset.symbol}<small>{asset.assetType === 'native' ? 'NATIVE' : 'SPL'}</small></span>
-                    <strong>{formatAssetQuantity(asset.quantity)}</strong>
-                    <small>{formatUsd(asset.priceUsd)} EACH</small>
-                    <b>{formatUsd(asset.marketValueUsd)}</b>
-                  </article>
-                ))}
+          <div className="engine-wallet-stack">
+            <details className="engine-wallet-shelf" aria-label="Ethereum direct wallet asset breakdown">
+              <summary>
+                <span className="engine-wallet-summary-copy"><span>EVM DIRECT WALLET</span><small>{sourceStatusLabel(sources.evm.status)} · DIRECT WALLET LOOK-THROUGH</small></span>
+                <strong><MetricState status={sources.evm.status}>{formatUsd(evmDirectWalletTotal)}</MetricState></strong>
+                <i aria-hidden="true">+</i>
+              </summary>
+              <div className="engine-wallet-body">
+                {sources.evm.status === 'loading' ? (
+                  <div className="engine-wallet-state">LOADING FINALIZED ETHEREUM BALANCES…</div>
+                ) : sources.evm.status === 'unavailable' ? (
+                  <div className="engine-wallet-state is-unavailable">EVM DIRECT WALLET SNAPSHOT UNAVAILABLE</div>
+                ) : (
+                  <>
+                    <div className="engine-wallet-reconciliation" aria-label="EVM and DeBank reconciliation">
+                      <div><span>DEBANK EVM REFERENCE</span><strong>{formatUsd(evmSnapshot?.debankReferenceUsd ?? 0)}</strong><small>CONTROLLING EVM TOTAL</small></div>
+                      <div><span>DIRECT WALLET COVERAGE</span><strong>{formatUsd(evmDirectWalletTotal)}</strong><small>ALLOWLISTED ASSETS</small></div>
+                      <div><span>PROTOCOL + OTHER DELTA</span><strong>{formatUsd(evmSnapshot?.unattributedDeBankUsd ?? 0)}</strong><small>NOT ASSIGNED BY THIS VIEW</small></div>
+                    </div>
+                    <div className="engine-wallet-actions"><a href={`https://etherscan.io/address/${EVM_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a></div>
+                    <div className="engine-wallet-assets">
+                      {evmAssets.map((asset) => (
+                        <article key={asset.assetId}>
+                          <span>{asset.symbol}<small>{asset.assetType === 'native' ? 'NATIVE' : 'ERC-20'}</small></span>
+                          <strong>{formatAssetQuantity(asset.quantity)}</strong>
+                          <small>{formatUsd(asset.priceUsd)} EACH</small>
+                          <b>{formatUsd(asset.marketValueUsd)}</b>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p>Finalized Ethereum RPC balances · exact-contract allowlist · mixed-source spot references · INCLUDED IN DEBANK · NOT ADDED AGAIN<br />wTAO is TAO price exposure through a centralized/community bridge wrapper, not canonical native TAO custody</p>
               </div>
-            )}
-            <p>Finalized read-only balances · canonical mint allowlist · live Jupiter prices · independently verified</p>
-          </div>
-          <div className="engine-solana-wallet" aria-label="HyperCore spot asset breakdown">
-            <div className="engine-solana-head">
-              <div><span>HYPERCORE SPOT WALLET</span><strong><MetricState status={sources.hypercore.status}>{formatUsd(hypercoreTotalValue)}</MetricState></strong></div>
-              <a href={`https://app.hyperliquid.xyz/portfolio/${HYPERCORE_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a>
-            </div>
-            {sources.hypercore.status === 'loading' ? (
-              <div className="engine-solana-state">LOADING VERIFIED SPOT BALANCES…</div>
-            ) : sources.hypercore.status === 'unavailable' ? (
-              <div className="engine-solana-state is-unavailable">HYPERCORE WALLET SNAPSHOT UNAVAILABLE</div>
-            ) : (
-              <div className="engine-solana-assets">
-                {hypercoreAssets.map((asset) => (
-                  <article key={asset.assetId}>
-                    <span>{asset.symbol}<small>SPOT · TOKEN {asset.tokenIndex}</small></span>
-                    <strong>{formatAssetQuantity(asset.quantity)}</strong>
-                    <small>{formatUsd(asset.priceUsd)} EACH</small>
-                    <b>{formatUsd(asset.marketValueUsd)}</b>
-                  </article>
-                ))}
+            </details>
+
+            <details className="engine-wallet-shelf" aria-label="Solana wallet asset breakdown">
+              <summary>
+                <span className="engine-wallet-summary-copy"><span>SOLANA WALLET</span><small>{sourceStatusLabel(sources.solana.status)} · FINALIZED DIRECT WALLET</small></span>
+                <strong><MetricState status={sources.solana.status}>{formatUsd(solanaTotalValue)}</MetricState></strong>
+                <i aria-hidden="true">+</i>
+              </summary>
+              <div className="engine-wallet-body">
+                {sources.solana.status === 'loading' ? (
+                  <div className="engine-wallet-state">LOADING FINALIZED BALANCES…</div>
+                ) : sources.solana.status === 'unavailable' ? (
+                  <div className="engine-wallet-state is-unavailable">SOLANA WALLET SNAPSHOT UNAVAILABLE</div>
+                ) : (
+                  <>
+                    <div className="engine-wallet-actions"><a href={`https://solscan.io/account/${SOLANA_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a></div>
+                    <div className="engine-wallet-assets">
+                      {solanaAssets.map((asset) => (
+                        <article key={asset.assetId}>
+                          <span>{asset.symbol}<small>{asset.assetType === 'native' ? 'NATIVE' : 'SPL'}</small></span>
+                          <strong>{formatAssetQuantity(asset.quantity)}</strong>
+                          <small>{formatUsd(asset.priceUsd)} EACH</small>
+                          <b>{formatUsd(asset.marketValueUsd)}</b>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p>Finalized read-only balances · canonical mint allowlist · live Jupiter prices · independently verified</p>
               </div>
-            )}
-            <p>Read-only Hyperliquid spot clearinghouse balances · HYPE token index 150 · HYPE/USDC market @107 · independently verified</p>
+            </details>
+
+            <details className="engine-wallet-shelf" aria-label="HyperCore spot asset breakdown">
+              <summary>
+                <span className="engine-wallet-summary-copy"><span>HYPERCORE SPOT WALLET</span><small>{sourceStatusLabel(sources.hypercore.status)} · VERIFIED SPOT BALANCES</small></span>
+                <strong><MetricState status={sources.hypercore.status}>{formatUsd(hypercoreTotalValue)}</MetricState></strong>
+                <i aria-hidden="true">+</i>
+              </summary>
+              <div className="engine-wallet-body">
+                {sources.hypercore.status === 'loading' ? (
+                  <div className="engine-wallet-state">LOADING VERIFIED SPOT BALANCES…</div>
+                ) : sources.hypercore.status === 'unavailable' ? (
+                  <div className="engine-wallet-state is-unavailable">HYPERCORE WALLET SNAPSHOT UNAVAILABLE</div>
+                ) : (
+                  <>
+                    <div className="engine-wallet-actions"><a href={`https://app.hyperliquid.xyz/portfolio/${HYPERCORE_WALLET}`} target="_blank" rel="noopener noreferrer">VIEW WALLET ↗</a></div>
+                    <div className="engine-wallet-assets">
+                      {hypercoreAssets.map((asset) => (
+                        <article key={asset.assetId}>
+                          <span>{asset.symbol}<small>SPOT · TOKEN {asset.tokenIndex}</small></span>
+                          <strong>{formatAssetQuantity(asset.quantity)}</strong>
+                          <small>{formatUsd(asset.priceUsd)} EACH</small>
+                          <b>{formatUsd(asset.marketValueUsd)}</b>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p>Read-only Hyperliquid spot clearinghouse balances · HYPE token index 150 · HYPE/USDC market @107 · independently verified</p>
+              </div>
+            </details>
           </div>
         </section>
 

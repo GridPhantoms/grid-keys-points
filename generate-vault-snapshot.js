@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- standalone Node generator uses CommonJS */
 const fs = require('fs');
 const path = require('path');
-const { Interface } = require('ethers');
+const { Interface, formatUnits } = require('ethers');
 
 const VAULT_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.csv');
 const VAULT_METADATA_PATH = path.join(process.cwd(), 'public', 'vault-snapshot.meta.json');
 const SOLANA_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'solana-vault-snapshot.json');
 const HYPERCORE_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'hypercore-vault-snapshot.json');
+const EVM_SNAPSHOT_PATH = path.join(process.cwd(), 'public', 'evm-vault-snapshot.json');
 const VEBLACK_BALANCE = 109840.99;
 const COATTAIL_BROKER_WALLET = '0x3ba0c547Ec6465ddB56A5A8144D6253756E67f7b';
 const ROBINHOOD_CHAIN_ID = 4663;
@@ -18,6 +19,24 @@ const BALANCE_OF_SELECTOR = '70a08231';
 const MULTICALL3_INTERFACE = new Interface([
   'function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)',
 ]);
+
+const EVM_WALLET = '0x6a1bc919e847c12725904965e05971b818b47ad0';
+const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com';
+const ETHEREUM_CHAIN_ID = 1;
+const DEFILLAMA_PRICES_URL = 'https://coins.llama.fi/prices/current/';
+const ERC20_INTERFACE = new Interface([
+  'function balanceOf(address account) view returns (uint256)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+]);
+const EVM_ASSETS = [
+  { assetId: 'ethereum-native-eth', symbol: 'ETH', displayName: 'Ethereum', assetType: 'native', contractAddress: null, decimals: 18, priceKey: 'snapshot-eth-usd', basisQuantity: 1.3723189254860362, costBasisUsd: 3666.83 },
+  { assetId: 'ethereum-usdc', symbol: 'USDC', displayName: 'USD Coin', assetType: 'erc20', contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6, priceKey: 'usd-par', basisQuantity: 0, costBasisUsd: 0 },
+  { assetId: 'ethereum-wbtc', symbol: 'WBTC', displayName: 'Wrapped Bitcoin', assetType: 'erc20', contractAddress: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', decimals: 8, priceKey: 'coingecko:wrapped-bitcoin', basisQuantity: 0.04128509, costBasisUsd: 3438 },
+  { assetId: 'ethereum-uni', symbol: 'UNI', displayName: 'Uniswap', assetType: 'erc20', contractAddress: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', decimals: 18, priceKey: 'ethereum:0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', basisQuantity: 72.4434782410463, costBasisUsd: 659.84 },
+  { assetId: 'ethereum-wtao', symbol: 'wTAO', displayName: 'Wrapped TAO', assetType: 'erc20', contractAddress: '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', decimals: 9, priceKey: 'ethereum:0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44', basisQuantity: 2.987868015, costBasisUsd: 879.79 },
+  { assetId: 'ethereum-bytes', symbol: 'BYTES', displayName: 'Neo Tokyo BYTES', assetType: 'erc20', contractAddress: '0xa19f5264F7D7Be11c451C093D8f92592820Bea86', decimals: 18, priceKey: 'snapshot-bytes-usd', basisQuantity: 0, costBasisUsd: 0 },
+];
 
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const SOLANA_RPC_FALLBACK_URL = 'https://solana-rpc.publicnode.com';
@@ -171,6 +190,162 @@ async function fetchJson(url, label, init = {}) {
     },
   });
   return res.json();
+}
+
+async function ethereumRpc(method, params = []) {
+  const payload = await fetchJson(ETHEREUM_RPC_URL, `Ethereum RPC ${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+  });
+  if (payload?.error || payload?.result === undefined || payload?.result === null) {
+    throw new Error(`Ethereum RPC ${method} returned an invalid response`);
+  }
+  return payload.result;
+}
+
+function parseRpcQuantity(value, label) {
+  if (typeof value !== 'string' || !/^0x[0-9a-fA-F]+$/.test(value)) throw new Error(`Invalid ${label}`);
+  return BigInt(value);
+}
+
+function parseEthereumBlock(block) {
+  if (!block || typeof block !== 'object' || !/^0x[0-9a-fA-F]+$/.test(block.number || '') || !/^0x[0-9a-fA-F]{64}$/.test(block.hash || '')) {
+    throw new Error('Ethereum finalized block response is incomplete');
+  }
+  const timestamp = Number(parseRpcQuantity(block.timestamp, 'Ethereum block timestamp'));
+  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) throw new Error('Ethereum finalized block timestamp is invalid');
+  return {
+    number: Number(parseRpcQuantity(block.number, 'Ethereum block number')),
+    tag: block.number,
+    hash: block.hash.toLowerCase(),
+    timestamp: new Date(timestamp * 1_000).toISOString().replace(/\.000Z$/, 'Z'),
+  };
+}
+
+async function ethereumCall(contractAddress, functionName, args, blockTag) {
+  const data = ERC20_INTERFACE.encodeFunctionData(functionName, args);
+  const result = await ethereumRpc('eth_call', [{ to: contractAddress, data }, blockTag]);
+  try {
+    return ERC20_INTERFACE.decodeFunctionResult(functionName, result);
+  } catch {
+    throw new Error(`Ethereum ${functionName} response was undecodable for ${contractAddress}`);
+  }
+}
+
+async function getDefiLlamaPrices(priceKeys) {
+  const keys = [...new Set(priceKeys)];
+  const payload = await fetchJson(`${DEFILLAMA_PRICES_URL}${keys.join(',')}?searchWidth=4h`, 'DefiLlama EVM prices');
+  if (!payload?.coins || typeof payload.coins !== 'object') throw new Error('DefiLlama EVM price response is incomplete');
+  const prices = new Map();
+  for (const key of keys) {
+    const quote = payload.coins[key];
+    const price = Number(quote?.price);
+    const timestamp = Number(quote?.timestamp);
+    const confidence = Number(quote?.confidence);
+    if (!Number.isFinite(price) || price <= 0 || !Number.isSafeInteger(timestamp) || timestamp <= 0 || !Number.isFinite(confidence) || confidence < 0.8) {
+      throw new Error(`DefiLlama price missing or low-confidence for ${key}`);
+    }
+    prices.set(key, { price, observedAt: new Date(timestamp * 1_000).toISOString().replace(/\.000Z$/, 'Z'), confidence });
+  }
+  return prices;
+}
+
+async function getEvmVaultSnapshot(debankReferenceUsd, ethUsd, bytesUsd) {
+  const chainId = Number(parseRpcQuantity(await ethereumRpc('eth_chainId'), 'Ethereum chain id'));
+  if (chainId !== ETHEREUM_CHAIN_ID) throw new Error(`Ethereum RPC chain identity mismatch: ${chainId}`);
+
+  const sourceBlock = parseEthereumBlock(await ethereumRpc('eth_getBlockByNumber', ['finalized', false]));
+  const quotedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const llamaPrices = await getDefiLlamaPrices(
+    EVM_ASSETS.map((asset) => asset.priceKey).filter((key) => key.includes(':'))
+  );
+
+  const assets = await Promise.all(EVM_ASSETS.map(async (asset) => {
+    let rawBalance;
+    if (asset.assetType === 'native') {
+      rawBalance = parseRpcQuantity(await ethereumRpc('eth_getBalance', [EVM_WALLET, sourceBlock.tag]), 'Ethereum native balance');
+    } else {
+      const [balanceResult, symbolResult, decimalsResult] = await Promise.all([
+        ethereumCall(asset.contractAddress, 'balanceOf', [EVM_WALLET], sourceBlock.tag),
+        ethereumCall(asset.contractAddress, 'symbol', [], sourceBlock.tag),
+        ethereumCall(asset.contractAddress, 'decimals', [], sourceBlock.tag),
+      ]);
+      const onchainSymbol = String(symbolResult[0]);
+      const onchainDecimals = Number(decimalsResult[0]);
+      if (onchainSymbol !== asset.symbol || onchainDecimals !== asset.decimals) {
+        throw new Error(`Ethereum asset identity mismatch for ${asset.assetId}`);
+      }
+      rawBalance = balanceResult[0];
+      if (typeof rawBalance !== 'bigint' || rawBalance < 0n) throw new Error(`Ethereum balance invalid for ${asset.assetId}`);
+    }
+
+    const quantity = Number(formatUnits(rawBalance, asset.decimals));
+    if (!Number.isFinite(quantity) || quantity < 0) throw new Error(`Ethereum display quantity invalid for ${asset.assetId}`);
+    const quote = asset.priceKey === 'usd-par'
+      ? { price: 1, provider: 'USD par', observedAt: quotedAt, confidence: 1 }
+      : asset.priceKey === 'snapshot-eth-usd'
+        ? { price: ethUsd, provider: 'Engine Room ETH/USD reference', observedAt: quotedAt, confidence: null }
+        : asset.priceKey === 'snapshot-bytes-usd'
+          ? { price: bytesUsd, provider: 'Engine Room BYTES/USD reference', observedAt: quotedAt, confidence: null }
+          : { ...llamaPrices.get(asset.priceKey), provider: 'DefiLlama Coins API' };
+    if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) throw new Error(`Ethereum price invalid for ${asset.assetId}`);
+
+    return {
+      assetId: asset.assetId,
+      symbol: asset.symbol,
+      displayName: asset.displayName,
+      chain: 'ethereum',
+      chainId: ETHEREUM_CHAIN_ID,
+      network: 'mainnet',
+      assetType: asset.assetType,
+      walletAddress: EVM_WALLET,
+      contractAddress: asset.contractAddress,
+      decimals: asset.decimals,
+      rawBalance: rawBalance.toString(),
+      quantity,
+      priceUsd: quote.price,
+      marketValueUsd: quantity * quote.price,
+      costBasisUsd: asset.costBasisUsd,
+      basisQuantity: asset.basisQuantity,
+      averageEntryUsd: asset.basisQuantity > 0 ? asset.costBasisUsd / asset.basisQuantity : null,
+      verificationStatus: 'independently-verified',
+      accountingTreatment: 'included-in-debank-not-added-to-total',
+      balanceSource: 'ethereum-json-rpc-finalized',
+      priceSource: {
+        provider: quote.provider,
+        observedAt: quote.observedAt,
+        confidence: quote.confidence,
+      },
+    };
+  }));
+
+  const confirmedBlock = parseEthereumBlock(await ethereumRpc('eth_getBlockByNumber', [sourceBlock.tag, false]));
+  if (confirmedBlock.hash !== sourceBlock.hash) throw new Error('Ethereum block changed during balance collection');
+
+  const directWalletTotalUsd = assets.reduce((sum, asset) => sum + asset.marketValueUsd, 0);
+  return {
+    schemaVersion: 1,
+    chain: 'ethereum',
+    chainId: ETHEREUM_CHAIN_ID,
+    network: 'mainnet',
+    walletAddress: EVM_WALLET,
+    capturedAt: '',
+    valuationRole: 'direct-wallet-look-through',
+    accountingTreatment: 'included-in-debank-not-added-to-total',
+    verificationStatus: 'independently-verified',
+    balanceSource: {
+      provider: 'Ethereum JSON-RPC',
+      finality: 'finalized',
+      blockNumber: sourceBlock.number,
+      blockHash: sourceBlock.hash,
+      blockTimestamp: sourceBlock.timestamp,
+    },
+    assets,
+    directWalletTotalUsd,
+    debankReferenceUsd,
+    unattributedDeBankUsd: debankReferenceUsd - directWalletTotalUsd,
+  };
 }
 
 async function fetchText(url, label) {
@@ -621,6 +796,15 @@ function readExistingHypercoreSnapshot() {
   }
 }
 
+function readExistingEvmSnapshot() {
+  if (!fs.existsSync(EVM_SNAPSHOT_PATH)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(EVM_SNAPSHOT_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 function comparableTimedSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return '';
   return JSON.stringify({ ...snapshot, capturedAt: '' });
@@ -688,10 +872,11 @@ async function collectValues(debankValue) {
       return [key, floorEth * ethUsd, floorEth];
     })
   );
-  const [brokerWallet, solanaSnapshot, hypercoreSnapshot] = await Promise.all([
+  const [brokerWallet, solanaSnapshot, hypercoreSnapshot, evmSnapshot] = await Promise.all([
     getCoattailBrokerWalletValue(),
     getSolanaVaultSnapshot(),
     getHypercoreVaultSnapshot(),
+    getEvmVaultSnapshot(debankValue, ethUsd, bytesPrice),
   ]);
 
   const values = {
@@ -709,14 +894,14 @@ async function collectValues(debankValue) {
     floorsEth[key] = eth;
   }
 
-  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings, solanaSnapshot, hypercoreSnapshot };
+  return { values, ethUsd, floorsEth, brokerWalletHoldings: brokerWallet.holdings, solanaSnapshot, hypercoreSnapshot, evmSnapshot };
 }
 
 async function main() {
   const args = parseArgs(process.argv);
   const debank = args.debank ? parseNumber(args.debank, 'debank_portfolio_usd') : null;
 
-  const { values, ethUsd, floorsEth, brokerWalletHoldings, solanaSnapshot, hypercoreSnapshot } = await collectValues(debank ?? 0);
+  const { values, ethUsd, floorsEth, brokerWalletHoldings, solanaSnapshot, hypercoreSnapshot, evmSnapshot } = await collectValues(debank ?? 0);
 
   if (args.preview || debank === null) {
     console.log('Vault snapshot source preview. No files were changed.');
@@ -739,6 +924,10 @@ async function main() {
     for (const asset of hypercoreSnapshot.assets) {
       console.log(`  ${asset.symbol}: balance=${formatValue(asset.quantity, 9)} hold=${formatValue(asset.hold, 9)} price_usd=${formatValue(asset.priceUsd, 8)} value_usd=${formatValue(asset.marketValueUsd, 2)}`);
     }
+    console.log(`evm_direct_wallet_usd=${formatValue(evmSnapshot.directWalletTotalUsd, 2)} (${evmSnapshot.assets.length} allowlisted Ethereum assets; informational look-through)`);
+    for (const asset of evmSnapshot.assets) {
+      console.log(`  ${asset.symbol}: balance=${formatValue(asset.quantity, 9)} price_usd=${formatValue(asset.priceUsd, 8)} value_usd=${formatValue(asset.marketValueUsd, 2)}`);
+    }
     if (debank === null) {
       console.log('Missing debank_portfolio_usd. Re-run with --debank <usd_value> to update public/vault-snapshot.csv.');
     }
@@ -749,27 +938,38 @@ async function main() {
   const existingCsv = readExistingSnapshot();
   const existingSolanaSnapshot = readExistingSolanaSnapshot();
   const existingHypercoreSnapshot = readExistingHypercoreSnapshot();
-  if (
-    existingCsv === nextCsv.trim()
-    && comparableTimedSnapshot(existingSolanaSnapshot) === comparableTimedSnapshot(solanaSnapshot)
-    && comparableTimedSnapshot(existingHypercoreSnapshot) === comparableTimedSnapshot(hypercoreSnapshot)
-  ) {
+  const existingEvmSnapshot = readExistingEvmSnapshot();
+  const csvChanged = existingCsv !== nextCsv.trim();
+  const solanaChanged = comparableTimedSnapshot(existingSolanaSnapshot) !== comparableTimedSnapshot(solanaSnapshot);
+  const hypercoreChanged = comparableTimedSnapshot(existingHypercoreSnapshot) !== comparableTimedSnapshot(hypercoreSnapshot);
+  const evmChanged = comparableTimedSnapshot(existingEvmSnapshot) !== comparableTimedSnapshot(evmSnapshot);
+  if (!csvChanged && !solanaChanged && !hypercoreChanged && !evmChanged) {
     console.log('No vault snapshot data changes; leaving Engine Room snapshot time unchanged.');
     return;
   }
 
   const snapshotTime = formatUtcSnapshot();
-  solanaSnapshot.capturedAt = snapshotTime;
-  hypercoreSnapshot.capturedAt = snapshotTime;
-  fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
-  fs.writeFileSync(SOLANA_SNAPSHOT_PATH, `${JSON.stringify(solanaSnapshot, null, 2)}\n`);
-  fs.writeFileSync(HYPERCORE_SNAPSHOT_PATH, `${JSON.stringify(hypercoreSnapshot, null, 2)}\n`);
-  updateVaultSnapshotMetadata(snapshotTime);
-
-  console.log(`Updated ${path.relative(process.cwd(), VAULT_SNAPSHOT_PATH)}`);
-  console.log(`Updated ${path.relative(process.cwd(), VAULT_METADATA_PATH)} capture time to ${snapshotTime}`);
-  console.log(`Updated ${path.relative(process.cwd(), SOLANA_SNAPSHOT_PATH)} at finalized Solana slot ${Math.max(solanaSnapshot.balanceSource.tokenAccountsSlot, solanaSnapshot.balanceSource.nativeBalanceSlot)}`);
-  console.log(`Updated ${path.relative(process.cwd(), HYPERCORE_SNAPSHOT_PATH)} with ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').quantity, 8)} HYPE at ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').priceUsd, 4)} USD`);
+  if (csvChanged) {
+    fs.writeFileSync(VAULT_SNAPSHOT_PATH, nextCsv);
+    updateVaultSnapshotMetadata(snapshotTime);
+    console.log(`Updated ${path.relative(process.cwd(), VAULT_SNAPSHOT_PATH)}`);
+    console.log(`Updated ${path.relative(process.cwd(), VAULT_METADATA_PATH)} capture time to ${snapshotTime}`);
+  }
+  if (solanaChanged) {
+    solanaSnapshot.capturedAt = snapshotTime;
+    fs.writeFileSync(SOLANA_SNAPSHOT_PATH, `${JSON.stringify(solanaSnapshot, null, 2)}\n`);
+    console.log(`Updated ${path.relative(process.cwd(), SOLANA_SNAPSHOT_PATH)} at finalized Solana slot ${Math.max(solanaSnapshot.balanceSource.tokenAccountsSlot, solanaSnapshot.balanceSource.nativeBalanceSlot)}`);
+  }
+  if (hypercoreChanged) {
+    hypercoreSnapshot.capturedAt = snapshotTime;
+    fs.writeFileSync(HYPERCORE_SNAPSHOT_PATH, `${JSON.stringify(hypercoreSnapshot, null, 2)}\n`);
+    console.log(`Updated ${path.relative(process.cwd(), HYPERCORE_SNAPSHOT_PATH)} with ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').quantity, 8)} HYPE at ${formatValue(hypercoreSnapshot.assets.find((asset) => asset.symbol === 'HYPE').priceUsd, 4)} USD`);
+  }
+  if (evmChanged) {
+    evmSnapshot.capturedAt = snapshotTime;
+    fs.writeFileSync(EVM_SNAPSHOT_PATH, `${JSON.stringify(evmSnapshot, null, 2)}\n`);
+    console.log(`Updated ${path.relative(process.cwd(), EVM_SNAPSHOT_PATH)} at finalized Ethereum block ${evmSnapshot.balanceSource.blockNumber}`);
+  }
   console.log(`black_price_usd=${formatValue(values.black_price_usd, 8)}`);
   console.log(`bytes_price_usd=${formatValue(values.bytes_price_usd, 8)}`);
   console.log(`neo_s1_floor_usd=${formatValue(values.neo_s1_floor_usd, 2)}`);

@@ -42,6 +42,16 @@ test('Engine Room uses the terminal-family hero and five-section hierarchy', asy
   });
 });
 
+test('Engine Room defers wall-clock rendering until after hydration', async () => {
+  const ui = await read('../app/engine/EngineRoom.tsx');
+
+  assert.doesNotMatch(ui, /useState\(\(\) => Date\.now\(\)\)/);
+  assert.match(ui, /const \[currentTime, setCurrentTime\] = useState<number \| null>\(null\)/);
+  assert.match(ui, /setCurrentTime\(Date\.now\(\)\)/);
+  assert.match(ui, /currentTime === null \? null : Math\.floor/);
+  assert.match(ui, /\{daysSinceGenesis \?\? '—'\}/);
+});
+
 test('Engine Room renders a sanitized, extensible NFT portfolio as responsive linked tiles', async () => {
   const [ui, css, neoRoute, alchemy] = await Promise.all([
     read('../app/engine/EngineRoom.tsx'),

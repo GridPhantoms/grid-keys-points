@@ -756,9 +756,10 @@ export default function EngineRoom() {
   const [rewardKeyType, setRewardKeyType] = useState<RewardKeyType>('genesis');
   const [hypotheticalBytesPrice, setHypotheticalBytesPrice] = useState('');
   const [rewardKeyCount, setRewardKeyCount] = useState('1');
-  const [currentTime] = useState(() => Date.now());
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
 
   useEffect(() => {
+    const hydrationTimer = window.setTimeout(() => setCurrentTime(Date.now()), 0);
     let cancelled = false;
 
     const loadData = async () => {
@@ -820,7 +821,10 @@ export default function EngineRoom() {
     };
 
     loadData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(hydrationTimer);
+    };
   }, []);
 
   const snapshot = sources.vault.data ?? {};
@@ -879,7 +883,7 @@ export default function EngineRoom() {
     ? rewardArchive.uniqueRecipientsByCycle.reduce((sum, count) => sum + ((count / liberatedSlaves) * 100), 0) / rewardArchive.uniqueRecipientsByCycle.length
     : 0;
 
-  const daysSinceGenesis = Math.floor((currentTime - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
+  const daysSinceGenesis = currentTime === null ? null : Math.floor((currentTime - GENESIS_LAUNCH) / (1000 * 60 * 60 * 24));
 
   const neoS1Count = nftHoldings?.s1 ?? 0;
   const neoS2Count = nftHoldings?.s2 ?? 0;
@@ -1185,7 +1189,7 @@ export default function EngineRoom() {
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
             <article><span>AVG. VOTER PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
-            <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis}</strong><small>SINCE FIRST MINT</small></article>
+            <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis ?? '—'}</strong><small>SINCE FIRST MINT</small></article>
           </div>
         </section>
 

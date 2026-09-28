@@ -4,16 +4,16 @@
   "chainId": 1,
   "network": "mainnet",
   "walletAddress": "0x6a1bc919e847c12725904965e05971b818b47ad0",
-  "capturedAt": "2026-09-27T12:08:13Z",
+  "capturedAt": "2026-09-28T00:07:56Z",
   "valuationRole": "direct-wallet-look-through",
   "accountingTreatment": "included-in-debank-not-added-to-total",
   "verificationStatus": "independently-verified",
   "balanceSource": {
     "provider": "Ethereum JSON-RPC",
     "finality": "finalized",
-    "blockNumber": 26068622,
-    "blockHash": "0xbaa1595ab094f2c6e737e061472f8fdd4b68f91777867faa900b0989fa5dd796",
-    "blockTimestamp": "2026-09-27T11:53:59Z"
+    "blockNumber": 26072176,
+    "blockHash": "0x1d43be694b7dcbdc0fcbdb2d18ca34497b04009b0d8509272e8d6ed7b543094f",
+    "blockTimestamp": "2026-09-27T23:50:47Z"
   },
   "assets": [
     {
@@ -29,8 +29,8 @@
       "decimals": 18,
       "rawBalance": "1529095657983913555",
       "quantity": 1.5290956579839134,
-      "priceUsd": 2712.55,
-      "marketValueUsd": 4147.748427064264,
+      "priceUsd": 2689.81,
+      "marketValueUsd": 4112.9767918017105,
       "costBasisUsd": 3666.83,
       "basisQuantity": 1.3723189254860362,
       "averageEntryUsd": 2671.9955047630883,
@@ -39,7 +39,7 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "Engine Room ETH/USD reference",
-        "observedAt": "2026-09-27T12:08:13Z",
+        "observedAt": "2026-09-28T00:07:55Z",
         "confidence": null
       }
     },
@@ -66,7 +66,7 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "USD par",
-        "observedAt": "2026-09-27T12:08:13Z",
+        "observedAt": "2026-09-28T00:07:55Z",
         "confidence": 1
       }
     },
@@ -83,8 +83,8 @@
       "decimals": 8,
       "rawBalance": "10720354",
       "quantity": 0.10720354,
-      "priceUsd": 84876.43234282515,
-      "marketValueUsd": 9099.05400972135,
+      "priceUsd": 84458.49846322012,
+      "marketValueUsd": 9054.250018341758,
       "costBasisUsd": 3438,
       "basisQuantity": 0.04128509,
       "averageEntryUsd": 83274.61560577923,
@@ -93,7 +93,7 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "DefiLlama Coins API",
-        "observedAt": "2026-09-27T12:01:40Z",
+        "observedAt": "2026-09-28T00:05:40Z",
         "confidence": 0.99
       }
     },
@@ -110,8 +110,8 @@
       "decimals": 18,
       "rawBalance": "72443478241046289353",
       "quantity": 72.4434782410463,
-      "priceUsd": 9.950730110441215,
-      "marketValueUsd": 720.8655002382724,
+      "priceUsd": 9.665910900969909,
+      "marketValueUsd": 700.2322060343057,
       "costBasisUsd": 659.84,
       "basisQuantity": 72.4434782410463,
       "averageEntryUsd": 9.108342338346427,
@@ -120,7 +120,7 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "DefiLlama Coins API",
-        "observedAt": "2026-09-27T12:06:40Z",
+        "observedAt": "2026-09-28T00:05:40Z",
         "confidence": 0.99
       }
     },
@@ -137,8 +137,8 @@
       "decimals": 9,
       "rawBalance": "2987868015",
       "quantity": 2.987868015,
-      "priceUsd": 328.91121534864345,
-      "marketValueUsd": 982.7433001149889,
+      "priceUsd": 322.2367729188719,
+      "marketValueUsd": 962.8009470611156,
       "costBasisUsd": 879.79,
       "basisQuantity": 2.987868015,
       "averageEntryUsd": 294.45410425868494,
@@ -147,7 +147,7 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "DefiLlama Coins API",
-        "observedAt": "2026-09-27T11:51:50Z",
+        "observedAt": "2026-09-27T23:51:50Z",
         "confidence": 0.99
       }
     },
@@ -164,8 +164,8 @@
       "decimals": 18,
       "rawBalance": "500000000000000000002",
       "quantity": 500,
-      "priceUsd": 0.2986,
-      "marketValueUsd": 149.29999999999998,
+      "priceUsd": 0.3309,
+      "marketValueUsd": 165.45000000000002,
       "costBasisUsd": 0,
       "basisQuantity": 0,
       "averageEntryUsd": null,
@@ -174,12 +174,12 @@
       "balanceSource": "ethereum-json-rpc-finalized",
       "priceSource": {
         "provider": "Engine Room BYTES/USD reference",
-        "observedAt": "2026-09-27T12:08:13Z",
+        "observedAt": "2026-09-28T00:07:55Z",
         "confidence": null
       }
     }
   ],
-  "directWalletTotalUsd": 27494.788622138876,
-  "debankReferenceUsd": 32758,
-  "unattributedDeBankUsd": 5263.211377861124
+  "directWalletTotalUsd": 27390.78734823889,
+  "debankReferenceUsd": 32770,
+  "unattributedDeBankUsd": 5379.2126517611105
 }

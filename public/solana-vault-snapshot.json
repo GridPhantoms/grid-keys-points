@@ -3,19 +3,19 @@
   "chain": "solana",
   "network": "mainnet-beta",
   "walletAddress": "3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S",
-  "capturedAt": "2026-10-01T12:08:38Z",
+  "capturedAt": "2026-10-02T00:09:23Z",
   "verificationStatus": "independently-verified",
   "balanceSource": {
     "provider": "Solana JSON-RPC",
     "commitment": "finalized",
     "genesisHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
-    "tokenAccountsSlot": 452283234,
-    "nativeBalanceSlot": 452283233
+    "tokenAccountsSlot": 452444347,
+    "nativeBalanceSlot": 452444346
   },
   "priceSource": {
     "provider": "Jupiter Price API V3",
-    "minBlockId": 452283194,
-    "maxBlockId": 452283261
+    "minBlockId": 452444361,
+    "maxBlockId": 452444375
   },
   "assets": [
     {
@@ -28,15 +28,15 @@
       "walletAddress": "3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S",
       "contractOrMint": "native",
       "quantity": 22.788639241,
-      "priceUsd": 117.85617718569661,
-      "marketValueUsd": 2685.7819042082147,
+      "priceUsd": 118.35448448697517,
+      "marketValueUsd": 2697.137649528208,
       "costBasisUsd": 1979.192038,
       "basisQuantity": 17.479034959,
       "averageEntryUsd": 113.23234049491438,
       "verificationStatus": "independently-verified",
       "balanceSource": "solana-json-rpc-finalized",
       "priceSource": "jupiter-price-v3",
-      "priceBlockId": 452283261,
+      "priceBlockId": 452444375,
       "stage": 1,
       "targetUsd": 1979.192038,
       "deploymentProgress": 1
@@ -51,15 +51,15 @@
       "walletAddress": "3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S",
       "contractOrMint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
       "quantity": 1558.15795,
-      "priceUsd": 0.3241574233190184,
-      "marketValueUsd": 505.08846619604395,
+      "priceUsd": 0.3267470947228614,
+      "marketValueUsd": 509.12358328182955,
       "costBasisUsd": 439.9,
       "basisQuantity": 1558.15795,
       "averageEntryUsd": 0.282320543947422,
       "verificationStatus": "independently-verified",
       "balanceSource": "solana-json-rpc-finalized",
       "priceSource": "jupiter-price-v3",
-      "priceBlockId": 452283194,
+      "priceBlockId": 452444361,
       "stage": 1,
       "targetUsd": 439.9,
       "deploymentProgress": 1
@@ -74,15 +74,15 @@
       "walletAddress": "3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S",
       "contractOrMint": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
       "quantity": 90862.36,
-      "priceUsd": 0.009644169143313662,
-      "marketValueUsd": 876.2919686006576,
+      "priceUsd": 0.009437626882394991,
+      "marketValueUsd": 857.5250513338514,
       "costBasisUsd": 879.79,
       "basisQuantity": 90862.36,
       "averageEntryUsd": 0.00968266727828773,
       "verificationStatus": "independently-verified",
       "balanceSource": "solana-json-rpc-finalized",
       "priceSource": "jupiter-price-v3",
-      "priceBlockId": 452283217,
+      "priceBlockId": 452444367,
       "stage": 1,
       "targetUsd": 879.79,
       "deploymentProgress": 1
@@ -97,7 +97,7 @@
       "walletAddress": "3XkRf4B28NmH96aMbz3fNtfZhMeficq9fNv3kA7pFU9S",
       "contractOrMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
       "quantity": 0,
-      "priceUsd": 0.9999155371089876,
+      "priceUsd": 0.9999103488848677,
       "marketValueUsd": 0,
       "costBasisUsd": 0,
       "basisQuantity": 0,
@@ -105,11 +105,11 @@
       "verificationStatus": "independently-verified",
       "balanceSource": "solana-json-rpc-finalized",
       "priceSource": "jupiter-price-v3",
-      "priceBlockId": 452283259,
+      "priceBlockId": 452444375,
       "stage": null,
       "targetUsd": null,
       "deploymentProgress": null
     }
   ],
-  "totalUsd": 4067.1623390049162
+  "totalUsd": 4063.786284143889
 }

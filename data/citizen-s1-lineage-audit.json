@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-03T06:21:01.323Z",
+  "generatedAt": "2026-10-04T06:21:01.559Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26109886,
-    "blockHash": "0x52fbcecafa01ba47fe4341b8424ddb62d214713f33736b969ea664783fe3724f",
-    "asOf": "2026-10-03T06:01:59.000Z"
+    "blockNumber": 26117065,
+    "blockHash": "0x12987854b76805b005a9a6c1fd73132d0b2c51d24ca4199d8e22cb3dfc7dab57",
+    "asOf": "2026-10-04T06:01:59.000Z"
   },
   "definition": "Original Upload requires every constituent NFT used in the first S1 upload to come from its original 2021 claim distribution, excluding bought and later-issued components, and the Citizen never to have been disassembled or reassembled. Original Wallet is the Original Upload subset whose first assembly wallet remains the uninterrupted beneficial owner. Verified legacy-to-V2 migration and NeoTokyoStaker custody preserve both distinctions; ordinary wallet changes and transfer-backs break Original Wallet permanently.",
-  "rowsDigestSha256": "7e3e1ad5c2cabe58080162bf0ce1b991b882953803c08111f0d675227a0ecbcd",
+  "rowsDigestSha256": "39e893a2d1762acc6d795ee669e1366144723ace65f9cbcecef674c67a6bfce0",
   "originalUploadRows": [
     {
       "citizenId": "1",
@@ -18786,7 +18786,7 @@
         "item": "2469",
         "land": "2290"
       },
-      "location": "v2",
+      "location": "staked",
       "currentBeneficialOwner": "0x88323B94c0F2826B147B8bAffA952AeE58841360",
       "originalWallet": false
     },

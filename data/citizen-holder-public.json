@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-03T06:21:01.323Z",
+  "generatedAt": "2026-10-04T06:21:01.559Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26109886,
-    "blockHash": "0x52fbcecafa01ba47fe4341b8424ddb62d214713f33736b969ea664783fe3724f",
-    "asOf": "2026-10-03T06:01:59.000Z"
+    "blockNumber": 26117065,
+    "blockHash": "0x12987854b76805b005a9a6c1fd73132d0b2c51d24ca4199d8e22cb3dfc7dab57",
+    "asOf": "2026-10-04T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
@@ -13,12 +13,12 @@
       "supply": 2040,
       "uniqueOwners": 1698,
       "ownerPercentage": 83.23529411764706,
-      "rawCustodyOwnerCount": 520,
-      "directHolderWallets": 519,
+      "rawCustodyOwnerCount": 519,
+      "directHolderWallets": 518,
       "activeStakerWallets": 1196,
-      "directAndStakedOverlap": 17,
-      "directTokens": 612,
-      "stakedTokens": 1428,
+      "directAndStakedOverlap": 16,
+      "directTokens": 609,
+      "stakedTokens": 1431,
       "top": [
         {
           "rank": 1,
@@ -45,8 +45,8 @@
           "rank": 4,
           "address": "0x88323B94c0F2826B147B8bAffA952AeE58841360",
           "count": 11,
-          "held": 3,
-          "staked": 8
+          "held": 0,
+          "staked": 11
         },
         {
           "rank": 5,
@@ -196,18 +196,18 @@
           "staked": 4
         }
       ],
-      "topDigestSha256": "e31e14f8fa24e8b19a3d6e239e1b71c10629c41c17cf5a08c31fb305f995e3eb"
+      "topDigestSha256": "f7b3934aeb3686a678a315d40462dff3f2b35edbf0beb77a4cca67e3e8f55d96"
     },
     "s2": {
       "supply": 3581,
       "uniqueOwners": 2792,
       "ownerPercentage": 77.96704831052779,
-      "rawCustodyOwnerCount": 1475,
-      "directHolderWallets": 1474,
+      "rawCustodyOwnerCount": 1474,
+      "directHolderWallets": 1473,
       "activeStakerWallets": 1369,
-      "directAndStakedOverlap": 51,
-      "directTokens": 1896,
-      "stakedTokens": 1685,
+      "directAndStakedOverlap": 50,
+      "directTokens": 1895,
+      "stakedTokens": 1686,
       "top": [
         {
           "rank": 1,
@@ -396,8 +396,8 @@
       "percentageOfOriginalComponentUploads": 65.58139534883722,
       "locations": {
         "legacy": 66,
-        "v2": 325,
-        "staked": 878
+        "v2": 324,
+        "staked": 879
       }
     },
     "originalWallet": {

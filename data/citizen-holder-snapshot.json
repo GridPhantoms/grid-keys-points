@@ -1,11 +1,11 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-10-04T06:21:01.559Z",
+  "generatedAt": "2026-10-05T06:21:01.343Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26117065,
-    "blockHash": "0x12987854b76805b005a9a6c1fd73132d0b2c51d24ca4199d8e22cb3dfc7dab57",
-    "asOf": "2026-10-04T06:01:59.000Z"
+    "blockNumber": 26124245,
+    "blockHash": "0xc71acfa957c1f57e3d30cdb9b583fa0085bbcbce7d7bd0fd5d69dc1c17b938b0",
+    "asOf": "2026-10-05T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "contracts": {
@@ -19,26 +19,26 @@
     "staker": "0x67e1eCFA9232E27EAf3133B968A33A9a0dCa9e16"
   },
   "participantIndex": {
-    "baselineBlock": 26067793,
+    "baselineBlock": 26118403,
     "addressesChecked": 3324,
-    "deltaEvents": 54
+    "deltaEvents": 4
   },
   "verification": {
     "s1": {
-      "transferEvents": 9187,
+      "transferEvents": 9188,
       "transferPages": 10,
       "reconstructedTokens": 2040,
       "ownerOfVerified": 2040,
-      "stakingCustody": 1431,
-      "activePositions": 1431
+      "stakingCustody": 1430,
+      "activePositions": 1430
     },
     "s2": {
-      "transferEvents": 13779,
+      "transferEvents": 13782,
       "transferPages": 14,
       "reconstructedTokens": 3581,
       "ownerOfVerified": 3581,
-      "stakingCustody": 1686,
-      "activePositions": 1686
+      "stakingCustody": 1684,
+      "activePositions": 1684
     },
     "s1HistoricalDistinctions": {
       "componentManifestDigestSha256": "2fcbe574ba3343dae1294947ddcc67a6ebc28526b51d3d321a520f1e3de4c351",
@@ -61,12 +61,12 @@
       "supply": 2040,
       "uniqueOwners": 1698,
       "ownerPercentage": 83.23529411764706,
-      "rawCustodyOwnerCount": 519,
-      "directHolderWallets": 518,
-      "activeStakerWallets": 1196,
+      "rawCustodyOwnerCount": 520,
+      "directHolderWallets": 519,
+      "activeStakerWallets": 1195,
       "directAndStakedOverlap": 16,
-      "directTokens": 609,
-      "stakedTokens": 1431,
+      "directTokens": 610,
+      "stakedTokens": 1430,
       "top": [
         {
           "rank": 1,
@@ -250,12 +250,12 @@
       "supply": 3581,
       "uniqueOwners": 2792,
       "ownerPercentage": 77.96704831052779,
-      "rawCustodyOwnerCount": 1474,
-      "directHolderWallets": 1473,
-      "activeStakerWallets": 1369,
+      "rawCustodyOwnerCount": 1476,
+      "directHolderWallets": 1475,
+      "activeStakerWallets": 1367,
       "directAndStakedOverlap": 50,
-      "directTokens": 1895,
-      "stakedTokens": 1686,
+      "directTokens": 1897,
+      "stakedTokens": 1684,
       "top": [
         {
           "rank": 1,
@@ -466,8 +466,8 @@
       "percentageOfOriginalComponentUploads": 65.58139534883722,
       "locations": {
         "legacy": 66,
-        "v2": 324,
-        "staked": 879
+        "v2": 325,
+        "staked": 878
       },
       "tokenIds": [
         "1",
@@ -3854,7 +3854,7 @@
       "disassembledOrReassembled": 666,
       "inactiveOrUnresolved": 0
     },
-    "rowsDigestSha256": "39e893a2d1762acc6d795ee669e1366144723ace65f9cbcecef674c67a6bfce0",
+    "rowsDigestSha256": "f9d53624cce58ad84c64575af66c27d463a2a9e8768432c3db428b264468cb95",
     "definition": "Original Upload requires every constituent NFT used in the first S1 upload to come from its original 2021 claim distribution, excluding bought and later-issued components, and the Citizen never to have been disassembled or reassembled. Original Wallet is the Original Upload subset whose first assembly wallet remains the uninterrupted beneficial owner. Verified legacy-to-V2 migration and NeoTokyoStaker custody preserve both distinctions; ordinary wallet changes and transfer-backs break Original Wallet permanently."
   }
 }

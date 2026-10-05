@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-04T06:21:01.559Z",
+  "generatedAt": "2026-10-05T06:21:01.343Z",
   "source": {
     "chainId": 1,
-    "blockNumber": 26117065,
-    "blockHash": "0x12987854b76805b005a9a6c1fd73132d0b2c51d24ca4199d8e22cb3dfc7dab57",
-    "asOf": "2026-10-04T06:01:59.000Z"
+    "blockNumber": 26124245,
+    "blockHash": "0xc71acfa957c1f57e3d30cdb9b583fa0085bbcbce7d7bd0fd5d69dc1c17b938b0",
+    "asOf": "2026-10-05T06:01:59.000Z"
   },
   "methodology": "Current V2 Citizen ownership reconstructed from chronological ERC-721 transfers, verified token-by-token with ownerOf at one finalized block, then NeoTokyoStaker custody replaced with the originating wallet from active getStakerPositions records. Addresses are deduplicated per season; one person using multiple addresses remains multiple owners.",
   "seasons": {
@@ -13,12 +13,12 @@
       "supply": 2040,
       "uniqueOwners": 1698,
       "ownerPercentage": 83.23529411764706,
-      "rawCustodyOwnerCount": 519,
-      "directHolderWallets": 518,
-      "activeStakerWallets": 1196,
+      "rawCustodyOwnerCount": 520,
+      "directHolderWallets": 519,
+      "activeStakerWallets": 1195,
       "directAndStakedOverlap": 16,
-      "directTokens": 609,
-      "stakedTokens": 1431,
+      "directTokens": 610,
+      "stakedTokens": 1430,
       "top": [
         {
           "rank": 1,
@@ -202,12 +202,12 @@
       "supply": 3581,
       "uniqueOwners": 2792,
       "ownerPercentage": 77.96704831052779,
-      "rawCustodyOwnerCount": 1474,
-      "directHolderWallets": 1473,
-      "activeStakerWallets": 1369,
+      "rawCustodyOwnerCount": 1476,
+      "directHolderWallets": 1475,
+      "activeStakerWallets": 1367,
       "directAndStakedOverlap": 50,
-      "directTokens": 1895,
-      "stakedTokens": 1686,
+      "directTokens": 1897,
+      "stakedTokens": 1684,
       "top": [
         {
           "rank": 1,
@@ -396,8 +396,8 @@
       "percentageOfOriginalComponentUploads": 65.58139534883722,
       "locations": {
         "legacy": 66,
-        "v2": 324,
-        "staked": 879
+        "v2": 325,
+        "staked": 878
       }
     },
     "originalWallet": {

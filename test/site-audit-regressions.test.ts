@@ -127,6 +127,20 @@ test('public discovery and social-share surfaces are defined', async () => {
   assert.match(ogImage, /GRID PHANTOMS/);
 });
 
+test('root layout self-hosts Space Grotesk without build-time Google fetches', async () => {
+  const [layout, font, license] = await Promise.all([
+    read('../app/layout.tsx'),
+    readFile(new URL('../app/fonts/space-grotesk-latin.woff2', import.meta.url)),
+    read('../app/fonts/OFL.txt'),
+  ]);
+
+  assert.match(layout, /import localFont from ["']next\/font\/local["']/);
+  assert.match(layout, /space-grotesk-latin\.woff2/);
+  assert.doesNotMatch(layout, /next\/font\/google/);
+  assert.equal(font.subarray(0, 4).toString('ascii'), 'wOF2');
+  assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/);
+});
+
 test('raffle has one H1 and Trait Charts provide semantic point data', async () => {
   const [raffle, traits] = await Promise.all([
     read('../app/raffle/page.tsx'),

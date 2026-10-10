@@ -159,6 +159,7 @@ const COMPLETED_REWARD_HISTORY = [
   { cycle: 'June 2026', genesis: 2.4, exodus: 2 },
   { cycle: 'July 2026', genesis: 2.4, exodus: 2 },
   { cycle: 'August 2026', genesis: 1.5, exodus: 1.25 },
+  { cycle: 'September 2026', genesis: 1.5, exodus: 1.25 },
 ] as const;
 
 const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
@@ -172,26 +173,32 @@ const COMPLETED_REWARDS_PER_KEY = COMPLETED_REWARD_HISTORY.reduce(
 const REWARD_HISTORY_THROUGH = COMPLETED_REWARD_HISTORY.at(-1)?.cycle ?? '';
 
 const LATEST_GRID_CYCLE = {
-  cycle: 'August 2026',
-  proposalUrl: 'https://snapshot.box/#/s:gridphantoms.eth/proposal/0x105b2a2f4b29b359f721e84a6e997e02f04474a71e2aede2b8010076343eba10',
-  winner: 'Full-Spectrum Vault',
-  winnerGp: '286 GP',
-  winnerShare: '37.93%',
-  runnerUp: 'Liquid Diversified',
-  runnerUpGp: '269 GP',
+  cycle: 'September 2026',
+  proposalUrl: 'https://snapshot.box/#/s:gridphantoms.eth/proposal/0x23a37865793cdfff461fba8d8d4bc52e0572f4fea50946db1322662cca13801a',
+  winner: 'Monthly',
+  winnerGp: '514 GP',
+  winnerShare: '76.72%',
+  runnerUp: 'Every 2 Weeks',
+  runnerUpGp: '89 GP',
   participatingWallets: 36,
-  totalGp: 754,
-  snapshotBlock: '25,876,257',
-  genesisKeys: 307,
-  exodusKeys: 447,
+  participationLabel: '35 SNAPSHOT VOTERS + 1 SUBSCRIBER',
+  totalGp: 670,
+  votingPowerLabel: 'SNAPSHOT VOTING POWER',
+  snapshotBlock: '26,095,341',
+  genesisKeys: 274,
+  exodusKeys: 420,
   genesisRate: '1.50',
   exodusRate: '1.25',
-  baseBytes: '1,019.25',
-  hazardBytes: '217',
-  totalBytes: '1,236.25',
+  baseBytes: '936',
+  hazardBytes: '253',
+  hazardLabel: '31 WALLETS RECEIVED POSITIVE SUPPORT',
+  currentCycleBytes: '1,189',
+  catchupBytes: '40.75',
+  totalBytes: '1,229.75',
 } as const;
 
 const REWARD_PROOFS = [
+  { cycle: 'September 2026', distributed: 'October 10, 2026', occurredAt: '2026-10-10T16:15:42Z', bytes: '1,229.75', transfers: 36, hash: '0xadd26630e11dd8cc48dc15a4845d0d85a88f4bb3f87114e46c6d395b26b4f3f5' },
   { cycle: 'August 2026', distributed: 'September 6, 2026', occurredAt: '2026-09-06T22:56:53Z', bytes: '1,236.25', transfers: 36, hash: '0x831b49fea0931019c04575f82a292072c9da831dc9bcf48d78189f4c8cd71931' },
   { cycle: 'July 2026', distributed: 'August 3, 2026', occurredAt: '2026-08-03T02:10:34Z', bytes: '1,178.8', transfers: 27, hash: '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd' },
   { cycle: 'June 2026', distributed: 'July 13, 2026', occurredAt: '2026-07-13T03:17:55Z', bytes: '1,115.6', transfers: 28, hash: '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d' },
@@ -1111,8 +1118,8 @@ export default function EngineRoom() {
                 <small>{LATEST_GRID_CYCLE.winnerGp} · {LATEST_GRID_CYCLE.winnerShare} · runner-up {LATEST_GRID_CYCLE.runnerUp} at {LATEST_GRID_CYCLE.runnerUpGp}</small>
               </div>
               <dl className="engine-cycle-stats">
-                <div><dt>PARTICIPATION</dt><dd>{LATEST_GRID_CYCLE.participatingWallets}</dd><small>36 PARTICIPATING WALLETS</small></div>
-                <div><dt>VOTING POWER</dt><dd>{LATEST_GRID_CYCLE.totalGp}</dd><small>754 GP</small></div>
+                <div><dt>PARTICIPATION</dt><dd>{LATEST_GRID_CYCLE.participatingWallets}</dd><small>{LATEST_GRID_CYCLE.participationLabel}</small></div>
+                <div><dt>VOTING POWER</dt><dd>{LATEST_GRID_CYCLE.totalGp}</dd><small>{LATEST_GRID_CYCLE.votingPowerLabel}</small></div>
                 <div><dt>SNAPSHOT BLOCK</dt><dd>{LATEST_GRID_CYCLE.snapshotBlock}</dd><small>ETHEREUM</small></div>
                 <div><dt>QUALIFYING KEYS</dt><dd>{LATEST_GRID_CYCLE.genesisKeys + LATEST_GRID_CYCLE.exodusKeys}</dd><small>{LATEST_GRID_CYCLE.genesisKeys} GENESIS · {LATEST_GRID_CYCLE.exodusKeys} EXODUS</small></div>
               </dl>
@@ -1120,10 +1127,10 @@ export default function EngineRoom() {
             <div className="engine-cycle-allocation">
               <div><span>PER-KEY BASE RATES</span><strong>{LATEST_GRID_CYCLE.genesisRate} GENESIS · {LATEST_GRID_CYCLE.exodusRate} EXODUS</strong></div>
               <div><span>BASE REWARDS</span><strong>{LATEST_GRID_CYCLE.baseBytes} BASE</strong></div>
-              <div><span>FIRST HAZARD SUPPORT</span><strong>{LATEST_GRID_CYCLE.hazardBytes} HAZARD SUPPORT</strong><small>30 WALLETS RECEIVED POSITIVE SUPPORT</small></div>
+              <div><span>HAZARD SUPPORT</span><strong>{LATEST_GRID_CYCLE.hazardBytes} HAZARD SUPPORT</strong><small>{LATEST_GRID_CYCLE.hazardLabel}</small></div>
               <div className="is-total"><span>VERIFIED DISTRIBUTION</span><strong>{LATEST_GRID_CYCLE.totalBytes} BYTES</strong></div>
             </div>
-            <p className="engine-cycle-note">Hazard Support is wallet-level and is not included in the per-Key simulator. It was applied once under the cycle&apos;s fixed Clearance schedule after participation qualified; future potential Phantom Rewards remain discretionary and are never guaranteed.</p>
+            <p className="engine-cycle-note">The verified distribution includes {LATEST_GRID_CYCLE.currentCycleBytes} BYTES for Cycle 12 plus an approved {LATEST_GRID_CYCLE.catchupBytes} BYTES prior-cycle catch-up. Hazard Support is wallet-level and is not included in the per-Key simulator. Future potential Phantom Rewards remain discretionary and are never guaranteed.</p>
           </div>
           <a href={`https://snowtrace.io/tx/${LATEST_REWARD_PROOF.hash}`} target="_blank" rel="noopener noreferrer" className="engine-proof-link">
             <span className="engine-proof-status">LATEST VERIFIED DISTRIBUTION</span>
@@ -1185,10 +1192,10 @@ export default function EngineRoom() {
           </div>
           <div className="engine-vitals-grid">
             <article><span>LIBERATED SLAVES</span><EvidenceBadge classification="Observed" /><strong><MetricState status={holderStatus}>{liberatedSlaves.toLocaleString()}</MetricState></strong><small>UNIQUE WALLETS</small></article>
-            <article><span>TOTAL VOTES CAST</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 11 CYCLES</small></article>
+            <article><span>WALLET-LEVEL REWARDS</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={rewardTotalStatus}>{totalVotesCast.toLocaleString()}</MetricState></strong><small>ACROSS 12 CYCLES</small></article>
             <article><span>AVG. KEYS PER PHANTOM</span><EvidenceBadge classification="Calculated" /><strong><MetricState status={averageKeysStatus}>{avgKeysPerPhantomCalc.toFixed(2)}</MetricState></strong><small>KEYS / HOLDER</small></article>
             <article><span>EXODUS MINT PROGRESS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={totalKeysStatus}>{exodusMintProgress.toFixed(2)}%</MetricState></strong><small>OF 3,333 SUPPLY</small></article>
-            <article><span>AVG. VOTER PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
+            <article><span>AVG. REWARD PARTICIPATION</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan"><MetricState status={participationStatus}>{voterParticipationRate.toFixed(1)}%</MetricState></strong><small>VS CURRENT HOLDERS</small></article>
             <article><span>DAYS SINCE GENESIS</span><EvidenceBadge classification="Calculated" /><strong className="engine-cyan">{daysSinceGenesis ?? '—'}</strong><small>SINCE FIRST MINT</small></article>
           </div>
         </section>

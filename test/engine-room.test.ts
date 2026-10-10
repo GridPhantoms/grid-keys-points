@@ -161,6 +161,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   ]);
 
   const proofHashes = [
+    '0xadd26630e11dd8cc48dc15a4845d0d85a88f4bb3f87114e46c6d395b26b4f3f5',
     '0x831b49fea0931019c04575f82a292072c9da831dc9bcf48d78189f4c8cd71931',
     '0x65674cb20d3980ef4bf9e93eeeb0560a746030dc6aa1a48390c4cc6d4bf66efd',
     '0x1a00539906d2e1c7508a1c1aef64b0a7e66a2b55d15cc6f3361b74b8da36202d',
@@ -177,7 +178,7 @@ test('Engine Room exposes verified reward proofs and keeps supporting copy respo
   proofHashes.forEach((hash) => assert.match(ui, new RegExp(hash)));
   assert.match(ui, /<details className="engine-proof-shelf">/);
   assert.match(ui, /VIEW \{EARLIER_REWARD_PROOFS\.length\} EARLIER PROOFS/);
-  assert.match(ui, /TOTAL VOTES CAST/);
+  assert.match(ui, /WALLET-LEVEL REWARDS/);
   assert.doesNotMatch(ui, /ELIGIBLE DISTRIBUTION ROWS/);
   assert.match(css, /\.engine-disclaimer\{[^}]*overflow-wrap:anywhere/);
   assert.match(css, /\.engine-proof-shelf\{/);
@@ -321,10 +322,10 @@ test('Engine Room delayed-review follow-up keeps provenance and wording literal'
   assert.match(ui, /ESTIMATED USD VALUE/);
   assert.match(ui, /Snapshot BYTES price:/);
   assert.match(ui, /LIBERATED SLAVES/);
-  assert.match(ui, /AVG\. VOTER PARTICIPATION/);
+  assert.match(ui, /AVG\. REWARD PARTICIPATION/);
   assert.match(ui, /VS CURRENT HOLDERS/);
 
-  assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 11);
+  assert.equal((ui.match(/occurredAt: '202[5-6]-/g) || []).length, 12);
   assert.match(ui, /<time dateTime=\{proof\.occurredAt\}>/);
 
   assert.match(neoRoute, /readAt: new Date\(\)\.toISOString\(\)/);
@@ -360,8 +361,8 @@ test('Engine Room mobile copy stays compact and source details are optional', as
   assert.match(ui, /TOTAL BYTES × SNAPSHOT PRICE/);
   assert.match(ui, /<span>REWARDS PER KEY<\/span><EvidenceBadge classification="Calculated"/);
   assert.match(ui, /<span>VALUE PER KEY<\/span><EvidenceBadge classification="Projected"/);
-  assert.match(ui, /<span>TOTAL VOTES CAST<\/span>/);
-  assert.match(ui, /<span>AVG\. VOTER PARTICIPATION<\/span>/);
+  assert.match(ui, /<span>WALLET-LEVEL REWARDS<\/span>/);
+  assert.match(ui, /<span>AVG\. REWARD PARTICIPATION<\/span>/);
 
   assert.doesNotMatch(ui, /VAULT VALUE PER KEY/);
   assert.doesNotMatch(ui, /COMPLETED PHANTOM REWARDS/);

@@ -63,25 +63,26 @@ test('Trait Intelligence Archive publishes the approved mechanics, categories, s
   assert.match(nav, /label: 'Trait Intelligence'/);
 });
 
-test('Engine Room publishes the verified August vote and distribution without converting Hazard Support into per-Key history', async () => {
+test('Engine Room publishes the verified September vote and distribution without converting Hazard Support into per-Key history', async () => {
   const [engine, manifest] = await Promise.all([
     read('../app/engine/EngineRoom.tsx'),
     read('../lib/phantom-reward-files.ts'),
   ]);
 
-  assert.match(manifest, /\/airdrops\/2026-08Airdrop\.csv/);
-  assert.match(manifest, /2026-09-06T22:56:53Z/);
-  assert.match(engine, /cycle: 'August 2026', genesis: 1\.5, exodus: 1\.25/);
-  assert.match(engine, /0x831b49fea0931019c04575f82a292072c9da831dc9bcf48d78189f4c8cd71931/);
-  assert.match(engine, /Full-Spectrum Vault/);
-  assert.match(engine, /286 GP/);
-  assert.match(engine, /36 PARTICIPATING WALLETS/);
-  assert.match(engine, /754 GP/);
-  assert.match(engine, /baseBytes: '1,019\.25'/);
-  assert.match(engine, /hazardBytes: '217'/);
-  assert.match(engine, /totalBytes: '1,236\.25'/);
-  assert.match(engine, /FIRST HAZARD SUPPORT/);
-  assert.match(engine, /30 WALLETS RECEIVED POSITIVE SUPPORT/);
-  assert.match(engine, /ACROSS 11 CYCLES/);
+  assert.match(manifest, /\/airdrops\/2026-09Airdrop\.csv/);
+  assert.match(manifest, /2026-10-10T16:15:42Z/);
+  assert.match(engine, /cycle: 'September 2026', genesis: 1\.5, exodus: 1\.25/);
+  assert.match(engine, /0xadd26630e11dd8cc48dc15a4845d0d85a88f4bb3f87114e46c6d395b26b4f3f5/);
+  assert.match(engine, /winner: 'Monthly'/);
+  assert.match(engine, /514 GP/);
+  assert.match(engine, /35 SNAPSHOT VOTERS \+ 1 SUBSCRIBER/);
+  assert.match(engine, /totalGp: 670/);
+  assert.match(engine, /baseBytes: '936'/);
+  assert.match(engine, /hazardBytes: '253'/);
+  assert.match(engine, /currentCycleBytes: '1,189'/);
+  assert.match(engine, /catchupBytes: '40\.75'/);
+  assert.match(engine, /totalBytes: '1,229\.75'/);
+  assert.match(engine, /31 WALLETS RECEIVED POSITIVE SUPPORT/);
+  assert.match(engine, /ACROSS 12 CYCLES/);
   assert.match(engine, /Hazard Support is wallet-level and is not included in the per-Key simulator/);
 });

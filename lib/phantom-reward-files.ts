@@ -10,10 +10,11 @@ export const PHANTOM_REWARD_FILES = [
   '/airdrops/2026-06Airdrop.csv',
   '/airdrops/2026-07Airdrop.csv',
   '/airdrops/2026-08Airdrop.csv',
+  '/airdrops/2026-09Airdrop.csv',
 ] as const;
 
 export const PHANTOM_REWARD_FILE_NAMES = PHANTOM_REWARD_FILES.map((file) =>
   file.slice('/airdrops/'.length),
 );
 
-export const PHANTOM_REWARD_ARCHIVE_AT = '2026-09-06T22:56:53Z';
+export const PHANTOM_REWARD_ARCHIVE_AT = '2026-10-10T16:15:42Z';

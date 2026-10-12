@@ -1,0 +1,32 @@
+{
+  "snapshotAsOf": "2026-10-12T13:20:39.968867+00:00",
+  "sourceLabel": "Verified Oct 12, 2026 snapshot",
+  "market": {
+    "looseListings": 7356,
+    "officialRatingCoveragePct": 100.0,
+    "looseFloorEth": 0.0074899,
+    "within25PctOfFloor": 174
+  },
+  "supply": {
+    "original": 122154,
+    "loose": 107674,
+    "burnedIntoStatements": 14480,
+    "burnedPct": 11.85388935278419
+  },
+  "statements": {
+    "active": 168,
+    "listed": 43,
+    "creditsLocked": 14480,
+    "stageCounts": {
+      "BASE": 163,
+      "LAYERED": 4,
+      "INVERTED": 1
+    },
+    "floorEth": 0.709
+  },
+  "buildVsBuy": {
+    "looseBasketCredits": 80,
+    "looseBasketEth": 0.6209371289999998,
+    "statementFloorEth": 0.709
+  }
+}

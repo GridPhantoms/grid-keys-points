@@ -12,9 +12,11 @@ export const metadata: Metadata = {
 const integer = new Intl.NumberFormat('en-US');
 const percent = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 const eth = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 export default function CreditsOverviewPage() {
-  const statementDiscount = (1 - overview.buildVsBuy.statementFloorEth / overview.buildVsBuy.looseBasketEth) * 100;
+  const listedPct = overview.market.looseListings / overview.supply.loose * 100;
+  const buildSavingsPct = (1 - overview.buildVsBuy.looseBasketEth / overview.buildVsBuy.statementFloorEth) * 100;
   return (
     <>
       <CreditsHeader active="overview" />
@@ -36,21 +38,23 @@ export default function CreditsOverviewPage() {
         <section className="cr-section" aria-labelledby="market-pulse">
           <div className="cr-section-head"><div><p className="cr-kicker">Market pulse</p><h2 id="market-pulse">The latest verified baseline</h2></div><span>{overview.sourceLabel}</span></div>
           <div className="cr-stat-grid">
-            <article><span>Loose floor</span><strong>{overview.market.looseFloorEth} ETH</strong><small>Verified snapshot reference</small></article>
-            <article><span>Loose listings</span><strong>{integer.format(overview.market.looseListings)}</strong><small>{integer.format(overview.market.within25PctOfFloor)} within 25% of floor</small></article>
-            <article><span>Rating coverage</span><strong>{percent.format(overview.market.officialRatingCoveragePct)}%</strong><small>Listed tokens with official CR</small></article>
+            <article><span>Loose floor</span><strong>{overview.market.looseFloorEth} ETH</strong><small className="cr-usd-equivalent">≈ {usd.format(overview.market.looseFloorEth * overview.market.ethUsd)}</small><small>Verified snapshot reference</small></article>
+            <article><span>Loose listings</span><strong>{integer.format(overview.market.looseListings)}</strong><small>{percent.format(listedPct)}% of loose supply</small><small>{integer.format(overview.market.within25PctOfFloor)} within 25% of floor</small></article>
           </div>
         </section>
 
         <div className="cr-split">
           <section className="cr-panel" aria-labelledby="supply-title">
             <p className="cr-kicker">Supply transformation</p>
-            <h2 id="supply-title">Loose CREDITS become Statements</h2>
-            <div className="cr-supply-bar" aria-label={`${percent.format(overview.supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${overview.supply.burnedPct}%` }} /></div>
+            <h2 id="supply-title">CREDITS Burn Progress</h2>
+            <div className="cr-supply-progress">
+              <div className="cr-supply-bar" aria-label={`${percent.format(overview.supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${overview.supply.burnedPct}%` }} /></div>
+              <span className="cr-supply-marker" style={{ left: `${overview.supply.burnedPct}%` }}>{percent.format(overview.supply.burnedPct)}%</span>
+            </div>
             <dl className="cr-detail-list">
               <div><dt>Original supply</dt><dd>{integer.format(overview.supply.original)}</dd></div>
               <div><dt>Loose today</dt><dd>{integer.format(overview.supply.loose)}</dd></div>
-              <div><dt>In Statements</dt><dd>{integer.format(overview.supply.burnedIntoStatements)} <small>({percent.format(overview.supply.burnedPct)}%)</small></dd></div>
+              <div><dt>Burned/In Statements</dt><dd>{integer.format(overview.supply.burnedIntoStatements)}</dd></div>
             </dl>
           </section>
 
@@ -66,8 +70,8 @@ export default function CreditsOverviewPage() {
         </div>
 
         <section className="cr-section cr-build" aria-labelledby="build-title">
-          <div><p className="cr-kicker">Build vs. buy</p><h2 id="build-title">An assembled Statement was slightly cheaper.</h2><p>At the verified snapshot, buying the lowest Statement cost {eth.format(overview.buildVsBuy.statementFloorEth)} ETH. Building one from the cheapest 80 loose CREDITS cost {eth.format(overview.buildVsBuy.looseBasketEth)} ETH.</p></div>
-          <strong>{percent.format(statementDiscount)}% less</strong>
+          <div><p className="cr-kicker">Build vs. buy</p><h2 id="build-title">Building from loose CREDITS was cheaper.</h2><p>At the verified snapshot, the cheapest executable 80-CREDIT basket cost {eth.format(overview.buildVsBuy.looseBasketEth)} ETH. The lowest listed base Statement cost {eth.format(overview.buildVsBuy.statementFloorEth)} ETH.</p></div>
+          <strong>{percent.format(buildSavingsPct)}% less</strong>
         </section>
 
         <section className="cr-section" aria-labelledby="preview-title">
@@ -78,7 +82,7 @@ export default function CreditsOverviewPage() {
           </div>
         </section>
       </main>
-      <footer className="cr-footer">Read-only research. No wallet connection or purchase execution.</footer>
+      <footer className="cr-footer"><Link href="/">Market Intelligence by GridPhantoms</Link><span>Read-only research. No wallet connection or purchase execution.</span></footer>
     </>
   );
 }

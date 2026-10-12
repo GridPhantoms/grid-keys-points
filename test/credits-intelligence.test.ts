@@ -141,6 +141,12 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(nav, /href: '\/credits'/);
   assert.doesNotMatch(home, /\/credits/);
   assert.doesNotMatch(overview, /why it surfaced/i);
+  assert.doesNotMatch(overview, /Rating coverage/i);
+  assert.match(overview, /CREDITS Burn Progress/);
+  assert.match(overview, /Burned\/In Statements/);
+  assert.match(overview, /Building from loose CREDITS was cheaper/);
+  assert.match(overview, /Market Intelligence by GridPhantoms/);
+  assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);
   assert.match(finder, /5 \* 60 \* 1000/);

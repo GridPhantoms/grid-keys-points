@@ -3,9 +3,9 @@
   "sourceLabel": "Verified Oct 12, 2026 snapshot",
   "market": {
     "looseListings": 7356,
-    "officialRatingCoveragePct": 100.0,
     "looseFloorEth": 0.0074899,
-    "within25PctOfFloor": 174
+    "within25PctOfFloor": 174,
+    "ethUsd": 2524.21
   },
   "supply": {
     "original": 122154,

@@ -242,6 +242,8 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /CREDITS Burn Progress/);
   assert.match(overview, /Burned\/In Statements/);
   assert.match(overview, /Where does 1,000 CR cost less\?/);
+  assert.match(overview, /sweeping the \{basket\.credits\} lowest-priced loose CREDITS found on the floor/);
+  assert.match(overview, /snapshot comparison, not a live executable quote/);
   assert.match(overview, /Find more Credit Rating for less/);
   assert.match(overview, /View market stats/);
   assert.match(overview, /Market intelligence provided by GridPhantoms/);

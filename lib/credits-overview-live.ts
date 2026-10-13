@@ -17,6 +17,7 @@ type OpenSeaOrder = {
 export type LiveCreditsOverview = {
   snapshotAsOf: string;
   nextRefresh: string | null;
+  sourceRefreshing: boolean;
   looseListings: number;
   looseFloorEth: number;
   within25PctOfFloor: number;
@@ -48,7 +49,9 @@ function orderPriceEth(order: OpenSeaOrder) {
   return value / 10 ** decimals;
 }
 
-async function fetchStatementOrders(apiKey: string) {
+async function fetchStatementOrdersUncached() {
+  const apiKey = process.env.OPENSEA_API_KEY;
+  if (!apiKey) throw new Error('OpenSea Statement listings are unavailable');
   let cursor: string | null = null;
   const orders: OpenSeaOrder[] = [];
   const seenCursors = new Set<string>();
@@ -71,15 +74,19 @@ async function fetchStatementOrders(apiKey: string) {
   return orders;
 }
 
-async function loadLiveCreditsOverviewUncached(): Promise<LiveCreditsOverview> {
-  const apiKey = process.env.OPENSEA_API_KEY;
-  if (!apiKey) throw new Error('OpenSea Statement listings are unavailable');
+const loadStatementOrders = unstable_cache(
+  fetchStatementOrdersUncached,
+  ['credits-statement-orders-v1'],
+  { revalidate: REFRESH_SECONDS },
+);
 
+export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   const [officialPayload, tickerPayload, statementOrders] = await Promise.all([
     fetchJson(OFFICIAL_MARKET_URL),
     fetchJson(COINBASE_TICKER_URL),
-    fetchStatementOrders(apiKey),
+    loadStatementOrders(),
   ]);
+  const officialStatus = officialPayload as { refreshing?: boolean };
   const ethUsd = Number((tickerPayload as { price?: string }).price);
   const normalized = normalizeOfficialCreditSnapshot(officialPayload, ethUsd);
   const looseByPrice = [...normalized.items].sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId);
@@ -107,6 +114,7 @@ async function loadLiveCreditsOverviewUncached(): Promise<LiveCreditsOverview> {
   return {
     snapshotAsOf: normalized.updatedAt ?? new Date().toISOString(),
     nextRefresh: normalized.nextRefresh,
+    sourceRefreshing: officialStatus.refreshing === true,
     looseListings: looseByPrice.length,
     looseFloorEth,
     within25PctOfFloor: looseByPrice.filter((item) => item.priceEth <= looseFloorEth * 1.25).length,
@@ -119,9 +127,3 @@ async function loadLiveCreditsOverviewUncached(): Promise<LiveCreditsOverview> {
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),
   };
 }
-
-export const loadLiveCreditsOverview = unstable_cache(
-  loadLiveCreditsOverviewUncached,
-  ['credits-overview-live-v2'],
-  { revalidate: REFRESH_SECONDS },
-);

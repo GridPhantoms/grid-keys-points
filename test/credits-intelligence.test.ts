@@ -198,6 +198,9 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(overview, /export const revalidate/);
   assert.match(overviewLoader, /unstable_cache/);
   assert.match(overviewLoader, /REFRESH_SECONDS = 10 \* 60/);
+  assert.match(overviewLoader, /credits-statement-orders-v1/);
+  assert.doesNotMatch(overviewLoader, /credits-overview-live-v/);
+  assert.match(overview, /Official market scan in progress/);
   assert.doesNotMatch(overview, /See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);

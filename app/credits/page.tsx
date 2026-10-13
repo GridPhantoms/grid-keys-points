@@ -68,7 +68,7 @@ export default async function CreditsOverviewPage() {
           <aside className="cr-status" aria-label="Snapshot status">
             <span><i /> Verified snapshot</span>
             <strong>{new Date(snapshotAsOf).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC</strong>
-            <small>{live ? 'Market baseline refreshes every 15 minutes.' : 'Showing the latest verified fallback snapshot.'}</small>
+            <small>{live?.sourceRefreshing ? 'Official market scan in progress; displaying the last completed snapshot.' : live ? 'Checked against the official market source every 15 minutes.' : 'Showing the latest verified fallback snapshot.'}</small>
             <small>Visible listings can be checked directly in Value Finder.</small>
           </aside>
         </section>

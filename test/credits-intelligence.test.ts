@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 // @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import {
+  compareBuildAndBuyValue,
   filterCreditListings,
   matchingCreditListings,
   normalizeOfficialCreditSnapshot,
@@ -153,6 +154,19 @@ test('manual listing reconciliation removes sold rows and applies current OpenSe
   assert.equal(reconciled[0].checkedAt, '2026-10-13T09:00:00.000Z');
 });
 
+test('build versus buy compares normalized ETH per 1K CR rather than headline cost', () => {
+  const comparison = compareBuildAndBuyValue({
+    looseBasketEth: 0.620937129,
+    looseBasketCr: 23863.7528,
+    statementFloorEth: 0.709,
+    statementFloorCr: 28581,
+  });
+  assert.equal(comparison.cheaperMarket, 'statement');
+  assert.ok(Math.abs(comparison.looseEthPer1kCr - 0.0260200956) < 1e-10);
+  assert.ok(Math.abs(comparison.statementEthPer1kCr - 0.0248066898) < 1e-10);
+  assert.ok(Math.abs(comparison.savingsPct - 4.66334117) < 1e-8);
+});
+
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
   const [nav, home, overview, finder, css] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
@@ -167,8 +181,10 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(overview, /Rating coverage/i);
   assert.match(overview, /CREDITS Burn Progress/);
   assert.match(overview, /Burned\/In Statements/);
-  assert.match(overview, /Building from loose CREDITS was cheaper/);
-  assert.match(overview, /Market Intelligence by GridPhantoms/);
+  assert.match(overview, /Where does 1,000 CR cost less\?/);
+  assert.match(overview, /Find more Credit Rating for less/);
+  assert.match(overview, /View market stats/);
+  assert.match(overview, /Market intelligence provided by GridPhantoms/);
   assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
   assert.match(overview, /The Statement Market/);
@@ -177,9 +193,12 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);
   assert.match(finder, /forceFresh/);
-  assert.match(finder, /5 \* 60 \* 1000/);
+  assert.match(finder, /15 \* 60 \* 1000/);
+  assert.doesNotMatch(finder, /five minutes/i);
   assert.match(finder, /OpenSea listings and prices may change before purchase|data\.caution/);
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /\.cr-table-wrap\{display:none\}/);
   assert.match(css, /\.cr-card-list\{display:grid/);
+  assert.match(css, /\.cr-nav a\{[^}]*text-transform:uppercase/);
+  assert.match(css, /\.cr-stat-grid \.cr-support-stat\{[^}]*font-size:14px/);
 });

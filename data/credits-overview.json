@@ -27,6 +27,9 @@
   "buildVsBuy": {
     "looseBasketCredits": 80,
     "looseBasketEth": 0.6209371289999998,
-    "statementFloorEth": 0.709
+    "looseBasketCr": 23863.7528,
+    "statementFloorEth": 0.709,
+    "statementFloorCr": 28581,
+    "statementFloorTokenId": 140
   }
 }

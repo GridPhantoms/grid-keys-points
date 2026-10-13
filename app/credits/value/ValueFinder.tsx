@@ -90,7 +90,7 @@ export default function ValueFinder() {
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void refresh(false), 0);
-    const refreshTimer = window.setInterval(() => void refresh(false), 5 * 60 * 1000);
+    const refreshTimer = window.setInterval(() => void refresh(false), 15 * 60 * 1000);
     const ageTimer = window.setInterval(() => setNow(Date.now()), 30 * 1000);
     return () => { window.clearTimeout(initialTimer); window.clearInterval(refreshTimer); window.clearInterval(ageTimer); };
   }, [refresh]);
@@ -138,7 +138,7 @@ export default function ValueFinder() {
         </section>
       )}
 
-      {data && <p className="cr-caution">{data.caution} Approximate USD uses the Coinbase ETH-USD ticker fetched with this snapshot. Listings recheck automatically every five minutes while this page is open.</p>}
+      {data && <p className="cr-caution">{data.caution} Approximate USD uses the Coinbase ETH-USD ticker fetched with this snapshot. The market snapshot rechecks automatically every 15 minutes while this page is open; use Refresh listings for a direct OpenSea validation of visible CREDITS.</p>}
     </div>
   );
 }

@@ -174,6 +174,25 @@ export function reconcileFreshCreditListings(
   });
 }
 
+export function compareBuildAndBuyValue(input: {
+  looseBasketEth: number;
+  looseBasketCr: number;
+  statementFloorEth: number;
+  statementFloorCr: number;
+}) {
+  const values = [input.looseBasketEth, input.looseBasketCr, input.statementFloorEth, input.statementFloorCr];
+  if (values.some((value) => !Number.isFinite(value) || value <= 0)) {
+    throw new Error('Build versus buy inputs must be positive');
+  }
+  const looseEthPer1kCr = input.looseBasketEth / input.looseBasketCr * 1_000;
+  const statementEthPer1kCr = input.statementFloorEth / input.statementFloorCr * 1_000;
+  const cheaperMarket = looseEthPer1kCr <= statementEthPer1kCr ? 'loose' as const : 'statement' as const;
+  const savingsPct = cheaperMarket === 'loose'
+    ? (1 - looseEthPer1kCr / statementEthPer1kCr) * 100
+    : (1 - statementEthPer1kCr / looseEthPer1kCr) * 100;
+  return { looseEthPer1kCr, statementEthPer1kCr, cheaperMarket, savingsPct };
+}
+
 export function rankStatementListings(metadata: StatementMetadata[], listings: StatementListing[], ethUsd: number) {
   if (!Number.isFinite(ethUsd) || ethUsd <= 0) throw new Error('ETH-USD price is unavailable');
   const metadataById = new Map(metadata.map((item) => [item.tokenId, item]));

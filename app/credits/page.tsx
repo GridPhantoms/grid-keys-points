@@ -25,6 +25,9 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD',
 export default async function CreditsOverviewPage() {
   const live = await loadLiveCreditsOverview().catch(() => null);
   const snapshotAsOf = live?.snapshotAsOf ?? overview.snapshotAsOf;
+  const protocolSnapshotLabel = new Date(overview.snapshotAsOf).toLocaleString('en-US', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
+  });
   const market = {
     looseListings: live?.looseListings ?? overview.market.looseListings,
     looseFloorEth: live?.looseFloorEth ?? overview.market.looseFloorEth,
@@ -85,6 +88,7 @@ export default async function CreditsOverviewPage() {
           <section className="cr-panel" aria-labelledby="supply-title">
             <p className="cr-kicker">Supply transformation</p>
             <h2 id="supply-title">CREDITS Burn Progress</h2>
+            <p className="cr-panel-asof">Protocol snapshot: {protocolSnapshotLabel} UTC</p>
             <div className="cr-supply-progress">
               <div className="cr-supply-bar" aria-label={`${percent.format(overview.supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${overview.supply.burnedPct}%` }} /></div>
               <span className="cr-supply-marker">{percent.format(overview.supply.burnedPct)}%</span>
@@ -99,6 +103,7 @@ export default async function CreditsOverviewPage() {
           <section className="cr-panel" aria-labelledby="statements-title">
             <p className="cr-kicker">Statement snapshot</p>
             <h2 id="statements-title">The Statement Market</h2>
+            <p className="cr-panel-asof">Protocol snapshot: {protocolSnapshotLabel} UTC</p>
             <dl className="cr-detail-list cr-statement-details">
               <div><dt>Current base floor</dt><dd>{eth.format(statementFloor.eth)} ETH<small>≈ {usd.format(statementFloor.eth * market.ethUsd)} · Statement #{statementFloor.tokenId}</small></dd></div>
               <div><dt>Active Statements</dt><dd>{integer.format(overview.statements.active)}</dd></div>

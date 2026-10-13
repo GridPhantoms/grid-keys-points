@@ -51,16 +51,16 @@ export default async function CreditsOverviewPage() {
   return (
     <>
       <CreditsHeader active="overview" />
+      <div className="cr-creditline"><Link href="/">Market intelligence provided by GridPhantoms <span aria-hidden="true">↗</span></Link></div>
       <main className="cr-main">
         <section className="cr-hero">
           <div>
             <p className="cr-kicker">Collector market view</p>
             <h1>Find more Credit Rating for less.</h1>
             <p className="cr-lede">Compare live asks across loose CREDITS and Statements to spot better-rated pieces and lower-cost CR before you buy.</p>
-            <Link href="/" className="cr-attribution">Market intelligence provided by GridPhantoms <span aria-hidden="true">↗</span></Link>
             <div className="cr-hero-actions">
               <Link href="/credits/value" className="cr-primary">Open Value Finder <span aria-hidden="true">→</span></Link>
-              <a href="#market-pulse" className="cr-market-jump">View market stats <span aria-hidden="true">↓</span></a>
+              <a href="#market-pulse" className="cr-primary">View market stats <span aria-hidden="true">↓</span></a>
             </div>
           </div>
           <aside className="cr-status" aria-label="Snapshot status">
@@ -111,13 +111,6 @@ export default async function CreditsOverviewPage() {
           <strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% cheaper</small></strong>
         </section>
 
-        <section className="cr-section" aria-labelledby="preview-title">
-          <div className="cr-section-head"><div><p className="cr-kicker">Value preview</p><h2 id="preview-title">Compare ETH per 1K CR</h2></div><Link href="/credits/value" className="cr-primary">See current values <span aria-hidden="true">→</span></Link></div>
-          <div className="cr-preview-grid">
-            <article><span>Loose CREDITS</span><strong>ETH per 1K CR</strong><p>Filter by minimum rating and maximum ask.</p></article>
-            <article><span>Statements</span><strong>Top 10 values</strong><p>Compare format, layers, rating and live ask.</p></article>
-          </div>
-        </section>
       </main>
       <footer className="cr-footer"><Link href="/">Market intelligence provided by GridPhantoms <span aria-hidden="true">↗</span></Link><span>Read-only research. No wallet connection or purchase execution.</span></footer>
     </>

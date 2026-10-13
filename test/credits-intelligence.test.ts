@@ -185,11 +185,12 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /Find more Credit Rating for less/);
   assert.match(overview, /View market stats/);
   assert.match(overview, /Market intelligence provided by GridPhantoms/);
+  assert.match(overview, /cr-creditline/);
+  assert.doesNotMatch(overview, /Value preview/);
   assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
   assert.match(overview, /The Statement Market/);
-  assert.match(overview, /Compare ETH per 1K CR/);
-  assert.match(overview, /className="cr-primary"[^>]*>See current values/);
+  assert.doesNotMatch(overview, /See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);
   assert.match(finder, /forceFresh/);

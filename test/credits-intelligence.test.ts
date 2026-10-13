@@ -168,11 +168,12 @@ test('build versus buy compares normalized ETH per 1K CR rather than headline co
 });
 
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
-  const [nav, home, overview, overviewLoader, finder, css] = await Promise.all([
+  const [nav, home, overview, overviewLoader, valuePage, finder, css] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/GridHome.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/credits-overview-live.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/value/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/value/ValueFinder.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/credits.css', import.meta.url), 'utf8'),
   ]);
@@ -187,6 +188,8 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /View market stats/);
   assert.match(overview, /Market intelligence provided by GridPhantoms/);
   assert.match(overview, /cr-creditline/);
+  assert.match(valuePage, /Market intelligence provided by GridPhantoms/);
+  assert.match(valuePage, /cr-creditline/);
   assert.doesNotMatch(overview, /Value preview/);
   assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);

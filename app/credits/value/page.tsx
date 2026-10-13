@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import CreditsHeader from '../CreditsHeader';
 import ValueFinder from './ValueFinder';
 
@@ -12,6 +13,7 @@ export default function CreditsValuePage() {
   return (
     <>
       <CreditsHeader active="value" />
+      <div className="cr-creditline"><Link href="/">Market intelligence provided by GridPhantoms <span aria-hidden="true">↗</span></Link></div>
       <main className="cr-main cr-value-main">
         <section className="cr-value-hero">
           <p className="cr-kicker">Live collector tool</p>

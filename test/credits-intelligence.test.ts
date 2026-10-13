@@ -275,6 +275,7 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(finder, /five minutes/i);
   assert.match(finder, /OpenSea listings and prices may change before purchase|data\.caution/);
   assert.match(css, /@media\(max-width:760px\)/);
+  assert.match(css, /@media\(max-width:760px\)[^{]*\{[\s\S]*\.cr-filterbar input,\.cr-filterbar select\{font-size:16px\}/);
   assert.match(css, /\.cr-table-wrap\{display:none\}/);
   assert.match(css, /\.cr-card-list\{display:grid/);
   assert.match(css, /\.cr-nav a\{[^}]*text-transform:uppercase/);

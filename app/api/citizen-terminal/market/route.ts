@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const OPEN_SEA_UA = 'Mozilla/5.0 (compatible; GridPhantomsCitizenTerminal/1.0)';
-const OPEN_SEA_ITEMS_HASH = '33a4c321d0c7bc7775c92efcf80e2ae3738322e8427401448eaecd4d09b90454';
+const OPEN_SEA_ITEMS_HASH = '2745771cc822d0d395a86530bcaa0cd2ee516df3700dc9293efd5f0acdaa86cc';
 const ERC721_SUPPLY_ABI = ['function totalSupply() view returns (uint256)', 'function balanceOf(address) view returns (uint256)'];
 const LISTINGS_REVALIDATE_SECONDS = 300;
 const OFFERS_REVALIDATE_SECONDS = 900;
@@ -49,7 +49,7 @@ async function s1Rankings() {
 }
 
 async function openSeaListings(collectionSlug: string, limit: number) {
-  const variables = { address: '0x0000000000000000000000000000000000000000', collectionSlug, limit, sort: { by: 'PRICE', direction: 'ASC' } };
+  const variables = { collectionSlug, limit, sort: { by: 'PRICE', direction: 'ASC' } };
   const extensions = { persistedQuery: { sha256Hash: OPEN_SEA_ITEMS_HASH, version: 1 } };
   const params = new URLSearchParams({ app_id: 'os2-web', operationName: 'CollectionItemsListQuery', variables: JSON.stringify(variables), extensions: JSON.stringify(extensions) });
   const response = await fetch(`https://gql.opensea.io/graphql?${params}`, {
@@ -165,7 +165,7 @@ const cachedListingSnapshot = unstable_cache(async () => {
     listings: await openSeaListings(collection.slug, collection.key === 's1-citizens' ? 50 : 20),
   })));
   return { asOf: new Date().toISOString(), rows };
-}, ['citizen-market-listings-v2'], { revalidate: LISTINGS_REVALIDATE_SECONDS });
+}, ['citizen-market-listings-v3'], { revalidate: LISTINGS_REVALIDATE_SECONDS });
 
 const cachedOfferSnapshot = unstable_cache(async () => {
   const settled = await Promise.allSettled(CITIZEN_COLLECTIONS.map((collection) => openSeaTopCollectionOffer(collection.slug)));

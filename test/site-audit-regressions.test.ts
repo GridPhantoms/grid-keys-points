@@ -127,6 +127,14 @@ test('public discovery and social-share surfaces are defined', async () => {
   assert.match(ogImage, /GRID PHANTOMS/);
 });
 
+test('Citizen market uses the current OpenSea price-sorted listing query', async () => {
+  const route = await read('../app/api/citizen-terminal/market/route.ts');
+
+  assert.match(route, /2745771cc822d0d395a86530bcaa0cd2ee516df3700dc9293efd5f0acdaa86cc/);
+  assert.match(route, /const variables = \{ collectionSlug, limit, sort: \{ by: 'PRICE', direction: 'ASC' \} \}/);
+  assert.doesNotMatch(route, /address: '0x0000000000000000000000000000000000000000'/);
+});
+
 test('root layout self-hosts Space Grotesk without build-time Google fetches', async () => {
   const [layout, font, license] = await Promise.all([
     read('../app/layout.tsx'),

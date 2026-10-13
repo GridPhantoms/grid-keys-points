@@ -18,6 +18,11 @@ export type CreditListing = {
   url: string;
 };
 
+export type FreshCreditListing = {
+  tokenId: number;
+  priceEth: number;
+};
+
 export type StatementMetadata = {
   tokenId: number;
   format: string;
@@ -141,6 +146,32 @@ export function matchingCreditListings(items: CreditListing[], query: ValueQuery
 
 export function filterCreditListings(items: CreditListing[], query: ValueQuery) {
   return matchingCreditListings(items, query).slice(0, query.limit);
+}
+
+export function reconcileFreshCreditListings(
+  candidates: CreditListing[],
+  freshListings: FreshCreditListing[],
+  ethUsd: number,
+  checkedAt: string,
+) {
+  if (!Number.isFinite(ethUsd) || ethUsd <= 0) throw new Error('ETH-USD price is unavailable');
+  if (!Number.isFinite(Date.parse(checkedAt))) throw new Error('Fresh listing timestamp is unavailable');
+  const priceByToken = new Map(freshListings.flatMap((listing) => (
+    Number.isInteger(listing.tokenId) && listing.tokenId >= 0 && Number.isFinite(listing.priceEth) && listing.priceEth > 0
+      ? [[listing.tokenId, listing.priceEth] as const]
+      : []
+  )));
+  return candidates.flatMap((item) => {
+    const priceEth = priceByToken.get(item.tokenId);
+    if (!priceEth) return [];
+    return [{
+      ...item,
+      priceEth,
+      priceUsd: priceEth * ethUsd,
+      ethPer1kCr: priceEth / (item.creditRating / 1_000),
+      checkedAt,
+    }];
+  });
 }
 
 export function rankStatementListings(metadata: StatementMetadata[], listings: StatementListing[], ethUsd: number) {

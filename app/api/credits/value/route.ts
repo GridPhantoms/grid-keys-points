@@ -4,7 +4,10 @@ import {
   matchingCreditListings,
   normalizeOfficialCreditSnapshot,
   parseValueQuery,
+  reconcileFreshCreditListings,
   rankStatementListings,
+  type CreditListing,
+  type FreshCreditListing,
   type StatementListing,
   type StatementMetadata,
 } from '@/lib/credits-intelligence';
@@ -14,6 +17,7 @@ export const dynamic = 'force-dynamic';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
 const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
+const CREDITS_SLUG = 'credits';
 const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
 const STATEMENTS_SLUG = 'statements';
 const USER_AGENT = 'GridPhantomsCredits/1.0';
@@ -49,6 +53,37 @@ function orderPriceEth(order: OpenSeaOrder) {
   const decimals = Number(current.decimals ?? 18);
   if (!Number.isFinite(value) || value <= 0 || !Number.isInteger(decimals) || decimals < 0 || decimals > 30) return null;
   return value / 10 ** decimals;
+}
+
+async function fetchBestCreditListing(apiKey: string, tokenId: number): Promise<FreshCreditListing | null> {
+  const response = await fetch(
+    `https://api.opensea.io/api/v2/listings/collection/${CREDITS_SLUG}/nfts/${tokenId}/best`,
+    {
+      cache: 'no-store',
+      headers: { accept: 'application/json', 'user-agent': USER_AGENT, 'x-api-key': apiKey, 'cache-control': 'no-cache' },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`OpenSea current-listing check failed (${response.status})`);
+  const order = await response.json() as OpenSeaOrder;
+  const priceEth = orderPriceEth(order);
+  return priceEth ? { tokenId, priceEth } : null;
+}
+
+async function revalidateCreditCandidates(apiKey: string, candidates: CreditListing[]) {
+  const freshListings: FreshCreditListing[] = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < candidates.length) {
+      const candidate = candidates[cursor];
+      cursor += 1;
+      const listing = await fetchBestCreditListing(apiKey, candidate.tokenId);
+      if (listing) freshListings.push(listing);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(8, candidates.length) }, () => worker()));
+  return freshListings;
 }
 
 async function fetchAllStatementListings(apiKey: string): Promise<{ items: StatementListing[]; pages: number }> {
@@ -90,14 +125,31 @@ async function fetchAllStatementListings(apiKey: string): Promise<{ items: State
 }
 
 export async function GET(request: Request) {
-  const query = parseValueQuery(new URL(request.url).searchParams);
+  const requestUrl = new URL(request.url);
+  const query = parseValueQuery(requestUrl.searchParams);
+  const forceFresh = requestUrl.searchParams.has('refresh');
   try {
     const [officialPayload, ethUsd] = await Promise.all([
       fetchJson(OFFICIAL_MARKET_URL),
       fetchEthUsd(),
     ]);
     const normalized = normalizeOfficialCreditSnapshot(officialPayload, ethUsd);
-    const matchingCredits = matchingCreditListings(normalized.items, query);
+    const snapshotMatches = matchingCreditListings(normalized.items, query);
+    let matchingCredits = snapshotMatches;
+    let freshValidatedAt: string | null = null;
+    let freshCandidatesChecked = 0;
+    const apiKey = process.env.OPENSEA_API_KEY;
+    if (forceFresh) {
+      if (!apiKey) throw new Error('Current OpenSea listing validation is unavailable');
+      const candidates = snapshotMatches.slice(0, Math.min(snapshotMatches.length, query.limit + 25));
+      const freshListings = await revalidateCreditCandidates(apiKey, candidates);
+      freshValidatedAt = new Date().toISOString();
+      freshCandidatesChecked = candidates.length;
+      matchingCredits = matchingCreditListings(
+        reconcileFreshCreditListings(candidates, freshListings, ethUsd, freshValidatedAt),
+        query,
+      );
+    }
     const filteredCredits = matchingCredits.slice(0, query.limit);
     const fetchedAt = new Date().toISOString();
 
@@ -114,7 +166,6 @@ export async function GET(request: Request) {
       listingPages: 0,
       items: [],
     };
-    const apiKey = process.env.OPENSEA_API_KEY;
     if (apiKey) {
       try {
         const liveListings = await fetchAllStatementListings(apiKey);
@@ -141,7 +192,9 @@ export async function GET(request: Request) {
         nextRefresh: normalized.nextRefresh,
         checkedAtOldest: normalized.items.reduce<string | null>((oldest, item) => !oldest || item.checkedAt < oldest ? item.checkedAt : oldest, null),
         totalLiveListings: normalized.items.length,
-        matchingListings: matchingCredits.length,
+        matchingListings: snapshotMatches.length,
+        freshValidatedAt,
+        freshCandidatesChecked,
         items: filteredCredits,
       },
       statements,

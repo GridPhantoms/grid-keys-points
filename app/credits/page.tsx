@@ -49,7 +49,7 @@ export default function CreditsOverviewPage() {
             <h2 id="supply-title">CREDITS Burn Progress</h2>
             <div className="cr-supply-progress">
               <div className="cr-supply-bar" aria-label={`${percent.format(overview.supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${overview.supply.burnedPct}%` }} /></div>
-              <span className="cr-supply-marker" style={{ left: `${overview.supply.burnedPct}%` }}>{percent.format(overview.supply.burnedPct)}%</span>
+              <span className="cr-supply-marker">{percent.format(overview.supply.burnedPct)}%</span>
             </div>
             <dl className="cr-detail-list">
               <div><dt>Original supply</dt><dd>{integer.format(overview.supply.original)}</dd></div>
@@ -60,7 +60,7 @@ export default function CreditsOverviewPage() {
 
           <section className="cr-panel" aria-labelledby="statements-title">
             <p className="cr-kicker">Statement snapshot</p>
-            <h2 id="statements-title">Concentrated Credit Rating</h2>
+            <h2 id="statements-title">The Statement Market</h2>
             <dl className="cr-detail-list">
               <div><dt>Active Statements</dt><dd>{integer.format(overview.statements.active)}</dd></div>
               <div><dt>Listed</dt><dd>{integer.format(overview.statements.listed)}</dd></div>
@@ -75,7 +75,7 @@ export default function CreditsOverviewPage() {
         </section>
 
         <section className="cr-section" aria-labelledby="preview-title">
-          <div className="cr-section-head"><div><p className="cr-kicker">Value preview</p><h2 id="preview-title">Start with the comparable unit</h2></div><Link href="/credits/value">See current values →</Link></div>
+          <div className="cr-section-head"><div><p className="cr-kicker">Value preview</p><h2 id="preview-title">Compare ETH per 1K CR</h2></div><Link href="/credits/value" className="cr-primary">See current values <span aria-hidden="true">→</span></Link></div>
           <div className="cr-preview-grid">
             <article><span>Loose CREDITS</span><strong>ETH per 1K CR</strong><p>Filter by minimum rating and maximum ask.</p></article>
             <article><span>Statements</span><strong>Top 10 values</strong><p>Compare format, layers, rating and live ask.</p></article>

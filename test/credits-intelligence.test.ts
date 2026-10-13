@@ -7,6 +7,7 @@ import {
   matchingCreditListings,
   normalizeOfficialCreditSnapshot,
   parseValueQuery,
+  reconcileFreshCreditListings,
   rankStatementListings,
 } from '../lib/credits-intelligence.ts';
 
@@ -130,6 +131,28 @@ test('credit result limits do not hide the matching count', () => {
   assert.equal(filterCreditListings(source, query).length, 25);
 });
 
+test('manual listing reconciliation removes sold rows and applies current OpenSea prices', () => {
+  const source = normalizeOfficialCreditSnapshot({
+    complete: true,
+    updatedAt: 1,
+    nextRefresh: 2,
+    items: [
+      officialItem({ id: 1, score: 800, price: '0.02', rank: 1, url: 'https://opensea.io/1' }),
+      officialItem({ id: 2, score: 500, price: '0.03', rank: 2, url: 'https://opensea.io/2' }),
+    ],
+  }, 2000).items;
+
+  const reconciled = reconcileFreshCreditListings(source, [
+    { tokenId: 2, priceEth: 0.025 },
+  ], 2000, '2026-10-13T09:00:00.000Z');
+
+  assert.deepEqual(reconciled.map((row) => row.tokenId), [2]);
+  assert.equal(reconciled[0].priceEth, 0.025);
+  assert.equal(reconciled[0].priceUsd, 50);
+  assert.equal(reconciled[0].ethPer1kCr, 0.05);
+  assert.equal(reconciled[0].checkedAt, '2026-10-13T09:00:00.000Z');
+});
+
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
   const [nav, home, overview, finder, css] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
@@ -147,8 +170,13 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /Building from loose CREDITS was cheaper/);
   assert.match(overview, /Market Intelligence by GridPhantoms/);
   assert.match(overview, /cr-supply-marker/);
+  assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
+  assert.match(overview, /The Statement Market/);
+  assert.match(overview, /Compare ETH per 1K CR/);
+  assert.match(overview, /className="cr-primary"[^>]*>See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);
+  assert.match(finder, /forceFresh/);
   assert.match(finder, /5 \* 60 \* 1000/);
   assert.match(finder, /OpenSea listings and prices may change before purchase|data\.caution/);
   assert.match(css, /@media\(max-width:760px\)/);

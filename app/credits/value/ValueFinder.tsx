@@ -16,7 +16,8 @@ type ApiData = {
   caution: string;
   credits: {
     available: boolean; source: string; sourceUpdatedAt: string | null; nextRefresh: string | null;
-    checkedAtOldest: string | null; totalLiveListings: number; matchingListings: number; items: CreditRow[];
+    checkedAtOldest: string | null; totalLiveListings: number; matchingListings: number;
+    freshValidatedAt: string | null; freshCandidatesChecked: number; items: CreditRow[];
   };
   statements: { available: boolean; reason: string | null; snapshotAsOf: string; listingPages: number; items: StatementRow[] };
 };
@@ -68,11 +69,13 @@ export default function ValueFinder() {
     limit,
   }).toString(), [appliedMinCr, appliedMaxEth, sort, limit]);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (forceFresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/credits/value?${query}`, { cache: 'no-store' });
+      const params = new URLSearchParams(query);
+      if (forceFresh) params.set('refresh', Date.now().toString());
+      const response = await fetch(`/api/credits/value?${params}`, { cache: 'no-store' });
       const payload = await response.json() as ApiData & { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Live value data is unavailable.');
       setData(payload);
@@ -86,8 +89,8 @@ export default function ValueFinder() {
   }, [query]);
 
   useEffect(() => {
-    const initialTimer = window.setTimeout(() => void refresh(), 0);
-    const refreshTimer = window.setInterval(() => void refresh(), 5 * 60 * 1000);
+    const initialTimer = window.setTimeout(() => void refresh(false), 0);
+    const refreshTimer = window.setInterval(() => void refresh(false), 5 * 60 * 1000);
     const ageTimer = window.setInterval(() => setNow(Date.now()), 30 * 1000);
     return () => { window.clearTimeout(initialTimer); window.clearInterval(refreshTimer); window.clearInterval(ageTimer); };
   }, [refresh]);
@@ -101,9 +104,10 @@ export default function ValueFinder() {
             <strong>{data?.credits.available ? 'Official CREDITS source available' : loading ? 'Checking live sources…' : 'Live source unavailable'}</strong>
             {data && <small>Fetched {relativeTime(data.fetchedAt, now)} · {new Date(data.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small>}
             {data?.credits.sourceUpdatedAt && <small>Official snapshot updated {relativeTime(data.credits.sourceUpdatedAt, now)}</small>}
+            {data?.credits.freshValidatedAt && <small>Visible results checked directly with OpenSea {relativeTime(data.credits.freshValidatedAt, now)}</small>}
           </div>
         </div>
-        <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh listings'}</button>
+        <button type="button" onClick={() => void refresh(true)} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh listings'}</button>
       </section>
 
       {error && <div className="cr-alert" role="alert"><strong>Live results unavailable.</strong><span>{error}</span></div>}

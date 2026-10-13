@@ -1,35 +1,35 @@
 {
-  "snapshotAsOf": "2026-10-12T13:20:39.968867+00:00",
-  "sourceLabel": "Verified Oct 12, 2026 snapshot",
+  "snapshotAsOf": "2026-10-13T13:21:48.827489+00:00",
+  "sourceLabel": "Verified Oct 13, 2026 snapshot",
   "market": {
-    "looseListings": 7356,
-    "looseFloorEth": 0.0074899,
-    "within25PctOfFloor": 174,
-    "ethUsd": 2524.21
+    "looseListings": 5993,
+    "looseFloorEth": 0.0127467,
+    "within25PctOfFloor": 129,
+    "ethUsd": 2501.1
   },
   "supply": {
     "original": 122154,
-    "loose": 107674,
-    "burnedIntoStatements": 14480,
-    "burnedPct": 11.85388935278419
+    "loose": 106074,
+    "burnedIntoStatements": 16080,
+    "burnedPct": 13.163711380716144
   },
   "statements": {
-    "active": 168,
-    "listed": 43,
-    "creditsLocked": 14480,
+    "active": 188,
+    "listed": 42,
+    "creditsLocked": 16080,
     "stageCounts": {
-      "BASE": 163,
+      "BASE": 183,
       "LAYERED": 4,
       "INVERTED": 1
     },
-    "floorEth": 0.709
+    "floorEth": 1.38
   },
   "buildVsBuy": {
     "looseBasketCredits": 80,
-    "looseBasketEth": 0.6209371289999998,
-    "looseBasketCr": 23863.7528,
-    "statementFloorEth": 0.709,
-    "statementFloorCr": 28581,
-    "statementFloorTokenId": 140
+    "looseBasketEth": 1.0961301175670006,
+    "looseBasketCr": 16794.087700000004,
+    "statementFloorEth": 1.38,
+    "statementFloorCr": 27151,
+    "statementFloorTokenId": 39
   }
 }

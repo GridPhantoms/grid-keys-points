@@ -167,6 +167,24 @@ test('build versus buy compares normalized ETH per 1K CR rather than headline co
   assert.ok(Math.abs(comparison.savingsPct - 4.66334117) < 1e-8);
 });
 
+test('static CREDITS fallback reconciles supply and active Statement metadata', async () => {
+  const [overview, statements] = await Promise.all([
+    readFile(new URL('../data/credits-overview.json', import.meta.url), 'utf8').then(JSON.parse),
+    readFile(new URL('../data/credits-statements.json', import.meta.url), 'utf8').then(JSON.parse),
+  ]);
+  const stageCounts = statements.items.reduce((counts: Record<string, number>, item: { stage: string }) => {
+    counts[item.stage] = (counts[item.stage] || 0) + 1;
+    return counts;
+  }, {});
+  const creditsInStatements = statements.items.reduce((sum: number, item: { credits: number }) => sum + item.credits, 0);
+
+  assert.equal(overview.snapshotAsOf, statements.snapshotAsOf);
+  assert.equal(overview.supply.loose + overview.supply.burnedIntoStatements, overview.supply.original);
+  assert.equal(overview.supply.burnedIntoStatements, creditsInStatements);
+  assert.equal(overview.statements.active, statements.items.length);
+  assert.deepEqual(overview.statements.stageCounts, stageCounts);
+});
+
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
   const [nav, home, overview, overviewLoader, valuePage, finder, css] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),

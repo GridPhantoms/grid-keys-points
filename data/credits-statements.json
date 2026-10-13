@@ -1,5 +1,5 @@
 {
-  "snapshotAsOf": "2026-10-12T13:20:39.968867+00:00",
+  "snapshotAsOf": "2026-10-13T13:21:48.827489+00:00",
   "items": [
     {
       "tokenId": 1,
@@ -883,7 +883,7 @@
     },
     {
       "tokenId": 119,
-      "format": "Consolidated",
+      "format": "Assessed",
       "stage": "BASE",
       "credits": 80,
       "layers": 1,
@@ -1211,7 +1211,7 @@
     },
     {
       "tokenId": 164,
-      "format": "Reconciled",
+      "format": "Recorded",
       "stage": "BASE",
       "credits": 80,
       "layers": 1,
@@ -1344,6 +1344,166 @@
       "credits": 80,
       "layers": 1,
       "creditRating": 30637
+    },
+    {
+      "tokenId": 182,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 48048
+    },
+    {
+      "tokenId": 183,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 52500
+    },
+    {
+      "tokenId": 184,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 49255
+    },
+    {
+      "tokenId": 185,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 49235
+    },
+    {
+      "tokenId": 186,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 51317
+    },
+    {
+      "tokenId": 187,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 53762
+    },
+    {
+      "tokenId": 188,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 54014
+    },
+    {
+      "tokenId": 189,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 53190
+    },
+    {
+      "tokenId": 190,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 32505
+    },
+    {
+      "tokenId": 191,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 43939
+    },
+    {
+      "tokenId": 192,
+      "format": "Reconciled",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 55045
+    },
+    {
+      "tokenId": 193,
+      "format": "Consolidated",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 38044
+    },
+    {
+      "tokenId": 194,
+      "format": "Accrued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 58256
+    },
+    {
+      "tokenId": 195,
+      "format": "Consolidated",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 28248
+    },
+    {
+      "tokenId": 196,
+      "format": "Amortized",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 35141
+    },
+    {
+      "tokenId": 197,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 33954
+    },
+    {
+      "tokenId": 198,
+      "format": "Recorded",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 36509
+    },
+    {
+      "tokenId": 199,
+      "format": "Recorded",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 25010
+    },
+    {
+      "tokenId": 200,
+      "format": "Recorded",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 50703
+    },
+    {
+      "tokenId": 201,
+      "format": "Issued",
+      "stage": "BASE",
+      "credits": 80,
+      "layers": 1,
+      "creditRating": 43914
     }
   ]
 }

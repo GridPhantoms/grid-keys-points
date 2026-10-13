@@ -3,7 +3,7 @@
   "venue": "hypercore",
   "network": "mainnet",
   "walletAddress": "0x6a1bc919e847c12725904965e05971b818b47ad0",
-  "capturedAt": "2026-10-12T12:07:57Z",
+  "capturedAt": "2026-10-13T00:07:46Z",
   "verificationStatus": "independently-verified",
   "balanceSource": {
     "provider": "Hyperliquid Info API",
@@ -28,8 +28,8 @@
       "quantity": 11.71549952,
       "hold": 0,
       "available": 11.71549952,
-      "priceUsd": 85.7735,
-      "marketValueUsd": 1004.87939807872,
+      "priceUsd": 80.629,
+      "marketValueUsd": 944.60901079808,
       "costBasisUsd": 1095.82,
       "basisQuantity": 11.71549952,
       "averageEntryUsd": 93.53591779243229,
@@ -65,5 +65,5 @@
       "deploymentProgress": null
     }
   ],
-  "totalUsd": 1006.4393980787199
+  "totalUsd": 946.16901079808
 }

@@ -44,12 +44,16 @@ export type RankedStatement = StatementMetadata & StatementListing & {
 };
 
 type UnknownRecord = Record<string, unknown>;
+const CREDITS_CONTRACT = '0x97630aa70ab14ed9883b41dafccbc11349723043';
+const ORIGINAL_CREDITS_SUPPLY = 122_154;
+const MAX_LISTING_AGE_MS = 24 * 60 * 60 * 1_000;
 
 function record(value: unknown): UnknownRecord | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as UnknownRecord : null;
 }
 
 function finiteNumber(value: unknown) {
+  if (value === null || value === undefined || value === '' || typeof value === 'boolean') return null;
   const number = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -68,15 +72,25 @@ function safeOpenSeaUrl(value: unknown) {
   if (typeof value !== 'string') return null;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && (url.hostname === 'opensea.io' || url.hostname.endsWith('.opensea.io')) ? url.toString() : null;
+    return url.protocol === 'https:' && url.hostname === 'opensea.io' && !url.username && !url.password ? url.toString() : null;
   } catch {
     return null;
   }
 }
 
+function optionalMillis(value: unknown) {
+  if (value === null || value === undefined) return null;
+  const milliseconds = finiteNumber(value);
+  if (milliseconds === null || milliseconds <= 0) throw new Error('Official snapshot timestamp is invalid');
+  const date = new Date(milliseconds);
+  if (!Number.isFinite(date.getTime())) throw new Error('Official snapshot timestamp is invalid');
+  return date.toISOString();
+}
+
 export function parseValueQuery(params: URLSearchParams): ValueQuery {
   const minCr = nonNegativeNumber(params.get('minCr')) ?? 0;
-  const maxEthRaw = positiveNumber(params.get('maxEth'));
+  const maxEthParam = params.get('maxEth');
+  const maxEthRaw = maxEthParam === null || maxEthParam === '' ? null : nonNegativeNumber(maxEthParam);
   const requestedSort = params.get('sort');
   const sort: CreditSort = requestedSort === 'lowest-price' || requestedSort === 'highest-cr' || requestedSort === 'best-value'
     ? requestedSort
@@ -93,7 +107,7 @@ export function parseValueQuery(params: URLSearchParams): ValueQuery {
 
 export function normalizeOfficialCreditSnapshot(payload: unknown, ethUsd: number) {
   const source = record(payload);
-  if (!source?.complete) throw new Error('Official CREDITS market snapshot is incomplete');
+  if (source?.complete !== true) throw new Error('Official CREDITS market snapshot is incomplete');
   if (!Array.isArray(source.items) || source.items.length === 0) throw new Error('Official rating/listing coverage is unavailable');
   if (!Number.isFinite(ethUsd) || ethUsd <= 0) throw new Error('ETH-USD price is unavailable');
 
@@ -103,10 +117,12 @@ export function normalizeOfficialCreditSnapshot(payload: unknown, ethUsd: number
     const creditRating = positiveNumber(item?.score);
     const officialRank = finiteNumber(item?.rank);
     const priceEth = positiveNumber(item?.price);
-    const url = safeOpenSeaUrl(item?.url);
-    const checkedAt = typeof item?.checkedAt === 'string' && Number.isFinite(Date.parse(item.checkedAt)) ? item.checkedAt : null;
-    if (!item?.listed || item.currency !== 'ETH' || !Number.isInteger(tokenId) || tokenId! < 0 || !creditRating
-      || !Number.isInteger(officialRank) || officialRank! <= 0 || !priceEth || !url || !checkedAt) {
+    const checkedAtMs = typeof item?.checkedAt === 'string' ? Date.parse(item.checkedAt) : Number.NaN;
+    const checkedAt = Number.isFinite(checkedAtMs) && checkedAtMs <= Date.now() + 5 * 60_000
+      && checkedAtMs >= Date.now() - MAX_LISTING_AGE_MS ? new Date(checkedAtMs).toISOString() : null;
+    if (item?.listed !== true || item.currency !== 'ETH' || !Number.isInteger(tokenId) || tokenId! < 1
+      || tokenId! > ORIGINAL_CREDITS_SUPPLY || !creditRating || !Number.isInteger(officialRank) || officialRank! <= 0
+      || !priceEth || !safeOpenSeaUrl(item?.url) || !checkedAt) {
       throw new Error('Official rating/listing coverage is unavailable');
     }
     return {
@@ -117,7 +133,7 @@ export function normalizeOfficialCreditSnapshot(payload: unknown, ethUsd: number
       priceUsd: priceEth * ethUsd,
       ethPer1kCr: priceEth / (creditRating / 1_000),
       checkedAt,
-      url,
+      url: `https://opensea.io/assets/ethereum/${CREDITS_CONTRACT}/${tokenId}`,
     };
   });
 
@@ -125,12 +141,10 @@ export function normalizeOfficialCreditSnapshot(payload: unknown, ethUsd: number
     throw new Error('Official rating/listing coverage contains duplicate tokens');
   }
 
-  const updatedAtNumber = finiteNumber(source.updatedAt);
-  const nextRefreshNumber = finiteNumber(source.nextRefresh);
   return {
     items,
-    updatedAt: updatedAtNumber === null ? null : new Date(updatedAtNumber).toISOString(),
-    nextRefresh: nextRefreshNumber === null ? null : new Date(nextRefreshNumber).toISOString(),
+    updatedAt: optionalMillis(source.updatedAt),
+    nextRefresh: optionalMillis(source.nextRefresh),
   };
 }
 
@@ -196,6 +210,9 @@ export function compareBuildAndBuyValue(input: {
 export function rankStatementListings(metadata: StatementMetadata[], listings: StatementListing[], ethUsd: number) {
   if (!Number.isFinite(ethUsd) || ethUsd <= 0) throw new Error('ETH-USD price is unavailable');
   const metadataById = new Map(metadata.map((item) => [item.tokenId, item]));
+  if (metadataById.size !== metadata.length) throw new Error('Statement metadata contains duplicate tokens');
+  const missingMetadata = listings.filter((listing) => !metadataById.has(listing.tokenId));
+  if (missingMetadata.length > 0) throw new Error('Current Statement metadata coverage is incomplete');
   return listings.flatMap((listing) => {
     const details = metadataById.get(listing.tokenId);
     if (!details || !Number.isFinite(listing.priceEth) || listing.priceEth <= 0 || !safeOpenSeaUrl(listing.url)

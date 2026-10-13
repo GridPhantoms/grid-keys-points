@@ -1,1509 +1,1905 @@
 {
+  "schemaVersion": 2,
   "snapshotAsOf": "2026-10-13T13:21:48.827489+00:00",
+  "provenance": {
+    "snapshotId": "20261013T132148Z-credits-daily-oct13-scheduled",
+    "status": "verified",
+    "cadence": "scheduled",
+    "protocolBlock": 26183812,
+    "protocolBlockHash": "0xf31819736996fd1d305c6d552974d38130a3966fa34f914072c5bcdbaf418616",
+    "protocolBlockTime": "2026-10-13T13:16:59+00:00",
+    "marketStartedAt": "2026-10-13T13:21:07.881211+00:00",
+    "marketCompletedAt": "2026-10-13T13:21:48.827489+00:00",
+    "ethUsdCandleStart": "2026-10-13T13:20:00+00:00",
+    "sourceFiles": [
+      "verification.json",
+      "live-snapshot.json",
+      "market-snapshot.json",
+      "ownership-snapshot-post-statements.json"
+    ]
+  },
+  "activeCount": 188,
   "items": [
     {
       "tokenId": 1,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 41722
+      "creditRating": 41722,
+      "avgRatingPerCredit": 521.525,
+      "stage": "BASE"
     },
     {
       "tokenId": 2,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 58852
+      "creditRating": 58852,
+      "avgRatingPerCredit": 735.65,
+      "stage": "BASE"
     },
     {
       "tokenId": 3,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 37706
+      "creditRating": 37706,
+      "avgRatingPerCredit": 471.325,
+      "stage": "BASE"
     },
     {
       "tokenId": 4,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35730
+      "creditRating": 35730,
+      "avgRatingPerCredit": 446.625,
+      "stage": "BASE"
     },
     {
       "tokenId": 5,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 42955
+      "creditRating": 42955,
+      "avgRatingPerCredit": 536.9375,
+      "stage": "BASE"
     },
     {
       "tokenId": 6,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 45716
+      "creditRating": 45716,
+      "avgRatingPerCredit": 571.45,
+      "stage": "BASE"
     },
     {
       "tokenId": 7,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33586
+      "creditRating": 33586,
+      "avgRatingPerCredit": 419.825,
+      "stage": "BASE"
     },
     {
       "tokenId": 8,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 53171
+      "creditRating": 53171,
+      "avgRatingPerCredit": 664.6375,
+      "stage": "BASE"
     },
     {
       "tokenId": 9,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 59484
+      "creditRating": 59484,
+      "avgRatingPerCredit": 743.55,
+      "stage": "BASE"
     },
     {
       "tokenId": 10,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 45718
+      "creditRating": 45718,
+      "avgRatingPerCredit": 571.475,
+      "stage": "BASE"
     },
     {
       "tokenId": 11,
       "format": "Recorded",
-      "stage": "LAYERED",
       "credits": 160,
+      "overprints": 1,
       "layers": 2,
-      "creditRating": 100457
+      "creditRating": 100457,
+      "avgRatingPerCredit": 627.85625,
+      "stage": "LAYERED"
     },
     {
       "tokenId": 12,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33705
+      "creditRating": 33705,
+      "avgRatingPerCredit": 421.3125,
+      "stage": "BASE"
     },
     {
       "tokenId": 13,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32312
+      "creditRating": 32312,
+      "avgRatingPerCredit": 403.9,
+      "stage": "BASE"
     },
     {
       "tokenId": 14,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30144
+      "creditRating": 30144,
+      "avgRatingPerCredit": 376.8,
+      "stage": "BASE"
     },
     {
       "tokenId": 15,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27609
+      "creditRating": 27609,
+      "avgRatingPerCredit": 345.1125,
+      "stage": "BASE"
     },
     {
       "tokenId": 16,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34270
+      "creditRating": 34270,
+      "avgRatingPerCredit": 428.375,
+      "stage": "BASE"
     },
     {
       "tokenId": 17,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28431
+      "creditRating": 28431,
+      "avgRatingPerCredit": 355.3875,
+      "stage": "BASE"
     },
     {
       "tokenId": 18,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 24037
+      "creditRating": 24037,
+      "avgRatingPerCredit": 300.4625,
+      "stage": "BASE"
     },
     {
       "tokenId": 20,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35237
+      "creditRating": 35237,
+      "avgRatingPerCredit": 440.4625,
+      "stage": "BASE"
     },
     {
       "tokenId": 21,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 48895
+      "creditRating": 48895,
+      "avgRatingPerCredit": 611.1875,
+      "stage": "BASE"
     },
     {
       "tokenId": 22,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29534
+      "creditRating": 29534,
+      "avgRatingPerCredit": 369.175,
+      "stage": "BASE"
     },
     {
       "tokenId": 23,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34014
+      "creditRating": 34014,
+      "avgRatingPerCredit": 425.175,
+      "stage": "BASE"
     },
     {
       "tokenId": 24,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27747
+      "creditRating": 27747,
+      "avgRatingPerCredit": 346.8375,
+      "stage": "BASE"
     },
     {
       "tokenId": 25,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 49708
+      "creditRating": 49708,
+      "avgRatingPerCredit": 621.35,
+      "stage": "BASE"
     },
     {
       "tokenId": 26,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29421
+      "creditRating": 29421,
+      "avgRatingPerCredit": 367.7625,
+      "stage": "BASE"
     },
     {
       "tokenId": 27,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29855
+      "creditRating": 29855,
+      "avgRatingPerCredit": 373.1875,
+      "stage": "BASE"
     },
     {
       "tokenId": 28,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25758
+      "creditRating": 25758,
+      "avgRatingPerCredit": 321.975,
+      "stage": "BASE"
     },
     {
       "tokenId": 29,
       "format": "Consolidated",
-      "stage": "LAYERED",
       "credits": 160,
+      "overprints": 1,
       "layers": 2,
-      "creditRating": 55064
+      "creditRating": 55064,
+      "avgRatingPerCredit": 344.15,
+      "stage": "LAYERED"
     },
     {
       "tokenId": 30,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25255
+      "creditRating": 25255,
+      "avgRatingPerCredit": 315.6875,
+      "stage": "BASE"
     },
     {
       "tokenId": 31,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27098
+      "creditRating": 27098,
+      "avgRatingPerCredit": 338.725,
+      "stage": "BASE"
     },
     {
       "tokenId": 32,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 24259
+      "creditRating": 24259,
+      "avgRatingPerCredit": 303.2375,
+      "stage": "BASE"
     },
     {
       "tokenId": 33,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28240
+      "creditRating": 28240,
+      "avgRatingPerCredit": 353,
+      "stage": "BASE"
     },
     {
       "tokenId": 34,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25413
+      "creditRating": 25413,
+      "avgRatingPerCredit": 317.6625,
+      "stage": "BASE"
     },
     {
       "tokenId": 35,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28800
+      "creditRating": 28800,
+      "avgRatingPerCredit": 360,
+      "stage": "BASE"
     },
     {
       "tokenId": 36,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33498
+      "creditRating": 33498,
+      "avgRatingPerCredit": 418.725,
+      "stage": "BASE"
     },
     {
       "tokenId": 37,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28130
+      "creditRating": 28130,
+      "avgRatingPerCredit": 351.625,
+      "stage": "BASE"
     },
     {
       "tokenId": 38,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27745
+      "creditRating": 27745,
+      "avgRatingPerCredit": 346.8125,
+      "stage": "BASE"
     },
     {
       "tokenId": 39,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27151
+      "creditRating": 27151,
+      "avgRatingPerCredit": 339.3875,
+      "stage": "BASE"
     },
     {
       "tokenId": 40,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26665
+      "creditRating": 26665,
+      "avgRatingPerCredit": 333.3125,
+      "stage": "BASE"
     },
     {
       "tokenId": 41,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30242
+      "creditRating": 30242,
+      "avgRatingPerCredit": 378.025,
+      "stage": "BASE"
     },
     {
       "tokenId": 42,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29612
+      "creditRating": 29612,
+      "avgRatingPerCredit": 370.15,
+      "stage": "BASE"
     },
     {
       "tokenId": 43,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31542
+      "creditRating": 31542,
+      "avgRatingPerCredit": 394.275,
+      "stage": "BASE"
     },
     {
       "tokenId": 44,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28378
+      "creditRating": 28378,
+      "avgRatingPerCredit": 354.725,
+      "stage": "BASE"
     },
     {
       "tokenId": 45,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 39124
+      "creditRating": 39124,
+      "avgRatingPerCredit": 489.05,
+      "stage": "BASE"
     },
     {
       "tokenId": 46,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29079
+      "creditRating": 29079,
+      "avgRatingPerCredit": 363.4875,
+      "stage": "BASE"
     },
     {
       "tokenId": 47,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25350
+      "creditRating": 25350,
+      "avgRatingPerCredit": 316.875,
+      "stage": "BASE"
     },
     {
       "tokenId": 49,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28002
+      "creditRating": 28002,
+      "avgRatingPerCredit": 350.025,
+      "stage": "BASE"
     },
     {
       "tokenId": 50,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27592
+      "creditRating": 27592,
+      "avgRatingPerCredit": 344.9,
+      "stage": "BASE"
     },
     {
       "tokenId": 51,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25776
+      "creditRating": 25776,
+      "avgRatingPerCredit": 322.2,
+      "stage": "BASE"
     },
     {
       "tokenId": 52,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 38526
+      "creditRating": 38526,
+      "avgRatingPerCredit": 481.575,
+      "stage": "BASE"
     },
     {
       "tokenId": 53,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28387
+      "creditRating": 28387,
+      "avgRatingPerCredit": 354.8375,
+      "stage": "BASE"
     },
     {
       "tokenId": 54,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 50042
+      "creditRating": 50042,
+      "avgRatingPerCredit": 625.525,
+      "stage": "BASE"
     },
     {
       "tokenId": 55,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 40582
+      "creditRating": 40582,
+      "avgRatingPerCredit": 507.275,
+      "stage": "BASE"
     },
     {
       "tokenId": 57,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28968
+      "creditRating": 28968,
+      "avgRatingPerCredit": 362.1,
+      "stage": "BASE"
     },
     {
       "tokenId": 58,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25110
+      "creditRating": 25110,
+      "avgRatingPerCredit": 313.875,
+      "stage": "BASE"
     },
     {
       "tokenId": 59,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31709
+      "creditRating": 31709,
+      "avgRatingPerCredit": 396.3625,
+      "stage": "BASE"
     },
     {
       "tokenId": 60,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30042
+      "creditRating": 30042,
+      "avgRatingPerCredit": 375.525,
+      "stage": "BASE"
     },
     {
       "tokenId": 61,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28336
+      "creditRating": 28336,
+      "avgRatingPerCredit": 354.2,
+      "stage": "BASE"
     },
     {
       "tokenId": 62,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 54055
+      "creditRating": 54055,
+      "avgRatingPerCredit": 675.6875,
+      "stage": "BASE"
     },
     {
       "tokenId": 63,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 44217
+      "creditRating": 44217,
+      "avgRatingPerCredit": 552.7125,
+      "stage": "BASE"
     },
     {
       "tokenId": 64,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25644
+      "creditRating": 25644,
+      "avgRatingPerCredit": 320.55,
+      "stage": "BASE"
     },
     {
       "tokenId": 65,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29150
+      "creditRating": 29150,
+      "avgRatingPerCredit": 364.375,
+      "stage": "BASE"
     },
     {
       "tokenId": 66,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35652
+      "creditRating": 35652,
+      "avgRatingPerCredit": 445.65,
+      "stage": "BASE"
     },
     {
       "tokenId": 67,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28460
+      "creditRating": 28460,
+      "avgRatingPerCredit": 355.75,
+      "stage": "BASE"
     },
     {
       "tokenId": 68,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 50481
+      "creditRating": 50481,
+      "avgRatingPerCredit": 631.0125,
+      "stage": "BASE"
     },
     {
       "tokenId": 69,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29860
+      "creditRating": 29860,
+      "avgRatingPerCredit": 373.25,
+      "stage": "BASE"
     },
     {
       "tokenId": 70,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 48907
+      "creditRating": 48907,
+      "avgRatingPerCredit": 611.3375,
+      "stage": "BASE"
     },
     {
       "tokenId": 71,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33014
+      "creditRating": 33014,
+      "avgRatingPerCredit": 412.675,
+      "stage": "BASE"
     },
     {
       "tokenId": 72,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 46622
+      "creditRating": 46622,
+      "avgRatingPerCredit": 582.775,
+      "stage": "BASE"
     },
     {
       "tokenId": 74,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27113
+      "creditRating": 27113,
+      "avgRatingPerCredit": 338.9125,
+      "stage": "BASE"
     },
     {
       "tokenId": 75,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31005
+      "creditRating": 31005,
+      "avgRatingPerCredit": 387.5625,
+      "stage": "BASE"
     },
     {
       "tokenId": 76,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30725
+      "creditRating": 30725,
+      "avgRatingPerCredit": 384.0625,
+      "stage": "BASE"
     },
     {
       "tokenId": 77,
       "format": "Reconciled",
-      "stage": "LAYERED",
       "credits": 320,
+      "overprints": 3,
       "layers": 4,
-      "creditRating": 180442
+      "creditRating": 180442,
+      "avgRatingPerCredit": 563.88125,
+      "stage": "LAYERED"
     },
     {
       "tokenId": 78,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28634
+      "creditRating": 28634,
+      "avgRatingPerCredit": 357.925,
+      "stage": "BASE"
     },
     {
       "tokenId": 79,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 60000
+      "creditRating": 60000,
+      "avgRatingPerCredit": 750,
+      "stage": "BASE"
     },
     {
       "tokenId": 80,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26513
+      "creditRating": 26513,
+      "avgRatingPerCredit": 331.4125,
+      "stage": "BASE"
     },
     {
       "tokenId": 81,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 39136
+      "creditRating": 39136,
+      "avgRatingPerCredit": 489.2,
+      "stage": "BASE"
     },
     {
       "tokenId": 82,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32105
+      "creditRating": 32105,
+      "avgRatingPerCredit": 401.3125,
+      "stage": "BASE"
     },
     {
       "tokenId": 83,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26789
+      "creditRating": 26789,
+      "avgRatingPerCredit": 334.8625,
+      "stage": "BASE"
     },
     {
       "tokenId": 84,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33246
+      "creditRating": 33246,
+      "avgRatingPerCredit": 415.575,
+      "stage": "BASE"
     },
     {
       "tokenId": 85,
       "format": "Issued",
-      "stage": "LAYERED",
       "credits": 160,
+      "overprints": 1,
       "layers": 2,
-      "creditRating": 73800
+      "creditRating": 73800,
+      "avgRatingPerCredit": 461.25,
+      "stage": "LAYERED"
     },
     {
       "tokenId": 87,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30155
+      "creditRating": 30155,
+      "avgRatingPerCredit": 376.9375,
+      "stage": "BASE"
     },
     {
       "tokenId": 88,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 40166
+      "creditRating": 40166,
+      "avgRatingPerCredit": 502.075,
+      "stage": "BASE"
     },
     {
       "tokenId": 89,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30292
+      "creditRating": 30292,
+      "avgRatingPerCredit": 378.65,
+      "stage": "BASE"
     },
     {
       "tokenId": 90,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 48282
+      "creditRating": 48282,
+      "avgRatingPerCredit": 603.525,
+      "stage": "BASE"
     },
     {
       "tokenId": 91,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 54274
+      "creditRating": 54274,
+      "avgRatingPerCredit": 678.425,
+      "stage": "BASE"
     },
     {
       "tokenId": 92,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30655
+      "creditRating": 30655,
+      "avgRatingPerCredit": 383.1875,
+      "stage": "BASE"
     },
     {
       "tokenId": 93,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34338
+      "creditRating": 34338,
+      "avgRatingPerCredit": 429.225,
+      "stage": "BASE"
     },
     {
       "tokenId": 94,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36011
+      "creditRating": 36011,
+      "avgRatingPerCredit": 450.1375,
+      "stage": "BASE"
     },
     {
       "tokenId": 95,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34587
+      "creditRating": 34587,
+      "avgRatingPerCredit": 432.3375,
+      "stage": "BASE"
     },
     {
       "tokenId": 96,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 23997
+      "creditRating": 23997,
+      "avgRatingPerCredit": 299.9625,
+      "stage": "BASE"
     },
     {
       "tokenId": 98,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29386
+      "creditRating": 29386,
+      "avgRatingPerCredit": 367.325,
+      "stage": "BASE"
     },
     {
       "tokenId": 99,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27674
+      "creditRating": 27674,
+      "avgRatingPerCredit": 345.925,
+      "stage": "BASE"
     },
     {
       "tokenId": 100,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36432
+      "creditRating": 36432,
+      "avgRatingPerCredit": 455.4,
+      "stage": "BASE"
     },
     {
       "tokenId": 101,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32931
+      "creditRating": 32931,
+      "avgRatingPerCredit": 411.6375,
+      "stage": "BASE"
     },
     {
       "tokenId": 102,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36122
+      "creditRating": 36122,
+      "avgRatingPerCredit": 451.525,
+      "stage": "BASE"
     },
     {
       "tokenId": 103,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34505
+      "creditRating": 34505,
+      "avgRatingPerCredit": 431.3125,
+      "stage": "BASE"
     },
     {
       "tokenId": 104,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32153
+      "creditRating": 32153,
+      "avgRatingPerCredit": 401.9125,
+      "stage": "BASE"
     },
     {
       "tokenId": 105,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26446
+      "creditRating": 26446,
+      "avgRatingPerCredit": 330.575,
+      "stage": "BASE"
     },
     {
       "tokenId": 106,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33874
+      "creditRating": 33874,
+      "avgRatingPerCredit": 423.425,
+      "stage": "BASE"
     },
     {
       "tokenId": 107,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29191
+      "creditRating": 29191,
+      "avgRatingPerCredit": 364.8875,
+      "stage": "BASE"
     },
     {
       "tokenId": 108,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32772
+      "creditRating": 32772,
+      "avgRatingPerCredit": 409.65,
+      "stage": "BASE"
     },
     {
       "tokenId": 110,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 46053
+      "creditRating": 46053,
+      "avgRatingPerCredit": 575.6625,
+      "stage": "BASE"
     },
     {
       "tokenId": 111,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26632
+      "creditRating": 26632,
+      "avgRatingPerCredit": 332.9,
+      "stage": "BASE"
     },
     {
       "tokenId": 112,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36427
+      "creditRating": 36427,
+      "avgRatingPerCredit": 455.3375,
+      "stage": "BASE"
     },
     {
       "tokenId": 113,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 52022
+      "creditRating": 52022,
+      "avgRatingPerCredit": 650.275,
+      "stage": "BASE"
     },
     {
       "tokenId": 114,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31238
+      "creditRating": 31238,
+      "avgRatingPerCredit": 390.475,
+      "stage": "BASE"
     },
     {
       "tokenId": 115,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28757
+      "creditRating": 28757,
+      "avgRatingPerCredit": 359.4625,
+      "stage": "BASE"
     },
     {
       "tokenId": 116,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27566
+      "creditRating": 27566,
+      "avgRatingPerCredit": 344.575,
+      "stage": "BASE"
     },
     {
       "tokenId": 118,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33009
+      "creditRating": 33009,
+      "avgRatingPerCredit": 412.6125,
+      "stage": "BASE"
     },
     {
       "tokenId": 119,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33885
+      "creditRating": 33885,
+      "avgRatingPerCredit": 423.5625,
+      "stage": "BASE"
     },
     {
       "tokenId": 120,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30244
+      "creditRating": 30244,
+      "avgRatingPerCredit": 378.05,
+      "stage": "BASE"
     },
     {
       "tokenId": 121,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29622
+      "creditRating": 29622,
+      "avgRatingPerCredit": 370.275,
+      "stage": "BASE"
     },
     {
       "tokenId": 122,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 59466
+      "creditRating": 59466,
+      "avgRatingPerCredit": 743.325,
+      "stage": "BASE"
     },
     {
       "tokenId": 123,
       "format": "Issued",
-      "stage": "INVERTED",
       "credits": 640,
+      "overprints": 7,
       "layers": 8,
-      "creditRating": 264387
+      "creditRating": 264387,
+      "avgRatingPerCredit": 413.1046875,
+      "stage": "INVERTED"
     },
     {
       "tokenId": 127,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35342
+      "creditRating": 35342,
+      "avgRatingPerCredit": 441.775,
+      "stage": "BASE"
     },
     {
       "tokenId": 128,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 37767
+      "creditRating": 37767,
+      "avgRatingPerCredit": 472.0875,
+      "stage": "BASE"
     },
     {
       "tokenId": 129,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33661
+      "creditRating": 33661,
+      "avgRatingPerCredit": 420.7625,
+      "stage": "BASE"
     },
     {
       "tokenId": 130,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35523
+      "creditRating": 35523,
+      "avgRatingPerCredit": 444.0375,
+      "stage": "BASE"
     },
     {
       "tokenId": 131,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 47224
+      "creditRating": 47224,
+      "avgRatingPerCredit": 590.3,
+      "stage": "BASE"
     },
     {
       "tokenId": 132,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29445
+      "creditRating": 29445,
+      "avgRatingPerCredit": 368.0625,
+      "stage": "BASE"
     },
     {
       "tokenId": 133,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28319
+      "creditRating": 28319,
+      "avgRatingPerCredit": 353.9875,
+      "stage": "BASE"
     },
     {
       "tokenId": 134,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32392
+      "creditRating": 32392,
+      "avgRatingPerCredit": 404.9,
+      "stage": "BASE"
     },
     {
       "tokenId": 135,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25958
+      "creditRating": 25958,
+      "avgRatingPerCredit": 324.475,
+      "stage": "BASE"
     },
     {
       "tokenId": 137,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 42910
+      "creditRating": 42910,
+      "avgRatingPerCredit": 536.375,
+      "stage": "BASE"
     },
     {
       "tokenId": 138,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28302
+      "creditRating": 28302,
+      "avgRatingPerCredit": 353.775,
+      "stage": "BASE"
     },
     {
       "tokenId": 139,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 40524
+      "creditRating": 40524,
+      "avgRatingPerCredit": 506.55,
+      "stage": "BASE"
     },
     {
       "tokenId": 140,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28581
+      "creditRating": 28581,
+      "avgRatingPerCredit": 357.2625,
+      "stage": "BASE"
     },
     {
       "tokenId": 141,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27982
+      "creditRating": 27982,
+      "avgRatingPerCredit": 349.775,
+      "stage": "BASE"
     },
     {
       "tokenId": 142,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30470
+      "creditRating": 30470,
+      "avgRatingPerCredit": 380.875,
+      "stage": "BASE"
     },
     {
       "tokenId": 143,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29378
+      "creditRating": 29378,
+      "avgRatingPerCredit": 367.225,
+      "stage": "BASE"
     },
     {
       "tokenId": 144,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29958
+      "creditRating": 29958,
+      "avgRatingPerCredit": 374.475,
+      "stage": "BASE"
     },
     {
       "tokenId": 145,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 34925
+      "creditRating": 34925,
+      "avgRatingPerCredit": 436.5625,
+      "stage": "BASE"
     },
     {
       "tokenId": 146,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31668
+      "creditRating": 31668,
+      "avgRatingPerCredit": 395.85,
+      "stage": "BASE"
     },
     {
       "tokenId": 147,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29298
+      "creditRating": 29298,
+      "avgRatingPerCredit": 366.225,
+      "stage": "BASE"
     },
     {
       "tokenId": 148,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32424
+      "creditRating": 32424,
+      "avgRatingPerCredit": 405.3,
+      "stage": "BASE"
     },
     {
       "tokenId": 149,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 22554
+      "creditRating": 22554,
+      "avgRatingPerCredit": 281.925,
+      "stage": "BASE"
     },
     {
       "tokenId": 150,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28780
+      "creditRating": 28780,
+      "avgRatingPerCredit": 359.75,
+      "stage": "BASE"
     },
     {
       "tokenId": 151,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 62235
+      "creditRating": 62235,
+      "avgRatingPerCredit": 777.9375,
+      "stage": "BASE"
     },
     {
       "tokenId": 152,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 47051
+      "creditRating": 47051,
+      "avgRatingPerCredit": 588.1375,
+      "stage": "BASE"
     },
     {
       "tokenId": 153,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 23073
+      "creditRating": 23073,
+      "avgRatingPerCredit": 288.4125,
+      "stage": "BASE"
     },
     {
       "tokenId": 154,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 45933
+      "creditRating": 45933,
+      "avgRatingPerCredit": 574.1625,
+      "stage": "BASE"
     },
     {
       "tokenId": 155,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35738
+      "creditRating": 35738,
+      "avgRatingPerCredit": 446.725,
+      "stage": "BASE"
     },
     {
       "tokenId": 156,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 46436
+      "creditRating": 46436,
+      "avgRatingPerCredit": 580.45,
+      "stage": "BASE"
     },
     {
       "tokenId": 157,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 24724
+      "creditRating": 24724,
+      "avgRatingPerCredit": 309.05,
+      "stage": "BASE"
     },
     {
       "tokenId": 158,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 42956
+      "creditRating": 42956,
+      "avgRatingPerCredit": 536.95,
+      "stage": "BASE"
     },
     {
       "tokenId": 159,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36955
+      "creditRating": 36955,
+      "avgRatingPerCredit": 461.9375,
+      "stage": "BASE"
     },
     {
       "tokenId": 160,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 31928
+      "creditRating": 31928,
+      "avgRatingPerCredit": 399.1,
+      "stage": "BASE"
     },
     {
       "tokenId": 161,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 43838
+      "creditRating": 43838,
+      "avgRatingPerCredit": 547.975,
+      "stage": "BASE"
     },
     {
       "tokenId": 162,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 60490
+      "creditRating": 60490,
+      "avgRatingPerCredit": 756.125,
+      "stage": "BASE"
     },
     {
       "tokenId": 163,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28643
+      "creditRating": 28643,
+      "avgRatingPerCredit": 358.0375,
+      "stage": "BASE"
     },
     {
       "tokenId": 164,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 61662
+      "creditRating": 61662,
+      "avgRatingPerCredit": 770.775,
+      "stage": "BASE"
     },
     {
       "tokenId": 165,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25128
+      "creditRating": 25128,
+      "avgRatingPerCredit": 314.1,
+      "stage": "BASE"
     },
     {
       "tokenId": 166,
       "format": "Assessed",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33469
+      "creditRating": 33469,
+      "avgRatingPerCredit": 418.3625,
+      "stage": "BASE"
     },
     {
       "tokenId": 167,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 24877
+      "creditRating": 24877,
+      "avgRatingPerCredit": 310.9625,
+      "stage": "BASE"
     },
     {
       "tokenId": 168,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27814
+      "creditRating": 27814,
+      "avgRatingPerCredit": 347.675,
+      "stage": "BASE"
     },
     {
       "tokenId": 169,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 24981
+      "creditRating": 24981,
+      "avgRatingPerCredit": 312.2625,
+      "stage": "BASE"
     },
     {
       "tokenId": 170,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 29005
+      "creditRating": 29005,
+      "avgRatingPerCredit": 362.5625,
+      "stage": "BASE"
     },
     {
       "tokenId": 171,
       "format": "Liquidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28327
+      "creditRating": 28327,
+      "avgRatingPerCredit": 354.0875,
+      "stage": "BASE"
     },
     {
       "tokenId": 172,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 27170
+      "creditRating": 27170,
+      "avgRatingPerCredit": 339.625,
+      "stage": "BASE"
     },
     {
       "tokenId": 173,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30267
+      "creditRating": 30267,
+      "avgRatingPerCredit": 378.3375,
+      "stage": "BASE"
     },
     {
       "tokenId": 174,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26574
+      "creditRating": 26574,
+      "avgRatingPerCredit": 332.175,
+      "stage": "BASE"
     },
     {
       "tokenId": 175,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 53277
+      "creditRating": 53277,
+      "avgRatingPerCredit": 665.9625,
+      "stage": "BASE"
     },
     {
       "tokenId": 176,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 43875
+      "creditRating": 43875,
+      "avgRatingPerCredit": 548.4375,
+      "stage": "BASE"
     },
     {
       "tokenId": 177,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 26113
+      "creditRating": 26113,
+      "avgRatingPerCredit": 326.4125,
+      "stage": "BASE"
     },
     {
       "tokenId": 178,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 38879
+      "creditRating": 38879,
+      "avgRatingPerCredit": 485.9875,
+      "stage": "BASE"
     },
     {
       "tokenId": 179,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32786
+      "creditRating": 32786,
+      "avgRatingPerCredit": 409.825,
+      "stage": "BASE"
     },
     {
       "tokenId": 180,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 30637
+      "creditRating": 30637,
+      "avgRatingPerCredit": 382.9625,
+      "stage": "BASE"
     },
     {
       "tokenId": 182,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 48048
+      "creditRating": 48048,
+      "avgRatingPerCredit": 600.6,
+      "stage": "BASE"
     },
     {
       "tokenId": 183,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 52500
+      "creditRating": 52500,
+      "avgRatingPerCredit": 656.25,
+      "stage": "BASE"
     },
     {
       "tokenId": 184,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 49255
+      "creditRating": 49255,
+      "avgRatingPerCredit": 615.6875,
+      "stage": "BASE"
     },
     {
       "tokenId": 185,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 49235
+      "creditRating": 49235,
+      "avgRatingPerCredit": 615.4375,
+      "stage": "BASE"
     },
     {
       "tokenId": 186,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 51317
+      "creditRating": 51317,
+      "avgRatingPerCredit": 641.4625,
+      "stage": "BASE"
     },
     {
       "tokenId": 187,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 53762
+      "creditRating": 53762,
+      "avgRatingPerCredit": 672.025,
+      "stage": "BASE"
     },
     {
       "tokenId": 188,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 54014
+      "creditRating": 54014,
+      "avgRatingPerCredit": 675.175,
+      "stage": "BASE"
     },
     {
       "tokenId": 189,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 53190
+      "creditRating": 53190,
+      "avgRatingPerCredit": 664.875,
+      "stage": "BASE"
     },
     {
       "tokenId": 190,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 32505
+      "creditRating": 32505,
+      "avgRatingPerCredit": 406.3125,
+      "stage": "BASE"
     },
     {
       "tokenId": 191,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 43939
+      "creditRating": 43939,
+      "avgRatingPerCredit": 549.2375,
+      "stage": "BASE"
     },
     {
       "tokenId": 192,
       "format": "Reconciled",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 55045
+      "creditRating": 55045,
+      "avgRatingPerCredit": 688.0625,
+      "stage": "BASE"
     },
     {
       "tokenId": 193,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 38044
+      "creditRating": 38044,
+      "avgRatingPerCredit": 475.55,
+      "stage": "BASE"
     },
     {
       "tokenId": 194,
       "format": "Accrued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 58256
+      "creditRating": 58256,
+      "avgRatingPerCredit": 728.2,
+      "stage": "BASE"
     },
     {
       "tokenId": 195,
       "format": "Consolidated",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 28248
+      "creditRating": 28248,
+      "avgRatingPerCredit": 353.1,
+      "stage": "BASE"
     },
     {
       "tokenId": 196,
       "format": "Amortized",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 35141
+      "creditRating": 35141,
+      "avgRatingPerCredit": 439.2625,
+      "stage": "BASE"
     },
     {
       "tokenId": 197,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 33954
+      "creditRating": 33954,
+      "avgRatingPerCredit": 424.425,
+      "stage": "BASE"
     },
     {
       "tokenId": 198,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 36509
+      "creditRating": 36509,
+      "avgRatingPerCredit": 456.3625,
+      "stage": "BASE"
     },
     {
       "tokenId": 199,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 25010
+      "creditRating": 25010,
+      "avgRatingPerCredit": 312.625,
+      "stage": "BASE"
     },
     {
       "tokenId": 200,
       "format": "Recorded",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 50703
+      "creditRating": 50703,
+      "avgRatingPerCredit": 633.7875,
+      "stage": "BASE"
     },
     {
       "tokenId": 201,
       "format": "Issued",
-      "stage": "BASE",
       "credits": 80,
+      "overprints": 0,
       "layers": 1,
-      "creditRating": 43914
+      "creditRating": 43914,
+      "avgRatingPerCredit": 548.925,
+      "stage": "BASE"
     }
-  ]
+  ],
+  "artifactSetDigest": "7c4d72729534ed2da48c90245565659f1a72486644cc59bf9dc9fbb028137604"
 }

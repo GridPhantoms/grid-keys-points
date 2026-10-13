@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import {
   compareBuildAndBuyValue,
   filterCreditListings,
@@ -12,13 +11,16 @@ import {
   rankStatementListings,
 } from '../lib/credits-intelligence.ts';
 
+const currentCheckedAt = new Date().toISOString();
+const creditUrl = (id: number) => `https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/${id}`;
+
 const officialItem = (overrides: Record<string, unknown> = {}) => ({
   id: 12,
   listed: true,
   price: '0.12',
   currency: 'ETH',
-  url: 'https://opensea.io/assets/ethereum/0xcredits/12',
-  checkedAt: '2026-10-12T12:00:00.000Z',
+  url: 'https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/12',
+  checkedAt: currentCheckedAt,
   score: 800,
   rank: 120,
   ...overrides,
@@ -40,8 +42,8 @@ test('official snapshot normalization exposes only complete rated ETH listings',
     priceEth: 0.12,
     priceUsd: 300,
     ethPer1kCr: 0.15,
-    checkedAt: '2026-10-12T12:00:00.000Z',
-    url: 'https://opensea.io/assets/ethereum/0xcredits/12',
+    checkedAt: currentCheckedAt,
+    url: 'https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/12',
   });
 });
 
@@ -51,15 +53,32 @@ test('official snapshot fails closed when incomplete or rating coverage is missi
   assert.throws(() => normalizeOfficialCreditSnapshot({ complete: true, items: [] }, 2500), /coverage/i);
 });
 
+test('official snapshot normalization rejects loose schema coercions and preserves null refresh times', () => {
+  assert.throws(() => normalizeOfficialCreditSnapshot({ complete: 'false', items: [officialItem()] }, 2500), /incomplete/i);
+  const current = Date.now();
+  const normalized = normalizeOfficialCreditSnapshot({
+    complete: true,
+    updatedAt: current,
+    nextRefresh: null,
+    items: [officialItem({ checkedAt: new Date(current).toISOString() })],
+  }, 2500);
+  assert.equal(normalized.nextRefresh, null);
+  assert.throws(() => normalizeOfficialCreditSnapshot({
+    complete: true,
+    updatedAt: current,
+    items: [officialItem({ checkedAt: '2020-01-01T00:00:00.000Z' })],
+  }, 2500), /coverage/i);
+});
+
 test('credit filters and sorts use deterministic token ID tie breaks', () => {
   const source = normalizeOfficialCreditSnapshot({
     complete: true,
     updatedAt: 1,
     nextRefresh: 2,
     items: [
-      officialItem({ id: 9, score: 900, price: '0.09', rank: 9, url: 'https://opensea.io/9' }),
-      officialItem({ id: 2, score: 900, price: '0.09', rank: 2, url: 'https://opensea.io/2' }),
-      officialItem({ id: 3, score: 700, price: '0.05', rank: 3, url: 'https://opensea.io/3' }),
+      officialItem({ id: 9, score: 900, price: '0.09', rank: 9, url: creditUrl(9) }),
+      officialItem({ id: 2, score: 900, price: '0.09', rank: 2, url: creditUrl(2) }),
+      officialItem({ id: 3, score: 700, price: '0.05', rank: 3, url: creditUrl(3) }),
     ],
   }, 2000).items;
 
@@ -92,6 +111,10 @@ test('query parsing validates values and bounds result limits to supported optio
   });
 });
 
+test('query parsing keeps an explicit zero ETH cap', () => {
+  assert.equal(parseValueQuery(new URLSearchParams({ maxEth: '0' })).maxEth, 0);
+});
+
 test('Statements return the top 10 current values with deterministic ties', () => {
   const metadata = Array.from({ length: 12 }, (_, index) => ({
     tokenId: index + 1,
@@ -114,6 +137,17 @@ test('Statements return the top 10 current values with deterministic ties', () =
   assert.equal(ranked[0].ethPer1kCr, 0.1);
 });
 
+test('Statement ranking fails closed when a live listing lacks metadata coverage', () => {
+  assert.throws(
+    () => rankStatementListings([], [{
+      tokenId: 999,
+      priceEth: 1,
+      url: 'https://opensea.io/assets/ethereum/0x75edd94b7e49b3bd5c8047b91f165a5e265a069b/999',
+    }], 2500),
+    /metadata coverage is incomplete/,
+  );
+});
+
 test('credit result limits do not hide the matching count', () => {
   const source = normalizeOfficialCreditSnapshot({
     complete: true,
@@ -124,7 +158,7 @@ test('credit result limits do not hide the matching count', () => {
       score: 800 - index,
       price: '0.02',
       rank: index + 1,
-      url: `https://opensea.io/${index + 1}`,
+      url: creditUrl(index + 1),
     })),
   }, 2000).items;
   const query = { minCr: 0, maxEth: null, sort: 'best-value' as const, limit: 25 as const };
@@ -138,8 +172,8 @@ test('manual listing reconciliation removes sold rows and applies current OpenSe
     updatedAt: 1,
     nextRefresh: 2,
     items: [
-      officialItem({ id: 1, score: 800, price: '0.02', rank: 1, url: 'https://opensea.io/1' }),
-      officialItem({ id: 2, score: 500, price: '0.03', rank: 2, url: 'https://opensea.io/2' }),
+      officialItem({ id: 1, score: 800, price: '0.02', rank: 1, url: creditUrl(1) }),
+      officialItem({ id: 2, score: 500, price: '0.03', rank: 2, url: creditUrl(2) }),
     ],
   }, 2000).items;
 
@@ -167,7 +201,7 @@ test('build versus buy compares normalized ETH per 1K CR rather than headline co
   assert.ok(Math.abs(comparison.savingsPct - 4.66334117) < 1e-8);
 });
 
-test('static CREDITS fallback reconciles supply and active Statement metadata', async () => {
+test('scheduled CREDITS protocol artifacts reconcile identity, supply, and Statement metadata', async () => {
   const [overview, statements] = await Promise.all([
     readFile(new URL('../data/credits-overview.json', import.meta.url), 'utf8').then(JSON.parse),
     readFile(new URL('../data/credits-statements.json', import.meta.url), 'utf8').then(JSON.parse),
@@ -179,10 +213,16 @@ test('static CREDITS fallback reconciles supply and active Statement metadata', 
   const creditsInStatements = statements.items.reduce((sum: number, item: { credits: number }) => sum + item.credits, 0);
 
   assert.equal(overview.snapshotAsOf, statements.snapshotAsOf);
-  assert.equal(overview.supply.loose + overview.supply.burnedIntoStatements, overview.supply.original);
-  assert.equal(overview.supply.burnedIntoStatements, creditsInStatements);
+  assert.equal(overview.schemaVersion, 2);
+  assert.equal(overview.provenance.cadence, 'scheduled');
+  assert.equal(overview.provenance.snapshotId, statements.provenance.snapshotId);
+  assert.equal(overview.artifactSetDigest, statements.artifactSetDigest);
+  assert.equal(overview.supply.loose + overview.supply.burned, overview.supply.original);
+  assert.equal(overview.supply.burned, creditsInStatements);
   assert.equal(overview.statements.active, statements.items.length);
   assert.deepEqual(overview.statements.stageCounts, stageCounts);
+  assert.equal(overview.archivedReferences.executableNow, false);
+  assert.equal(overview.archivedReferences.ethUsdClose, 2499.45);
 });
 
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
@@ -213,19 +253,22 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
   assert.match(overview, /The Statement Market/);
   assert.doesNotMatch(overview, /Verified snapshot reference/);
-  assert.match(overview, /sweeping \{basket\.credits\} CREDITS off the floor now/);
+  assert.doesNotMatch(overview, /off the floor now/);
   assert.match(overview, /cr-build-copy/);
   assert.match(overview, /export const dynamic = 'force-dynamic'/);
   assert.doesNotMatch(overview, /export const revalidate/);
   assert.match(overviewLoader, /unstable_cache/);
   assert.match(overviewLoader, /REFRESH_SECONDS = 10 \* 60/);
-  assert.match(overviewLoader, /credits-statement-orders-v1/);
+  assert.match(overviewLoader, /credits-statement-orders-v2/);
   assert.doesNotMatch(overviewLoader, /credits-overview-live-v/);
-  assert.match(overview, /Official market scan in progress/);
+  assert.match(overview, /last completed candidate snapshot/);
+  assert.match(overview, /Historical prices are not shown as live/);
   assert.doesNotMatch(overview, /See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
-  assert.match(finder, /Refresh listings/);
-  assert.match(finder, /forceFresh/);
+  assert.match(finder, /Recheck with OpenSea/);
+  assert.match(finder, /refresh', mode/);
+  assert.match(finder, /AbortController/);
+  assert.match(finder, /visibilitychange/);
   assert.match(finder, /15 \* 60 \* 1000/);
   assert.doesNotMatch(finder, /five minutes/i);
   assert.match(finder, /OpenSea listings and prices may change before purchase|data\.caution/);

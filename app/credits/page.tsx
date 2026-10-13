@@ -28,30 +28,24 @@ export default async function CreditsOverviewPage() {
   const protocolSnapshotLabel = new Date(overview.snapshotAsOf).toLocaleString('en-US', {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
   });
-  const market = {
-    looseListings: live?.looseListings ?? overview.market.looseListings,
-    looseFloorEth: live?.looseFloorEth ?? overview.market.looseFloorEth,
-    within25PctOfFloor: live?.within25PctOfFloor ?? overview.market.within25PctOfFloor,
-    ethUsd: live?.ethUsd ?? overview.market.ethUsd,
-  };
-  const statementFloor = {
-    eth: live?.statementFloorEth ?? overview.statements.floorEth,
-    cr: live?.statementFloorCr ?? overview.buildVsBuy.statementFloorCr,
-    tokenId: live?.statementFloorTokenId ?? overview.buildVsBuy.statementFloorTokenId,
-  };
-  const basket = {
-    credits: live?.looseBasketCredits ?? overview.buildVsBuy.looseBasketCredits,
-    eth: live?.looseBasketEth ?? overview.buildVsBuy.looseBasketEth,
-    cr: live?.looseBasketCr ?? overview.buildVsBuy.looseBasketCr,
-  };
-  const listedPct = market.looseListings / overview.supply.loose * 100;
-  const comparison = compareBuildAndBuyValue({
+  const market = live ? {
+    looseListings: live.looseListings,
+    looseFloorEth: live.looseFloorEth,
+    within25PctOfFloor: live.within25PctOfFloor,
+    ethUsd: live.ethUsd,
+  } : null;
+  const statementFloor = live?.statementAvailable && live.statementFloorEth && live.statementFloorCr && live.statementFloorTokenId
+    ? { eth: live.statementFloorEth, cr: live.statementFloorCr, tokenId: live.statementFloorTokenId }
+    : null;
+  const basket = live ? { credits: live.looseBasketCredits, eth: live.looseBasketEth, cr: live.looseBasketCr } : null;
+  const listedPct = market ? market.looseListings / overview.supply.loose * 100 : null;
+  const comparison = basket && statementFloor ? compareBuildAndBuyValue({
     looseBasketEth: basket.eth,
     looseBasketCr: basket.cr,
     statementFloorEth: statementFloor.eth,
     statementFloorCr: statementFloor.cr,
-  });
-  const cheaperLabel = comparison.cheaperMarket === 'loose' ? 'Loose basket' : 'Statement';
+  }) : null;
+  const cheaperLabel = comparison?.cheaperMarket === 'loose' ? 'Loose basket' : 'Statement';
 
   return (
     <>
@@ -69,19 +63,19 @@ export default async function CreditsOverviewPage() {
             </div>
           </div>
           <aside className="cr-status" aria-label="Snapshot status">
-            <span><i /> Verified snapshot</span>
+            <span><i /> {live ? 'Official market snapshot' : 'Market data unavailable'}</span>
             <strong>{new Date(snapshotAsOf).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC</strong>
-            <small>{live?.sourceRefreshing ? 'Official market scan in progress; displaying the last completed snapshot.' : live ? 'Checked against the official market source every 15 minutes.' : 'Showing the latest verified fallback snapshot.'}</small>
+            <small>{live?.sourceRefreshing || live?.sourceDegraded ? 'Official market scan is delayed or rate-limited; displaying its last completed candidate snapshot.' : live ? 'Official candidate snapshot checked on each page request.' : 'Live market prices are hidden rather than replaced with historical fallback prices.'}</small>
             <small>Visible listings can be checked directly in Value Finder.</small>
           </aside>
         </section>
 
         <section className="cr-section" aria-labelledby="market-pulse">
-          <div className="cr-section-head"><div><p className="cr-kicker">Market pulse</p><h2 id="market-pulse">The latest verified baseline</h2></div><span>{live ? '15-minute market snapshot' : overview.sourceLabel}</span></div>
-          <div className="cr-stat-grid">
-            <article><span>Loose floor</span><strong>{market.looseFloorEth} ETH</strong><small className="cr-support-stat cr-usd-equivalent">≈ {usd.format(market.looseFloorEth * market.ethUsd)}</small></article>
-            <article><span>Loose listings</span><strong>{integer.format(market.looseListings)}</strong><small className="cr-support-stat">{percent.format(listedPct)}% of loose supply</small><small className="cr-support-stat">{integer.format(market.within25PctOfFloor)} within 25% of floor</small></article>
-          </div>
+          <div className="cr-section-head"><div><p className="cr-kicker">Market pulse</p><h2 id="market-pulse">Latest completed candidate snapshot</h2></div><span>{live ? 'Official source · request-time check' : 'Unavailable'}</span></div>
+          {market ? <div className="cr-stat-grid">
+            <article><span>Loose snapshot floor</span><strong>{market.looseFloorEth} ETH</strong><small className="cr-support-stat cr-usd-equivalent">≈ {usd.format(market.looseFloorEth * market.ethUsd)}</small></article>
+            <article><span>Loose snapshot listings</span><strong>{integer.format(market.looseListings)}</strong><small className="cr-support-stat">{percent.format(listedPct!)}% of daily loose supply</small><small className="cr-support-stat">{integer.format(market.within25PctOfFloor)} within 25% of snapshot floor</small></article>
+          </div> : <p className="cr-empty">Current market dependencies could not be verified. Historical prices are not shown as live.</p>}
         </section>
 
         <div className="cr-split">
@@ -96,7 +90,7 @@ export default async function CreditsOverviewPage() {
             <dl className="cr-detail-list">
               <div><dt>Original supply</dt><dd>{integer.format(overview.supply.original)}</dd></div>
               <div><dt>Loose today</dt><dd>{integer.format(overview.supply.loose)}</dd></div>
-              <div><dt>Burned/In Statements</dt><dd>{integer.format(overview.supply.burnedIntoStatements)}</dd></div>
+              <div><dt>Burned/In Statements</dt><dd>{integer.format(overview.supply.burned)}</dd></div>
             </dl>
           </section>
 
@@ -105,17 +99,16 @@ export default async function CreditsOverviewPage() {
             <h2 id="statements-title">The Statement Market</h2>
             <p className="cr-panel-asof">Protocol snapshot: {protocolSnapshotLabel} UTC</p>
             <dl className="cr-detail-list cr-statement-details">
-              <div><dt>Current base floor</dt><dd>{eth.format(statementFloor.eth)} ETH<small>≈ {usd.format(statementFloor.eth * market.ethUsd)} · Statement #{statementFloor.tokenId}</small></dd></div>
+              <div><dt>Verified base floor</dt><dd>{statementFloor && market ? <>{eth.format(statementFloor.eth)} ETH<small>≈ {usd.format(statementFloor.eth * market.ethUsd)} · Statement #{statementFloor.tokenId}</small></> : <>Unavailable<small>{live?.statementReason ?? 'Current dependencies could not be verified.'}</small></>}</dd></div>
               <div><dt>Active Statements</dt><dd>{integer.format(overview.statements.active)}</dd></div>
-              <div><dt>Listed</dt><dd>{integer.format(overview.statements.listed)}</dd></div>
+              <div><dt>Daily listed baseline</dt><dd>{integer.format(overview.statements.listed)}</dd></div>
               <div><dt>Base / Layered / Inverted</dt><dd>{overview.statements.stageCounts.BASE} / {overview.statements.stageCounts.LAYERED} / {overview.statements.stageCounts.INVERTED}</dd></div>
             </dl>
           </section>
         </div>
 
         <section className="cr-section cr-build" aria-labelledby="build-title">
-          <div><p className="cr-kicker">Loose vs. Statement value</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p className="cr-build-copy">At the latest market snapshot, the cheapest executable {basket.credits}-CREDIT basket (sweeping {basket.credits} CREDITS off the floor now) carried {decimal.format(basket.cr)} CR at {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR.</p><p className="cr-build-copy">The lowest listed base Statement, #{statementFloor.tokenId}, carried {integer.format(statementFloor.cr)} CR at {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR.</p></div>
-          <strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% cheaper</small></strong>
+          {basket && statementFloor && comparison ? <><div><p className="cr-kicker">Loose vs. Statement value</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p className="cr-build-copy">In the latest completed candidate snapshot, the lowest-priced {basket.credits}-CREDIT basket totaled {eth.format(basket.eth)} ETH and carried {decimal.format(basket.cr)} CR, or {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR. Confirm every order in Value Finder before purchase.</p><p className="cr-build-copy">The lowest verified listed base Statement, #{statementFloor.tokenId}, carried {integer.format(statementFloor.cr)} CR at {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR.</p></div><strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% cheaper</small></strong></> : <div><p className="cr-kicker">Loose vs. Statement value</p><h2 id="build-title">Comparison temporarily unavailable</h2><p className="cr-build-copy">The comparison is hidden until loose listings, Statement orders, daily Statement metadata, and ETH/USD can all be verified together.</p></div>}
         </section>
 
       </main>

@@ -1,35 +1,49 @@
 {
+  "schemaVersion": 2,
   "snapshotAsOf": "2026-10-13T13:21:48.827489+00:00",
-  "sourceLabel": "Verified Oct 13, 2026 snapshot",
-  "market": {
-    "looseListings": 5993,
-    "looseFloorEth": 0.0127467,
-    "within25PctOfFloor": 129,
-    "ethUsd": 2501.1
+  "sourceLabel": "Verified cadence-aligned CREDITS DAILY archive",
+  "sourceUrl": "/credits/value",
+  "provenance": {
+    "snapshotId": "20261013T132148Z-credits-daily-oct13-scheduled",
+    "status": "verified",
+    "cadence": "scheduled",
+    "protocolBlock": 26183812,
+    "protocolBlockHash": "0xf31819736996fd1d305c6d552974d38130a3966fa34f914072c5bcdbaf418616",
+    "protocolBlockTime": "2026-10-13T13:16:59+00:00",
+    "marketStartedAt": "2026-10-13T13:21:07.881211+00:00",
+    "marketCompletedAt": "2026-10-13T13:21:48.827489+00:00",
+    "ethUsdCandleStart": "2026-10-13T13:20:00+00:00",
+    "sourceFiles": [
+      "verification.json",
+      "live-snapshot.json",
+      "market-snapshot.json",
+      "ownership-snapshot-post-statements.json"
+    ]
   },
   "supply": {
     "original": 122154,
     "loose": 106074,
-    "burnedIntoStatements": 16080,
-    "burnedPct": 13.163711380716144
+    "burned": 16080,
+    "burnedPct": 13.1637
   },
   "statements": {
     "active": 188,
     "listed": 42,
-    "creditsLocked": 16080,
+    "totalUnderlyingCredits": 16080,
     "stageCounts": {
       "BASE": 183,
       "LAYERED": 4,
       "INVERTED": 1
-    },
-    "floorEth": 1.38
+    }
   },
-  "buildVsBuy": {
-    "looseBasketCredits": 80,
-    "looseBasketEth": 1.0961301175670006,
-    "looseBasketCr": 16794.087700000004,
-    "statementFloorEth": 1.38,
-    "statementFloorCr": 27151,
-    "statementFloorTokenId": 39
-  }
+  "archivedReferences": {
+    "marketAsOf": "2026-10-13T13:21:48.827489+00:00",
+    "looseListings": 5993,
+    "looseFloorEth": 0.0127467,
+    "within25PctOfFloor": 129,
+    "ethUsdCandleStart": "2026-10-13T13:20:00+00:00",
+    "ethUsdClose": 2499.45,
+    "executableNow": false
+  },
+  "artifactSetDigest": "7c4d72729534ed2da48c90245565659f1a72486644cc59bf9dc9fbb028137604"
 }

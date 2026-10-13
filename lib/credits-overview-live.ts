@@ -18,13 +18,18 @@ export type LiveCreditsOverview = {
   snapshotAsOf: string;
   nextRefresh: string | null;
   sourceRefreshing: boolean;
+  sourceDegraded: boolean;
   looseListings: number;
   looseFloorEth: number;
   within25PctOfFloor: number;
   ethUsd: number;
-  statementFloorEth: number;
-  statementFloorCr: number;
-  statementFloorTokenId: number;
+  statementAvailable: boolean;
+  statementReason: string | null;
+  statementOrdersCheckedAt: string | null;
+  statementMetadataAsOf: string;
+  statementFloorEth: number | null;
+  statementFloorCr: number | null;
+  statementFloorTokenId: number | null;
   looseBasketCredits: number;
   looseBasketEth: number;
   looseBasketCr: number;
@@ -71,22 +76,21 @@ async function fetchStatementOrdersUncached() {
     if (next) seenCursors.add(next);
     cursor = next;
   } while (cursor);
-  return orders;
+  return { orders, checkedAt: new Date().toISOString() };
 }
 
 const loadStatementOrders = unstable_cache(
   fetchStatementOrdersUncached,
-  ['credits-statement-orders-v1'],
+  ['credits-statement-orders-v2'],
   { revalidate: REFRESH_SECONDS },
 );
 
 export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
-  const [officialPayload, tickerPayload, statementOrders] = await Promise.all([
+  const [officialPayload, tickerPayload] = await Promise.all([
     fetchJson(OFFICIAL_MARKET_URL),
     fetchJson(COINBASE_TICKER_URL),
-    loadStatementOrders(),
   ]);
-  const officialStatus = officialPayload as { refreshing?: boolean };
+  const officialStatus = officialPayload as { refreshing?: boolean; error?: unknown };
   const ethUsd = Number((tickerPayload as { price?: string }).price);
   const normalized = normalizeOfficialCreditSnapshot(officialPayload, ethUsd);
   const looseByPrice = [...normalized.items].sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId);
@@ -94,34 +98,58 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   const looseFloorEth = looseByPrice[0].priceEth;
   const looseBasket = looseByPrice.slice(0, 80);
 
-  const metadataById = new Map((statementData.items as StatementMetadata[]).map((item) => [item.tokenId, item]));
-  const lowestStatementById = new Map<number, number>();
-  for (const order of statementOrders) {
-    const offered = order.protocol_data?.parameters?.offer?.[0];
-    if (String(offered?.token).toLowerCase() !== STATEMENTS_CONTRACT) continue;
-    const tokenId = Number(offered?.identifierOrCriteria);
-    const priceEth = orderPriceEth(order);
-    const metadata = metadataById.get(tokenId);
-    if (!Number.isInteger(tokenId) || metadata?.stage !== 'BASE' || !priceEth) continue;
-    const previous = lowestStatementById.get(tokenId);
-    if (previous === undefined || priceEth < previous) lowestStatementById.set(tokenId, priceEth);
+  const metadata = statementData.items as StatementMetadata[];
+  const metadataById = new Map(metadata.map((item) => [item.tokenId, item]));
+  let statementAvailable = false;
+  let statementReason: string | null = 'Current Statement orders are unavailable.';
+  let statementOrdersCheckedAt: string | null = null;
+  let statementFloorEth: number | null = null;
+  let statementFloorCr: number | null = null;
+  let statementFloorTokenId: number | null = null;
+
+  try {
+    const statementScan = await loadStatementOrders();
+    statementOrdersCheckedAt = statementScan.checkedAt;
+    const eligibleOrders: Array<{ tokenId: number; priceEth: number; metadata: StatementMetadata }> = [];
+    const listedIds = new Set<number>();
+    for (const order of statementScan.orders) {
+      const offered = order.protocol_data?.parameters?.offer?.[0];
+      if (String(offered?.token).toLowerCase() !== STATEMENTS_CONTRACT) continue;
+      const tokenId = Number(offered?.identifierOrCriteria);
+      const priceEth = orderPriceEth(order);
+      if (!Number.isInteger(tokenId) || tokenId < 0 || !priceEth) continue;
+      listedIds.add(tokenId);
+      const details = metadataById.get(tokenId);
+      if (!details) throw new Error('Current Statement metadata coverage is incomplete');
+      if (details.stage === 'BASE') eligibleOrders.push({ tokenId, priceEth, metadata: details });
+    }
+    const floor = eligibleOrders.sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId)[0];
+    if (!floor || listedIds.size === 0) throw new Error('No verified current Statement floor is available');
+    statementAvailable = true;
+    statementReason = null;
+    statementFloorEth = floor.priceEth;
+    statementFloorCr = floor.metadata.creditRating;
+    statementFloorTokenId = floor.tokenId;
+  } catch {
+    statementAvailable = false;
   }
-  const statementFloor = [...lowestStatementById]
-    .map(([tokenId, priceEth]) => ({ tokenId, priceEth, metadata: metadataById.get(tokenId)! }))
-    .sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId)[0];
-  if (!statementFloor) throw new Error('No current Statement floor is available');
 
   return {
     snapshotAsOf: normalized.updatedAt ?? new Date().toISOString(),
     nextRefresh: normalized.nextRefresh,
     sourceRefreshing: officialStatus.refreshing === true,
+    sourceDegraded: typeof officialStatus.error === 'string' && officialStatus.error.length > 0,
     looseListings: looseByPrice.length,
     looseFloorEth,
     within25PctOfFloor: looseByPrice.filter((item) => item.priceEth <= looseFloorEth * 1.25).length,
     ethUsd,
-    statementFloorEth: statementFloor.priceEth,
-    statementFloorCr: statementFloor.metadata.creditRating,
-    statementFloorTokenId: statementFloor.tokenId,
+    statementAvailable,
+    statementReason,
+    statementOrdersCheckedAt,
+    statementMetadataAsOf: statementData.snapshotAsOf,
+    statementFloorEth,
+    statementFloorCr,
+    statementFloorTokenId,
     looseBasketCredits: 80,
     looseBasketEth: looseBasket.reduce((sum, item) => sum + item.priceEth, 0),
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),

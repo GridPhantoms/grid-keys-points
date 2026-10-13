@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
 import {
   matchingCreditListings,
@@ -55,7 +56,11 @@ function orderPriceEth(order: OpenSeaOrder) {
   return value / 10 ** decimals;
 }
 
-async function fetchBestCreditListing(apiKey: string, tokenId: number): Promise<FreshCreditListing | null> {
+type OpenSeaApiKey = string;
+
+async function fetchBestCreditListingUncached(tokenId: number): Promise<{ checkedAt: string; value: FreshCreditListing | null }> {
+  const apiKey = process.env.OPENSEA_API_KEY;
+  if (!apiKey) throw new Error('Current OpenSea listing validation is unavailable');
   const response = await fetch(
     `https://api.opensea.io/api/v2/listings/collection/${CREDITS_SLUG}/nfts/${tokenId}/best`,
     {
@@ -64,29 +69,40 @@ async function fetchBestCreditListing(apiKey: string, tokenId: number): Promise<
       signal: AbortSignal.timeout(15_000),
     },
   );
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    return { checkedAt: new Date().toISOString(), value: null };
+  }
   if (!response.ok) throw new Error(`OpenSea current-listing check failed (${response.status})`);
   const order = await response.json() as OpenSeaOrder;
   const priceEth = orderPriceEth(order);
-  return priceEth ? { tokenId, priceEth } : null;
+  const value = priceEth ? { tokenId, priceEth } : null;
+  return { checkedAt: new Date().toISOString(), value };
 }
 
-async function revalidateCreditCandidates(apiKey: string, candidates: CreditListing[]) {
+const fetchBestCreditListingCached = unstable_cache(
+  fetchBestCreditListingUncached,
+  ['credits-auto-opensea-token-v1'],
+  { revalidate: 60 },
+);
+
+async function revalidateCreditCandidates(candidates: CreditListing[], bypassCache: boolean) {
   const freshListings: FreshCreditListing[] = [];
+  const checkedTimes: string[] = [];
   let cursor = 0;
   const worker = async () => {
     while (cursor < candidates.length) {
       const candidate = candidates[cursor];
       cursor += 1;
-      const listing = await fetchBestCreditListing(apiKey, candidate.tokenId);
-      if (listing) freshListings.push(listing);
+      const result = await (bypassCache ? fetchBestCreditListingUncached(candidate.tokenId) : fetchBestCreditListingCached(candidate.tokenId));
+      checkedTimes.push(result.checkedAt);
+      if (result.value) freshListings.push(result.value);
     }
   };
   await Promise.all(Array.from({ length: Math.min(8, candidates.length) }, () => worker()));
-  return freshListings;
+  return { freshListings, checkedAt: checkedTimes.sort()[0] ?? new Date().toISOString() };
 }
 
-async function fetchAllStatementListings(apiKey: string): Promise<{ items: StatementListing[]; pages: number }> {
+async function fetchAllStatementListings(apiKey: OpenSeaApiKey): Promise<{ items: StatementListing[]; pages: number; checkedAt: string }> {
   let cursor: string | null = null;
   let pages = 0;
   const lowestByToken = new Map<number, StatementListing>();
@@ -121,13 +137,14 @@ async function fetchAllStatementListings(apiKey: string): Promise<{ items: State
     cursor = next;
   } while (cursor);
 
-  return { items: [...lowestByToken.values()], pages };
+  return { items: [...lowestByToken.values()], pages, checkedAt: new Date().toISOString() };
 }
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const query = parseValueQuery(requestUrl.searchParams);
-  const forceFresh = requestUrl.searchParams.has('refresh');
+  const validationMode = requestUrl.searchParams.get('refresh');
+  const forceFresh = validationMode === 'auto' || validationMode === 'manual';
   try {
     const [officialPayload, ethUsd] = await Promise.all([
       fetchJson(OFFICIAL_MARKET_URL),
@@ -141,9 +158,23 @@ export async function GET(request: Request) {
     const apiKey = process.env.OPENSEA_API_KEY;
     if (forceFresh) {
       if (!apiKey) throw new Error('Current OpenSea listing validation is unavailable');
-      const candidates = snapshotMatches.slice(0, Math.min(snapshotMatches.length, query.limit + 25));
-      const freshListings = await revalidateCreditCandidates(apiKey, candidates);
-      freshValidatedAt = new Date().toISOString();
+      const validationBudget = Math.min(snapshotMatches.length, query.limit + 75);
+      const candidates: CreditListing[] = [];
+      const freshListings: FreshCreditListing[] = [];
+      const validationTimes: string[] = [];
+      for (let start = 0; start < validationBudget; start += 25) {
+        const batch = snapshotMatches.slice(start, Math.min(start + 25, validationBudget));
+        candidates.push(...batch);
+        const validation = await revalidateCreditCandidates(batch, validationMode === 'manual');
+        freshListings.push(...validation.freshListings);
+        validationTimes.push(validation.checkedAt);
+        const currentlyValid = matchingCreditListings(
+          reconcileFreshCreditListings(candidates, freshListings, ethUsd, new Date().toISOString()),
+          query,
+        );
+        if (currentlyValid.length >= query.limit) break;
+      }
+      freshValidatedAt = validationTimes.sort()[0] ?? new Date().toISOString();
       freshCandidatesChecked = candidates.length;
       matchingCredits = matchingCreditListings(
         reconcileFreshCreditListings(candidates, freshListings, ethUsd, freshValidatedAt),
@@ -151,30 +182,38 @@ export async function GET(request: Request) {
       );
     }
     const filteredCredits = matchingCredits.slice(0, query.limit);
-    const fetchedAt = new Date().toISOString();
 
     let statements: {
       available: boolean;
       reason: string | null;
       snapshotAsOf: string;
       listingPages: number;
+      listingCheckedAt: string | null;
+      metadataCoverage: { matched: number; listed: number };
       items: ReturnType<typeof rankStatementListings>;
     } = {
       available: false,
       reason: 'Live Statement listings require an OpenSea API key.',
       snapshotAsOf: statementData.snapshotAsOf,
       listingPages: 0,
+      listingCheckedAt: null,
+      metadataCoverage: { matched: 0, listed: 0 },
       items: [],
     };
     if (apiKey) {
       try {
         const liveListings = await fetchAllStatementListings(apiKey);
+        const metadataIds = new Set((statementData.items as StatementMetadata[]).map((item) => item.tokenId));
+        const matchedMetadata = liveListings.items.filter((item) => metadataIds.has(item.tokenId)).length;
+        const ranked = rankStatementListings(statementData.items as StatementMetadata[], liveListings.items, ethUsd);
         statements = {
           available: true,
           reason: null,
           snapshotAsOf: statementData.snapshotAsOf,
           listingPages: liveListings.pages,
-          items: rankStatementListings(statementData.items as StatementMetadata[], liveListings.items, ethUsd),
+          listingCheckedAt: liveListings.checkedAt,
+          metadataCoverage: { matched: matchedMetadata, listed: liveListings.items.length },
+          items: ranked,
         };
       } catch {
         statements.reason = 'Current OpenSea Statement listings are unavailable. No stale listings are shown.';
@@ -182,7 +221,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      fetchedAt,
+      fetchedAt: new Date().toISOString(),
       ethUsd,
       query,
       credits: {
@@ -192,9 +231,12 @@ export async function GET(request: Request) {
         nextRefresh: normalized.nextRefresh,
         checkedAtOldest: normalized.items.reduce<string | null>((oldest, item) => !oldest || item.checkedAt < oldest ? item.checkedAt : oldest, null),
         totalLiveListings: normalized.items.length,
-        matchingListings: snapshotMatches.length,
+        matchingListings: forceFresh ? matchingCredits.length : snapshotMatches.length,
+        snapshotMatchingListings: snapshotMatches.length,
         freshValidatedAt,
         freshCandidatesChecked,
+        validationScopeComplete: forceFresh ? freshCandidatesChecked >= snapshotMatches.length : false,
+        moreCandidatesRemain: forceFresh ? freshCandidatesChecked < snapshotMatches.length : snapshotMatches.length > query.limit,
         items: filteredCredits,
       },
       statements,

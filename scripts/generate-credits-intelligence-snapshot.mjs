@@ -1,149 +1,124 @@
 #!/usr/bin/env node
 
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import process from 'node:process';
 
-const snapshotDir = process.argv[2];
-if (!snapshotDir) {
-  throw new Error('Usage: node scripts/generate-credits-intelligence-snapshot.mjs <verified-snapshot-directory>');
-}
+const archiveArg = process.argv[2];
+if (!archiveArg) throw new Error('Usage: node scripts/generate-credits-intelligence-snapshot.mjs <verified-scheduled-archive>');
+
+const archive = path.resolve(archiveArg);
+const snapshotId = path.basename(archive);
+if (!snapshotId.endsWith('-scheduled')) throw new Error('Only cadence-aligned *-scheduled archives may be published');
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const overviewPath = path.join(projectRoot, 'data', 'credits-overview.json');
 const statementsPath = path.join(projectRoot, 'data', 'credits-statements.json');
-const [verification, live, market, previousOverview] = await Promise.all([
-  readJson(path.join(snapshotDir, 'verification.json')),
-  readJson(path.join(snapshotDir, 'live-snapshot.json')),
-  readJson(path.join(snapshotDir, 'market-snapshot.json')),
-  readJson(overviewPath),
+const [verification, live, market, ownership] = await Promise.all([
+  readFile(path.join(archive, 'verification.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(archive, 'live-snapshot.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(archive, 'market-snapshot.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(archive, 'ownership-snapshot-post-statements.json'), 'utf8').then(JSON.parse),
 ]);
 
-if (verification.status !== 'verified' || verification.review_only !== true) {
-  throw new Error('CREDITS source package is not a verified review-only snapshot');
+function requireValue(condition, message) {
+  if (!condition) throw new Error(message);
 }
-if (verification.onchain_block !== live.onchain_block || verification.onchain_block_hash !== live.onchain_block_hash) {
-  throw new Error('CREDITS source package block identity does not reconcile');
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
 }
-if (verification.market_completed_at_utc !== market.completed_at_utc) {
-  throw new Error('CREDITS source package market completion does not reconcile');
-}
-
-const activeStatements = live.statements.all_active;
-if (!Array.isArray(activeStatements) || activeStatements.length !== live.statements.active) {
-  throw new Error('Active Statement metadata is incomplete');
-}
-const publicStatements = activeStatements
-  .map((item) => ({
-    tokenId: Number(item.token_id),
-    format: String(item.format),
-    stage: String(item.stage),
-    credits: Number(item.credits),
-    layers: Number(item.layers),
-    creditRating: Number(item.credit_rating),
-  }))
-  .sort((a, b) => a.tokenId - b.tokenId);
-
-const creditsInStatements = publicStatements.reduce((sum, item) => sum + item.credits, 0);
-const stageCounts = publicStatements.reduce((counts, item) => {
-  counts[item.stage] = (counts[item.stage] || 0) + 1;
-  return counts;
-}, {});
-if (creditsInStatements !== live.credits.burned_into_active_statements) {
-  throw new Error('Statement CREDIT total does not reconcile');
-}
-if (JSON.stringify(stageCounts) !== JSON.stringify(live.statements.stage_counts)) {
-  throw new Error('Statement stage counts do not reconcile');
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
+  return JSON.stringify(value);
 }
 
-const officialResponse = await fetch('https://jack.art/credits/rating/api/market-snapshot', {
-  cache: 'no-store',
-  headers: { accept: 'application/json', 'user-agent': 'GridPhantomsCreditsSnapshot/1.0' },
-  signal: AbortSignal.timeout(30_000),
-});
-if (!officialResponse.ok) throw new Error(`Official rating snapshot unavailable (${officialResponse.status})`);
-const official = await officialResponse.json();
-if (official.complete !== true || !Array.isArray(official.items)) {
-  throw new Error('Official rating snapshot is incomplete');
-}
-const scoreById = new Map(official.items.map((item) => [Number(item.id), Number(item.score)]));
-const basketIds = live.credits.basket_80?.token_ids;
-if (!Array.isArray(basketIds) || basketIds.length !== 80) {
-  throw new Error('Executable 80-CREDIT basket is unavailable');
-}
-const basketScores = basketIds.map((tokenId) => scoreById.get(Number(tokenId)));
-if (basketScores.some((score) => !Number.isFinite(score))) {
-  throw new Error('Official rating coverage is incomplete for the executable basket');
-}
+requireValue(verification.status === 'verified', 'Archive verification status is not verified');
+requireValue(verification.review_only === true, 'Archive must remain review-only');
+requireValue(verification.publication_authorized === false, 'Social publication authorization must remain false');
+requireValue(live.status === 'verified', 'Live snapshot status is not verified');
+requireValue(ownership.status === 'verified', 'Ownership snapshot status is not verified');
+requireValue(verification.onchain_block === live.onchain_block, 'Verification/live block mismatch');
+requireValue(verification.onchain_block === ownership.block_number, 'Verification/ownership block mismatch');
+requireValue(verification.onchain_block_hash === live.onchain_block_hash, 'Verification/live block hash mismatch');
+requireValue(verification.onchain_block_hash === ownership.block_hash, 'Verification/ownership block hash mismatch');
+requireValue(verification.market_completed_at_utc === market.completed_at_utc, 'Verification/market completion mismatch');
+requireValue(String(verification.eth_usd_close).length > 0, 'Verified archived ETH/USD close is missing');
+requireValue(verification.eth_usd_candle_start_utc, 'Verified archived ETH/USD candle timestamp is missing');
 
-const baseFloor = live.statements.stage_floors?.BASE;
-const baseFloorStatement = publicStatements.find((item) => item.tokenId === Number(baseFloor?.floor_token_id));
-if (!baseFloorStatement || !Number.isFinite(Number(baseFloor?.floor_eth))) {
-  throw new Error('Base Statement floor does not reconcile to active metadata');
-}
+const original = Number(verification.ownership.reconciled_original_supply);
+const loose = Number(verification.ownership.unique_live_tokens);
+const burned = Number(verification.ownership.protocol_burned_tokens);
+const active = Number(verification.statements.active);
+requireValue(original === 122154 && loose + burned === original, 'Supply reconciliation failed');
+requireValue(ownership.unique_live_tokens === loose && ownership.protocol_burned_tokens === burned, 'Ownership export mismatch');
+requireValue(live.credits.loose_live_supply === loose && live.credits.burned_into_active_statements === burned, 'Live protocol export mismatch');
+requireValue(Array.isArray(live.statements.all_active) && live.statements.all_active.length === active, 'Active Statement coverage mismatch');
+requireValue(live.statements.rating_value_listed.length === verification.statements.listed, 'Statement listing count mismatch');
+requireValue(market.unique_listed_tokens === verification.market.unique_listed_tokens, 'Market listing count mismatch');
+requireValue(market.rating_listing_coverage_count === market.unique_listed_tokens, 'Archived market rating coverage is incomplete');
 
-const snapshotAsOf = market.completed_at_utc;
-const sourceDate = new Date(snapshotAsOf).toLocaleDateString('en-US', {
-  month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
-});
-const ethUsd = Number(live.eth_usd.close_usd);
-const looseBasketEth = Number(live.credits.basket_80.subtotal_eth);
-const looseBasketCr = basketScores.reduce((sum, score) => sum + score, 0);
+const statementItems = live.statements.all_active.map((item) => ({
+  tokenId: Number(item.token_id),
+  format: String(item.format),
+  credits: Number(item.credits),
+  overprints: Number(item.overprints),
+  layers: Number(item.layers),
+  creditRating: Number(item.credit_rating),
+  avgRatingPerCredit: Number(item.avg_rating_per_credit),
+  stage: String(item.stage),
+})).sort((a, b) => a.tokenId - b.tokenId);
+requireValue(new Set(statementItems.map((item) => item.tokenId)).size === active, 'Statement token IDs are not unique');
+requireValue(statementItems.reduce((sum, item) => sum + item.credits, 0) === burned, 'Statement CREDIT total mismatch');
 
-const overview = {
-  snapshotAsOf,
-  sourceLabel: `Verified ${sourceDate} snapshot`,
-  market: {
+const capturedAt = verification.market_completed_at_utc;
+const provenance = {
+  snapshotId,
+  status: 'verified',
+  cadence: 'scheduled',
+  protocolBlock: Number(verification.onchain_block),
+  protocolBlockHash: String(verification.onchain_block_hash),
+  protocolBlockTime: String(verification.onchain_block_time_utc),
+  marketStartedAt: String(market.started_at_utc),
+  marketCompletedAt: String(market.completed_at_utc),
+  ethUsdCandleStart: String(verification.eth_usd_candle_start_utc),
+  sourceFiles: ['verification.json', 'live-snapshot.json', 'market-snapshot.json', 'ownership-snapshot-post-statements.json'],
+};
+
+const overviewBase = {
+  schemaVersion: 2,
+  snapshotAsOf: capturedAt,
+  sourceLabel: 'Verified cadence-aligned CREDITS DAILY archive',
+  sourceUrl: '/credits/value',
+  provenance,
+  supply: { original, loose, burned, burnedPct: Number(((burned / original) * 100).toFixed(4)) },
+  statements: {
+    active,
+    listed: Number(verification.statements.listed),
+    totalUnderlyingCredits: Number(verification.statements.credits_burned_into_statements),
+    stageCounts: verification.statements.stage_counts,
+  },
+  archivedReferences: {
+    marketAsOf: String(market.completed_at_utc),
     looseListings: Number(market.unique_listed_tokens),
     looseFloorEth: Number(market.floor_eth),
     within25PctOfFloor: Number(market.within_25pct_of_floor),
-    ethUsd,
-  },
-  supply: {
-    original: Number(live.credits.original_supply),
-    loose: Number(live.credits.loose_live_supply),
-    burnedIntoStatements: Number(live.credits.burned_into_active_statements),
-    burnedPct: Number(live.credits.burned_pct_original_supply),
-  },
-  statements: {
-    active: Number(live.statements.active),
-    listed: Number(live.statements.listed),
-    creditsLocked: Number(live.statements.total_underlying_credits),
-    stageCounts,
-    floorEth: Number(baseFloor.floor_eth),
-  },
-  buildVsBuy: {
-    looseBasketCredits: 80,
-    looseBasketEth,
-    looseBasketCr,
-    statementFloorEth: Number(baseFloor.floor_eth),
-    statementFloorCr: baseFloorStatement.creditRating,
-    statementFloorTokenId: baseFloorStatement.tokenId,
+    ethUsdCandleStart: String(verification.eth_usd_candle_start_utc),
+    ethUsdClose: Number(verification.eth_usd_close),
+    executableNow: false,
   },
 };
+const statementsBase = { schemaVersion: 2, snapshotAsOf: capturedAt, provenance, activeCount: active, items: statementItems };
+const artifactSetDigest = sha256(canonical({ overview: overviewBase, statements: statementsBase }));
+const overviewExport = { ...overviewBase, artifactSetDigest };
+const statementsExport = { ...statementsBase, artifactSetDigest };
 
-if (overview.supply.loose + overview.supply.burnedIntoStatements !== overview.supply.original) {
-  throw new Error('Overview supply does not reconcile');
-}
-if (overview.snapshotAsOf <= previousOverview.snapshotAsOf) {
-  console.log(JSON.stringify({ status: 'unchanged', snapshotAsOf: overview.snapshotAsOf }));
-  process.exit(0);
-}
+const prohibited = /\b(owner|seller|orderHash|wallet|address|private_holder|private_market)\b/i;
+requireValue(!prohibited.test(JSON.stringify(overviewExport)), 'Overview export contains prohibited public fields');
+requireValue(!prohibited.test(JSON.stringify(statementsExport)), 'Statement export contains prohibited public fields');
 
 await Promise.all([
-  writeFile(overviewPath, `${JSON.stringify(overview, null, 2)}\n`),
-  writeFile(statementsPath, `${JSON.stringify({ snapshotAsOf, items: publicStatements }, null, 2)}\n`),
+  writeFile(overviewPath, `${JSON.stringify(overviewExport, null, 2)}\n`),
+  writeFile(statementsPath, `${JSON.stringify(statementsExport, null, 2)}\n`),
 ]);
-
-console.log(JSON.stringify({
-  status: 'updated',
-  snapshotAsOf,
-  activeStatements: publicStatements.length,
-  burnedIntoStatements: creditsInStatements,
-  looseSupply: overview.supply.loose,
-  stageCounts,
-}));
-
-async function readJson(filePath) {
-  return JSON.parse(await readFile(filePath, 'utf8'));
-}
+console.log(JSON.stringify({ snapshotId, capturedAt, protocolBlock: provenance.protocolBlock, activeStatements: active, loose, burned, artifactSetDigest }, null, 2));

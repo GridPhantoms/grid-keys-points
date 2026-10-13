@@ -2,17 +2,11 @@ import assert from 'node:assert/strict';
 
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { calculateStakingPoints, getStakingBytesCap } from '../lib/citizen-terminal.ts';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { extractOpenSeaEstimatedRank } from '../lib/opensea-rarity.ts';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { calculateCitizenSupply, calculateComponentSupply, calculateImpliedValuation, NEO_TOKYO_SUPPLY_CONFIG } from '../lib/citizen-valuation.ts';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { buildBytes2BytesSummary, normalizeCitizenPosition } from '../lib/bytes-to-bytes.ts';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { mapWithConcurrency, readResponseBuffer } from '../app/api/_lib/bounded-response.ts';
-// @ts-expect-error Node's strip-types test runner imports the TypeScript source directly.
 import { decodeAbiString, parseMetadataUri } from '../app/api/_lib/ethereum-nft-metadata.ts';
 import { buildCitizenHolderStats } from '../lib/citizen-holders.mjs';
 import { buildOriginalS1Distinctions, originalS1AuditRowsDigest } from '../lib/citizen-lineage.mjs';

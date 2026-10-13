@@ -190,6 +190,9 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
   assert.match(overview, /The Statement Market/);
+  assert.doesNotMatch(overview, /Verified snapshot reference/);
+  assert.match(overview, /sweeping \{basket\.credits\} CREDITS off the floor now/);
+  assert.match(overview, /cr-build-copy/);
   assert.doesNotMatch(overview, /See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);
@@ -202,4 +205,5 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(css, /\.cr-card-list\{display:grid/);
   assert.match(css, /\.cr-nav a\{[^}]*text-transform:uppercase/);
   assert.match(css, /\.cr-stat-grid \.cr-support-stat\{[^}]*font-size:14px/);
+  assert.match(css, /\.cr-statement-details dd small\{[^}]*font-size:14px/);
 });

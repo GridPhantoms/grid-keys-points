@@ -74,7 +74,7 @@ export default async function CreditsOverviewPage() {
         <section className="cr-section" aria-labelledby="market-pulse">
           <div className="cr-section-head"><div><p className="cr-kicker">Market pulse</p><h2 id="market-pulse">The latest verified baseline</h2></div><span>{live ? '15-minute market snapshot' : overview.sourceLabel}</span></div>
           <div className="cr-stat-grid">
-            <article><span>Loose floor</span><strong>{market.looseFloorEth} ETH</strong><small className="cr-usd-equivalent">≈ {usd.format(market.looseFloorEth * market.ethUsd)}</small><small>Verified snapshot reference</small></article>
+            <article><span>Loose floor</span><strong>{market.looseFloorEth} ETH</strong><small className="cr-support-stat cr-usd-equivalent">≈ {usd.format(market.looseFloorEth * market.ethUsd)}</small></article>
             <article><span>Loose listings</span><strong>{integer.format(market.looseListings)}</strong><small className="cr-support-stat">{percent.format(listedPct)}% of loose supply</small><small className="cr-support-stat">{integer.format(market.within25PctOfFloor)} within 25% of floor</small></article>
           </div>
         </section>
@@ -107,7 +107,7 @@ export default async function CreditsOverviewPage() {
         </div>
 
         <section className="cr-section cr-build" aria-labelledby="build-title">
-          <div><p className="cr-kicker">Loose vs. Statement value</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p>At the latest market snapshot, the cheapest executable {basket.credits}-CREDIT basket carried {decimal.format(basket.cr)} CR at {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR. The lowest listed base Statement, #{statementFloor.tokenId}, carried {integer.format(statementFloor.cr)} CR at {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR.</p></div>
+          <div><p className="cr-kicker">Loose vs. Statement value</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p className="cr-build-copy">At the latest market snapshot, the cheapest executable {basket.credits}-CREDIT basket (sweeping {basket.credits} CREDITS off the floor now) carried {decimal.format(basket.cr)} CR at {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR.</p><p className="cr-build-copy">The lowest listed base Statement, #{statementFloor.tokenId}, carried {integer.format(statementFloor.cr)} CR at {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR.</p></div>
           <strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% cheaper</small></strong>
         </section>
 

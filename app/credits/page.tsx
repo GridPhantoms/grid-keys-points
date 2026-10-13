@@ -11,7 +11,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/credits' },
 };
 
-export const revalidate = 900;
+// The data loader below owns the only cache boundary. Keeping the route
+// dynamic prevents a second stale-while-revalidate layer from compounding lag.
+export const dynamic = 'force-dynamic';
 
 const integer = new Intl.NumberFormat('en-US');
 const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });

@@ -7,7 +7,7 @@ const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot
 const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
 const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
 const USER_AGENT = 'GridPhantomsCredits/1.0';
-const REFRESH_SECONDS = 15 * 60;
+const REFRESH_SECONDS = 10 * 60;
 
 type OpenSeaOrder = {
   price?: { current?: { currency?: string; value?: string; decimals?: number } };
@@ -122,6 +122,6 @@ async function loadLiveCreditsOverviewUncached(): Promise<LiveCreditsOverview> {
 
 export const loadLiveCreditsOverview = unstable_cache(
   loadLiveCreditsOverviewUncached,
-  ['credits-overview-live-v1'],
+  ['credits-overview-live-v2'],
   { revalidate: REFRESH_SECONDS },
 );

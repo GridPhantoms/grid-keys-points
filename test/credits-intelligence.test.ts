@@ -168,10 +168,11 @@ test('build versus buy compares normalized ETH per 1K CR rather than headline co
 });
 
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
-  const [nav, home, overview, finder, css] = await Promise.all([
+  const [nav, home, overview, overviewLoader, finder, css] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/GridHome.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/credits-overview-live.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/value/ValueFinder.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/credits.css', import.meta.url), 'utf8'),
   ]);
@@ -193,6 +194,10 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(overview, /Verified snapshot reference/);
   assert.match(overview, /sweeping \{basket\.credits\} CREDITS off the floor now/);
   assert.match(overview, /cr-build-copy/);
+  assert.match(overview, /export const dynamic = 'force-dynamic'/);
+  assert.doesNotMatch(overview, /export const revalidate/);
+  assert.match(overviewLoader, /unstable_cache/);
+  assert.match(overviewLoader, /REFRESH_SECONDS = 10 \* 60/);
   assert.doesNotMatch(overview, /See current values/);
   assert.doesNotMatch(finder, /why it surfaced/i);
   assert.match(finder, /Refresh listings/);

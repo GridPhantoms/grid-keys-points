@@ -7,6 +7,19 @@ export const metadata: Metadata = {
   title: 'CREDITS Value Finder | Live Listings',
   description: 'Find current CREDITS and Statement listings by Credit Rating, price and ETH per 1,000 CR.',
   alternates: { canonical: '/credits/value' },
+  openGraph: {
+    type: 'website',
+    url: '/credits/value',
+    title: 'CREDITS Value Finder | Live Listings',
+    description: 'A public collector tool for comparing CREDITS and Statements by rating, ask and ETH per 1K CR.',
+    images: [{ url: '/credits/value/opengraph-image', width: 1200, height: 630, alt: 'CREDITS Intelligence Value Finder: compare Credit Rating value' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CREDITS Value Finder | Live Listings',
+    description: 'Compare CREDITS and Statements by rating, ask and ETH per 1K CR.',
+    images: ['/credits/value/opengraph-image'],
+  },
 };
 
 export default function CreditsValuePage() {

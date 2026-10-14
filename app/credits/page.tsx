@@ -9,6 +9,19 @@ export const metadata: Metadata = {
   title: 'CREDITS Intelligence | Market Overview',
   description: 'Live market intelligence for finding stronger Credit Rating value across loose CREDITS and Statements.',
   alternates: { canonical: '/credits' },
+  openGraph: {
+    type: 'website',
+    url: '/credits',
+    title: 'CREDITS Intelligence | Market Overview',
+    description: 'Public collector tools for understanding CREDITS supply, burn progress, Statements and market value.',
+    images: [{ url: '/credits/opengraph-image', width: 1200, height: 630, alt: 'CREDITS Intelligence public collector tools: market overview' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CREDITS Intelligence | Market Overview',
+    description: 'Understand CREDITS supply, burn progress, Statements and market value.',
+    images: ['/credits/opengraph-image'],
+  },
 };
 
 // The data loader below owns the only cache boundary. Keeping the route

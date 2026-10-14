@@ -275,7 +275,7 @@ test('scheduled CREDITS protocol artifacts reconcile identity, supply, and State
 });
 
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
-  const [nav, home, overview, overviewLoader, valuePage, finder, css] = await Promise.all([
+  const [nav, home, overview, overviewLoader, valuePage, finder, css, overviewOg, valueOg] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/GridHome.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/page.tsx', import.meta.url), 'utf8'),
@@ -283,6 +283,8 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
     readFile(new URL('../app/credits/value/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/value/ValueFinder.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/credits.css', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/opengraph-image.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/value/opengraph-image.tsx', import.meta.url), 'utf8'),
   ]);
   assert.doesNotMatch(nav, /href: '\/credits'/);
   assert.doesNotMatch(home, /\/credits/);
@@ -299,6 +301,14 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /cr-creditline/);
   assert.match(valuePage, /Market intelligence provided by GridPhantoms/);
   assert.match(valuePage, /cr-creditline/);
+  assert.match(overview, /Public collector tools for understanding CREDITS supply/);
+  assert.match(valuePage, /public collector tool for comparing CREDITS and Statements/);
+  assert.match(overviewOg, /SEE WHAT CREDITS/);
+  assert.match(overviewOg, /PUBLIC COLLECTOR TOOLS/);
+  assert.doesNotMatch(overviewOg, /KEYHOLDER GOVERNANCE/);
+  assert.match(valueOg, /FIND MORE CREDIT/);
+  assert.match(valueOg, /FREE · READ-ONLY/);
+  assert.doesNotMatch(valueOg, /KEYHOLDER GOVERNANCE/);
   assert.doesNotMatch(overview, /Value preview/);
   assert.match(overview, /cr-supply-marker/);
   assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);

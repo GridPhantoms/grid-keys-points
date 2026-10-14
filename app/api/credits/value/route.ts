@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
 import {
   matchingCreditListings,
+  normalizeOpenSeaStatementMetadata,
   normalizeOfficialCreditSnapshot,
   parseValueQuery,
   reconcileFreshCreditListings,
@@ -140,6 +141,24 @@ async function fetchAllStatementListings(apiKey: OpenSeaApiKey): Promise<{ items
   return { items: [...lowestByToken.values()], pages, checkedAt: new Date().toISOString() };
 }
 
+async function fetchMissingStatementMetadata(apiKey: OpenSeaApiKey, tokenIds: number[]) {
+  const metadata: StatementMetadata[] = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < tokenIds.length) {
+      const tokenId = tokenIds[cursor];
+      cursor += 1;
+      const payload = await fetchJson(
+        `https://api.opensea.io/api/v2/chain/ethereum/contract/${STATEMENTS_CONTRACT}/nfts/${tokenId}`,
+        { 'x-api-key': apiKey },
+      );
+      metadata.push(normalizeOpenSeaStatementMetadata(tokenId, payload));
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(8, tokenIds.length) }, () => worker()));
+  return metadata;
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const query = parseValueQuery(requestUrl.searchParams);
@@ -203,16 +222,21 @@ export async function GET(request: Request) {
     if (apiKey) {
       try {
         const liveListings = await fetchAllStatementListings(apiKey);
-        const metadataIds = new Set((statementData.items as StatementMetadata[]).map((item) => item.tokenId));
-        const matchedMetadata = liveListings.items.filter((item) => metadataIds.has(item.tokenId)).length;
-        const ranked = rankStatementListings(statementData.items as StatementMetadata[], liveListings.items, ethUsd);
+        const baselineMetadata = statementData.items as StatementMetadata[];
+        const metadataIds = new Set(baselineMetadata.map((item) => item.tokenId));
+        const missingIds = liveListings.items
+          .map((item) => item.tokenId)
+          .filter((tokenId) => !metadataIds.has(tokenId));
+        const currentMetadata = await fetchMissingStatementMetadata(apiKey, missingIds);
+        const completeMetadata = [...baselineMetadata, ...currentMetadata];
+        const ranked = rankStatementListings(completeMetadata, liveListings.items, ethUsd);
         statements = {
           available: true,
           reason: null,
           snapshotAsOf: statementData.snapshotAsOf,
           listingPages: liveListings.pages,
           listingCheckedAt: liveListings.checkedAt,
-          metadataCoverage: { matched: matchedMetadata, listed: liveListings.items.length },
+          metadataCoverage: { matched: liveListings.items.length, listed: liveListings.items.length },
           items: ranked,
         };
       } catch {

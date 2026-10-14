@@ -38,6 +38,11 @@ export type StatementListing = {
   url: string;
 };
 
+type OpenSeaTrait = {
+  trait_type?: unknown;
+  value?: unknown;
+};
+
 export type RankedStatement = StatementMetadata & StatementListing & {
   priceUsd: number;
   ethPer1kCr: number;
@@ -186,6 +191,29 @@ export function reconcileFreshCreditListings(
       checkedAt,
     }];
   });
+}
+
+export function normalizeOpenSeaStatementMetadata(tokenId: number, payload: unknown): StatementMetadata {
+  if (!Number.isInteger(tokenId) || tokenId < 0) throw new Error('Statement token ID is invalid');
+  const source = record(payload);
+  const nft = record(source?.nft);
+  if (!Array.isArray(nft?.traits)) throw new Error('Current Statement metadata is unavailable');
+  const traits = new Map<string, unknown>();
+  for (const rawTrait of nft.traits as OpenSeaTrait[]) {
+    if (typeof rawTrait?.trait_type === 'string') traits.set(rawTrait.trait_type, rawTrait.value);
+  }
+  const format = traits.get('Format');
+  const credits = positiveNumber(traits.get('Credits'));
+  const overprints = nonNegativeNumber(traits.get('Overprints'));
+  const creditRating = positiveNumber(traits.get('Credit Rating'));
+  if (typeof format !== 'string' || format.length === 0 || !credits || !Number.isInteger(credits)
+    || overprints === null || !Number.isInteger(overprints) || !creditRating) {
+    throw new Error('Current Statement metadata is incomplete');
+  }
+  const layers = overprints + 1;
+  if (credits !== layers * 80) throw new Error('Current Statement metadata does not reconcile');
+  const stage = layers >= 8 ? 'INVERTED' : layers >= 2 ? 'LAYERED' : 'BASE';
+  return { tokenId, format, stage, credits, layers, creditRating };
 }
 
 export function compareBuildAndBuyValue(input: {

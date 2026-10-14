@@ -165,10 +165,10 @@ export default function ValueFinder() {
         </section>
       ) : (
         <section id="statements-panel" role="tabpanel" aria-labelledby="statements-tab">
-          <div className="cr-results-head"><div><p className="cr-kicker">Statements</p><h2>Top 10 verified values</h2></div>{data?.statements.available && <span>{data.statements.metadataCoverage.matched}/{data.statements.metadataCoverage.listed} orders matched daily metadata · {data.statements.listingPages} page{data.statements.listingPages === 1 ? '' : 's'}</span>}</div>
-          {data?.statements.available && <p className="cr-scope-note">Orders checked {relativeTime(data.statements.listingCheckedAt, now)} · Statement metadata from {new Date(data.statements.snapshotAsOf).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC</p>}
+          <div className="cr-results-head"><div><p className="cr-kicker">Statements</p><h2>Top 10 verified values</h2></div>{data?.statements.available && <span>{data.statements.metadataCoverage.matched}/{data.statements.metadataCoverage.listed} orders matched verified metadata · {data.statements.listingPages} page{data.statements.listingPages === 1 ? '' : 's'}</span>}</div>
+          {data?.statements.available && <p className="cr-scope-note">Orders checked {relativeTime(data.statements.listingCheckedAt, now)} · Protocol metadata baseline from {new Date(data.statements.snapshotAsOf).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC · newer listed Statements resolved from current metadata</p>}
           {data && !data.statements.available && <div className="cr-alert"><strong>Statements unavailable for live purchase research.</strong><span>{data.statements.reason}</span></div>}
-          {data?.statements.available && data.statements.items.length === 0 && <p className="cr-empty">No active Statement listings matched the verified daily metadata.</p>}
+          {data?.statements.available && data.statements.items.length === 0 && <p className="cr-empty">No active Statement listings matched verified metadata.</p>}
           {data?.statements.available && data.statements.items.length > 0 && <StatementResults rows={data.statements.items} />}
         </section>
       )}

@@ -6,6 +6,7 @@ import {
   filterCreditListings,
   matchingCreditListings,
   normalizeOfficialCreditSnapshot,
+  normalizeOpenSeaStatementMetadata,
   parseValueQuery,
   reconcileFreshCreditListings,
   rankStatementListings,
@@ -146,6 +147,31 @@ test('Statement ranking fails closed when a live listing lacks metadata coverage
     }], 2500),
     /metadata coverage is incomplete/,
   );
+});
+
+test('newly listed Statement metadata can be verified without waiting for the daily snapshot', () => {
+  assert.deepEqual(normalizeOpenSeaStatementMetadata(205, { nft: { traits: [
+    { trait_type: 'Format', value: 'Recorded' },
+    { trait_type: 'Credits', value: '240' },
+    { trait_type: 'Overprints', value: '2' },
+    { trait_type: 'Credit Rating', value: '122887' },
+  ] } }), {
+    tokenId: 205,
+    format: 'Recorded',
+    stage: 'LAYERED',
+    credits: 240,
+    layers: 3,
+    creditRating: 122887,
+  });
+});
+
+test('live Statement metadata fails closed when Credits and layers do not reconcile', () => {
+  assert.throws(() => normalizeOpenSeaStatementMetadata(205, { nft: { traits: [
+    { trait_type: 'Format', value: 'Recorded' },
+    { trait_type: 'Credits', value: '80' },
+    { trait_type: 'Overprints', value: '2' },
+    { trait_type: 'Credit Rating', value: '122887' },
+  ] } }), /does not reconcile/);
 });
 
 test('credit result limits do not hide the matching count', () => {

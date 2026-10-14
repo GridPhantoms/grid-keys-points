@@ -1,7 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
-import { normalizeOfficialCreditSnapshot, type StatementMetadata } from '@/lib/credits-intelligence';
+import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, type StatementMetadata } from '@/lib/credits-intelligence';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
 const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
@@ -79,6 +79,24 @@ async function fetchStatementOrdersUncached() {
   return { orders, checkedAt: new Date().toISOString() };
 }
 
+async function fetchMissingStatementMetadata(key: string, tokenIds: number[]) {
+  const metadata: StatementMetadata[] = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < tokenIds.length) {
+      const tokenId = tokenIds[cursor];
+      cursor += 1;
+      const payload = await fetchJson(
+        `https://api.opensea.io/api/v2/chain/ethereum/contract/${STATEMENTS_CONTRACT}/nfts/${tokenId}`,
+        { 'x-api-key': key },
+      );
+      metadata.push(normalizeOpenSeaStatementMetadata(tokenId, payload));
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(8, tokenIds.length) }, () => worker()));
+  return metadata;
+}
+
 const loadStatementOrders = unstable_cache(
   fetchStatementOrdersUncached,
   ['credits-statement-orders-v2'],
@@ -110,6 +128,19 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   try {
     const statementScan = await loadStatementOrders();
     statementOrdersCheckedAt = statementScan.checkedAt;
+    const listedTokenIds = [...new Set(statementScan.orders.flatMap((order) => {
+      const offered = order.protocol_data?.parameters?.offer?.[0];
+      const tokenId = Number(offered?.identifierOrCriteria);
+      return String(offered?.token).toLowerCase() === STATEMENTS_CONTRACT && Number.isInteger(tokenId) && tokenId >= 0
+        ? [tokenId] : [];
+    }))];
+    const missingIds = listedTokenIds.filter((tokenId) => !metadataById.has(tokenId));
+    if (missingIds.length > 0) {
+      const apiKey = process.env.OPENSEA_API_KEY;
+      if (!apiKey) throw new Error('OpenSea Statement metadata is unavailable');
+      const currentMetadata = await fetchMissingStatementMetadata(apiKey, missingIds);
+      for (const item of currentMetadata) metadataById.set(item.tokenId, item);
+    }
     const eligibleOrders: Array<{ tokenId: number; priceEth: number; metadata: StatementMetadata }> = [];
     const listedIds = new Set<number>();
     for (const order of statementScan.orders) {

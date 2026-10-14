@@ -1,18 +1,18 @@
 {
   "schemaVersion": 2,
-  "snapshotAsOf": "2026-10-13T13:21:48.827489+00:00",
+  "snapshotAsOf": "2026-10-14T13:20:22.213041+00:00",
   "sourceLabel": "Verified cadence-aligned CREDITS DAILY archive",
   "sourceUrl": "/credits/value",
   "provenance": {
-    "snapshotId": "20261013T132148Z-credits-daily-oct13-scheduled",
+    "snapshotId": "20261014T132022Z-credits-daily-oct14-scheduled",
     "status": "verified",
     "cadence": "scheduled",
-    "protocolBlock": 26183812,
-    "protocolBlockHash": "0xf31819736996fd1d305c6d552974d38130a3966fa34f914072c5bcdbaf418616",
-    "protocolBlockTime": "2026-10-13T13:16:59+00:00",
-    "marketStartedAt": "2026-10-13T13:21:07.881211+00:00",
-    "marketCompletedAt": "2026-10-13T13:21:48.827489+00:00",
-    "ethUsdCandleStart": "2026-10-13T13:20:00+00:00",
+    "protocolBlock": 26190975,
+    "protocolBlockHash": "0x41d212de5a292f787068c7d8acc08e77b9a4edccb46069ddc194a47f407fff73",
+    "protocolBlockTime": "2026-10-14T13:15:35+00:00",
+    "marketStartedAt": "2026-10-14T13:19:31.205906+00:00",
+    "marketCompletedAt": "2026-10-14T13:20:22.213041+00:00",
+    "ethUsdCandleStart": "2026-10-14T13:19:00+00:00",
     "sourceFiles": [
       "verification.json",
       "live-snapshot.json",
@@ -22,28 +22,28 @@
   },
   "supply": {
     "original": 122154,
-    "loose": 106074,
-    "burned": 16080,
-    "burnedPct": 13.1637
+    "loose": 103994,
+    "burned": 18160,
+    "burnedPct": 14.8665
   },
   "statements": {
-    "active": 188,
+    "active": 212,
     "listed": 42,
-    "totalUnderlyingCredits": 16080,
+    "totalUnderlyingCredits": 18160,
     "stageCounts": {
-      "BASE": 183,
-      "LAYERED": 4,
+      "BASE": 206,
+      "LAYERED": 5,
       "INVERTED": 1
     }
   },
   "archivedReferences": {
-    "marketAsOf": "2026-10-13T13:21:48.827489+00:00",
-    "looseListings": 5993,
-    "looseFloorEth": 0.0127467,
-    "within25PctOfFloor": 129,
-    "ethUsdCandleStart": "2026-10-13T13:20:00+00:00",
-    "ethUsdClose": 2499.45,
+    "marketAsOf": "2026-10-14T13:20:22.213041+00:00",
+    "looseListings": 5500,
+    "looseFloorEth": 0.019279,
+    "within25PctOfFloor": 201,
+    "ethUsdCandleStart": "2026-10-14T13:19:00+00:00",
+    "ethUsdClose": 2460.96,
     "executableNow": false
   },
-  "artifactSetDigest": "7c4d72729534ed2da48c90245565659f1a72486644cc59bf9dc9fbb028137604"
+  "artifactSetDigest": "d8db0a7e1b20680689ac538ef6401169b4faff885aa35b7b7558794e92aad899"
 }

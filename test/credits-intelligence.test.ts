@@ -303,7 +303,7 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(valuePage, /cr-creditline/);
   assert.match(overview, /Public collector tools for understanding CREDITS supply/);
   assert.match(valuePage, /public collector tool for comparing CREDITS and Statements/);
-  assert.match(overviewOg, /SEE WHAT CREDITS/);
+  assert.match(overviewOg, /READ THE CREDITS/);
   assert.match(overviewOg, /PUBLIC COLLECTOR TOOLS/);
   assert.doesNotMatch(overviewOg, /KEYHOLDER GOVERNANCE/);
   assert.match(valueOg, /FIND MORE CREDIT/);

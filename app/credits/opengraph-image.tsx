@@ -19,8 +19,8 @@ export default function CreditsOpenGraphImage() {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ width: 720, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 69, fontWeight: 700, lineHeight: 0.98, letterSpacing: '-0.047em' }}>SEE WHAT CREDITS</span>
-              <span style={{ fontSize: 69, fontWeight: 700, lineHeight: 0.98, letterSpacing: '-0.047em', color: '#67e8f9' }}>ARE WORTH.</span>
+              <span style={{ fontSize: 69, fontWeight: 700, lineHeight: 0.98, letterSpacing: '-0.047em' }}>READ THE CREDITS</span>
+              <span style={{ fontSize: 69, fontWeight: 700, lineHeight: 0.98, letterSpacing: '-0.047em', color: '#67e8f9' }}>MARKET.</span>
               <span style={{ marginTop: 27, color: '#a8bbc0', fontSize: 25, letterSpacing: '-0.015em' }}>Supply · Burn Progress · Statements · Market Value</span>
             </div>
 

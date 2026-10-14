@@ -28,6 +28,13 @@ export default async function CreditsOverviewPage() {
   const protocolSnapshotLabel = new Date(overview.snapshotAsOf).toLocaleString('en-US', {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
   });
+  const currentProtocol = live?.protocolAvailable && live.protocolSupply ? live.protocolSupply : null;
+  const supply = currentProtocol ?? overview.supply;
+  const activeStatements = currentProtocol?.activeStatements ?? overview.statements.active;
+  const stageCounts = currentProtocol?.stageCounts ?? overview.statements.stageCounts;
+  const protocolLabel = currentProtocol && live?.protocolCheckedAt
+    ? `Current Statement metadata checked: ${new Date(live.protocolCheckedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC`
+    : `Daily protocol snapshot: ${protocolSnapshotLabel} UTC`;
   const market = live ? {
     looseListings: live.looseListings,
     looseFloorEth: live.looseFloorEth,
@@ -38,7 +45,7 @@ export default async function CreditsOverviewPage() {
     ? { eth: live.statementFloorEth, cr: live.statementFloorCr, tokenId: live.statementFloorTokenId }
     : null;
   const basket = live ? { credits: live.looseBasketCredits, eth: live.looseBasketEth, cr: live.looseBasketCr } : null;
-  const listedPct = market ? market.looseListings / overview.supply.loose * 100 : null;
+  const listedPct = market ? market.looseListings / supply.loose * 100 : null;
   const comparison = basket && statementFloor ? compareBuildAndBuyValue({
     looseBasketEth: basket.eth,
     looseBasketCr: basket.cr,
@@ -82,27 +89,27 @@ export default async function CreditsOverviewPage() {
           <section className="cr-panel" aria-labelledby="supply-title">
             <p className="cr-kicker">Supply transformation</p>
             <h2 id="supply-title">CREDITS Burn Progress</h2>
-            <p className="cr-panel-asof">Protocol snapshot: {protocolSnapshotLabel} UTC</p>
+            <p className="cr-panel-asof">{protocolLabel}</p>
             <div className="cr-supply-progress">
-              <div className="cr-supply-bar" aria-label={`${percent.format(overview.supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${overview.supply.burnedPct}%` }} /></div>
-              <span className="cr-supply-marker">{percent.format(overview.supply.burnedPct)}%</span>
+              <div className="cr-supply-bar" aria-label={`${percent.format(supply.burnedPct)} percent of original supply is in active Statements`}><i style={{ width: `${supply.burnedPct}%` }} /></div>
+              <span className="cr-supply-marker">{percent.format(supply.burnedPct)}%</span>
             </div>
             <dl className="cr-detail-list">
-              <div><dt>Original supply</dt><dd>{integer.format(overview.supply.original)}</dd></div>
-              <div><dt>Loose today</dt><dd>{integer.format(overview.supply.loose)}</dd></div>
-              <div><dt>Burned/In Statements</dt><dd>{integer.format(overview.supply.burned)}</dd></div>
+              <div><dt>Original supply</dt><dd>{integer.format(supply.original)}</dd></div>
+              <div><dt>Loose today</dt><dd>{integer.format(supply.loose)}</dd></div>
+              <div><dt>Burned/In Statements</dt><dd>{integer.format(supply.burned)}</dd></div>
             </dl>
           </section>
 
           <section className="cr-panel" aria-labelledby="statements-title">
             <p className="cr-kicker">Statement snapshot</p>
             <h2 id="statements-title">The Statement Market</h2>
-            <p className="cr-panel-asof">Protocol snapshot: {protocolSnapshotLabel} UTC</p>
+            <p className="cr-panel-asof">{protocolLabel}</p>
             <dl className="cr-detail-list cr-statement-details">
               <div><dt>Verified base floor</dt><dd>{statementFloor && market ? <>{eth.format(statementFloor.eth)} ETH<small>≈ {usd.format(statementFloor.eth * market.ethUsd)} · Statement #{statementFloor.tokenId}</small></> : <>Unavailable<small>{live?.statementReason ?? 'Current dependencies could not be verified.'}</small></>}</dd></div>
-              <div><dt>Active Statements</dt><dd>{integer.format(overview.statements.active)}</dd></div>
+              <div><dt>Active Statements</dt><dd>{integer.format(activeStatements)}</dd></div>
               <div><dt>Daily listed baseline</dt><dd>{integer.format(overview.statements.listed)}</dd></div>
-              <div><dt>Base / Layered / Inverted</dt><dd>{overview.statements.stageCounts.BASE} / {overview.statements.stageCounts.LAYERED} / {overview.statements.stageCounts.INVERTED}</dd></div>
+              <div><dt>Base / Layered / Inverted</dt><dd>{stageCounts.BASE} / {stageCounts.LAYERED} / {stageCounts.INVERTED}</dd></div>
             </dl>
           </section>
         </div>

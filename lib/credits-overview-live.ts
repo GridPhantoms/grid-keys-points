@@ -1,11 +1,12 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
-import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, type StatementMetadata } from '@/lib/credits-intelligence';
+import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
 const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
 const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
+const ORIGINAL_CREDITS_SUPPLY = 122_154;
 const USER_AGENT = 'GridPhantomsCredits/1.0';
 const REFRESH_SECONDS = 10 * 60;
 
@@ -33,6 +34,9 @@ export type LiveCreditsOverview = {
   looseBasketCredits: number;
   looseBasketEth: number;
   looseBasketCr: number;
+  protocolAvailable: boolean;
+  protocolCheckedAt: string | null;
+  protocolSupply: ReturnType<typeof summarizeStatementSupply> | null;
 };
 
 async function fetchJson(url: string, headers: HeadersInit = {}) {
@@ -103,6 +107,49 @@ const loadStatementOrders = unstable_cache(
   { revalidate: REFRESH_SECONDS },
 );
 
+async function fetchStatementProtocolUncached() {
+  const apiKey = process.env.OPENSEA_API_KEY;
+  if (!apiKey) throw new Error('OpenSea Statement metadata is unavailable');
+  let cursor: string | null = null;
+  const metadata: StatementMetadata[] = [];
+  const seenCursors = new Set<string>();
+  const seenTokenIds = new Set<number>();
+  let pages = 0;
+  do {
+    const params = new URLSearchParams({ limit: '200' });
+    if (cursor) params.set('next', cursor);
+    const payload = await fetchJson(
+      `https://api.opensea.io/api/v2/collection/statements/nfts?${params}`,
+      { 'x-api-key': apiKey },
+    ) as { nfts?: Array<{ identifier?: string; contract?: string }>; next?: string | null };
+    if (!Array.isArray(payload.nfts)) throw new Error('OpenSea Statement metadata is unavailable');
+    for (const nft of payload.nfts) {
+      const tokenId = Number(nft.identifier);
+      if (String(nft.contract).toLowerCase() !== STATEMENTS_CONTRACT || !Number.isInteger(tokenId) || tokenId < 0) {
+        throw new Error('OpenSea Statement metadata contains an invalid token');
+      }
+      if (seenTokenIds.has(tokenId)) throw new Error('OpenSea Statement metadata contains duplicate tokens');
+      seenTokenIds.add(tokenId);
+      metadata.push(normalizeOpenSeaStatementMetadata(tokenId, { nft }));
+    }
+    pages += 1;
+    const next = typeof payload.next === 'string' && payload.next.length > 0 ? payload.next : null;
+    if (next && (seenCursors.has(next) || pages >= 100)) throw new Error('OpenSea Statement metadata pagination did not complete');
+    if (next) seenCursors.add(next);
+    cursor = next;
+  } while (cursor);
+  return {
+    checkedAt: new Date().toISOString(),
+    supply: summarizeStatementSupply(metadata, ORIGINAL_CREDITS_SUPPLY),
+  };
+}
+
+const loadStatementProtocol = unstable_cache(
+  fetchStatementProtocolUncached,
+  ['credits-statement-protocol-v1'],
+  { revalidate: REFRESH_SECONDS },
+);
+
 export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   const [officialPayload, tickerPayload] = await Promise.all([
     fetchJson(OFFICIAL_MARKET_URL),
@@ -124,6 +171,18 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   let statementFloorEth: number | null = null;
   let statementFloorCr: number | null = null;
   let statementFloorTokenId: number | null = null;
+  let protocolAvailable = false;
+  let protocolCheckedAt: string | null = null;
+  let protocolSupply: ReturnType<typeof summarizeStatementSupply> | null = null;
+
+  try {
+    const protocol = await loadStatementProtocol();
+    protocolAvailable = true;
+    protocolCheckedAt = protocol.checkedAt;
+    protocolSupply = protocol.supply;
+  } catch {
+    protocolAvailable = false;
+  }
 
   try {
     const statementScan = await loadStatementOrders();
@@ -184,5 +243,8 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     looseBasketCredits: 80,
     looseBasketEth: looseBasket.reduce((sum, item) => sum + item.priceEth, 0),
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),
+    protocolAvailable,
+    protocolCheckedAt,
+    protocolSupply,
   };
 }

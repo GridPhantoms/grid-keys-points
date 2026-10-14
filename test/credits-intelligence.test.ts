@@ -10,6 +10,7 @@ import {
   parseValueQuery,
   reconcileFreshCreditListings,
   rankStatementListings,
+  summarizeStatementSupply,
 } from '../lib/credits-intelligence.ts';
 
 const currentCheckedAt = new Date().toISOString();
@@ -46,6 +47,28 @@ test('official snapshot normalization exposes only complete rated ETH listings',
     checkedAt: currentCheckedAt,
     url: 'https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/12',
   });
+});
+
+test('live Statement metadata reconciles burn progress and stage counts', () => {
+  const result = summarizeStatementSupply([
+    { tokenId: 1, format: 'Accrued', stage: 'BASE', credits: 80, layers: 1, creditRating: 1000 },
+    { tokenId: 2, format: 'Accrued', stage: 'LAYERED', credits: 160, layers: 2, creditRating: 2000 },
+    { tokenId: 3, format: 'Accrued', stage: 'INVERTED', credits: 640, layers: 8, creditRating: 3000 },
+  ], 122_154);
+  assert.deepEqual(result, {
+    original: 122_154,
+    loose: 121_274,
+    burned: 880,
+    burnedPct: 880 / 122_154 * 100,
+    activeStatements: 3,
+    stageCounts: { BASE: 1, LAYERED: 1, INVERTED: 1 },
+  });
+});
+
+test('live Statement supply fails closed on duplicate or unreconciled metadata', () => {
+  const item = { tokenId: 1, format: 'Accrued', stage: 'BASE', credits: 80, layers: 1, creditRating: 1000 };
+  assert.throws(() => summarizeStatementSupply([item, item], 122_154), /duplicate/i);
+  assert.throws(() => summarizeStatementSupply([{ ...item, credits: 160 }], 122_154), /reconcile/i);
 });
 
 test('official snapshot fails closed when incomplete or rating coverage is missing', () => {

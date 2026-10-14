@@ -216,6 +216,34 @@ export function normalizeOpenSeaStatementMetadata(tokenId: number, payload: unkn
   return { tokenId, format, stage, credits, layers, creditRating };
 }
 
+export function summarizeStatementSupply(metadata: StatementMetadata[], originalSupply: number) {
+  if (!Number.isInteger(originalSupply) || originalSupply <= 0 || metadata.length === 0) {
+    throw new Error('Statement supply inputs are invalid');
+  }
+  const tokenIds = new Set(metadata.map((item) => item.tokenId));
+  if (tokenIds.size !== metadata.length) throw new Error('Statement metadata contains duplicate tokens');
+  const burned = metadata.reduce((sum, item) => {
+    if (!Number.isInteger(item.credits) || item.credits <= 0 || item.credits !== item.layers * 80) {
+      throw new Error('Statement supply metadata does not reconcile');
+    }
+    return sum + item.credits;
+  }, 0);
+  if (burned > originalSupply) throw new Error('Statement supply exceeds original CREDITS supply');
+  const stageCounts = { BASE: 0, LAYERED: 0, INVERTED: 0 };
+  for (const item of metadata) {
+    if (!['BASE', 'LAYERED', 'INVERTED'].includes(item.stage)) throw new Error('Statement stage is invalid');
+    stageCounts[item.stage as keyof typeof stageCounts] += 1;
+  }
+  return {
+    original: originalSupply,
+    loose: originalSupply - burned,
+    burned,
+    burnedPct: burned / originalSupply * 100,
+    activeStatements: metadata.length,
+    stageCounts,
+  };
+}
+
 export function compareBuildAndBuyValue(input: {
   looseBasketEth: number;
   looseBasketCr: number;

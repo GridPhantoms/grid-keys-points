@@ -12,6 +12,7 @@ import {
   rankStatementListings,
   summarizeStatementSupply,
 } from '../lib/credits-intelligence.ts';
+import { createEthUsdQuoteResolver } from '../lib/eth-usd.ts';
 
 const currentCheckedAt = new Date().toISOString();
 const creditUrl = (id: number) => `https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/${id}`;
@@ -47,6 +48,52 @@ test('official snapshot normalization exposes only complete rated ETH listings',
     checkedAt: currentCheckedAt,
     url: 'https://opensea.io/assets/ethereum/0x97630aa70ab14ed9883b41dafccbc11349723043/12',
   });
+});
+
+test('ETH-USD quote resolver falls back from Coinbase to Kraken', async () => {
+  const requested: string[] = [];
+  const resolveQuote = createEthUsdQuoteResolver({
+    now: () => new Date('2026-10-14T08:00:00.000Z'),
+    fetcher: async (input) => {
+      const url = String(input);
+      requested.push(url);
+      if (url.includes('coinbase')) return new Response(null, { status: 503 });
+      return Response.json({ error: [], result: { XETHZUSD: { c: ['2510.42', '1.0'] } } });
+    },
+  });
+
+  const quote = await resolveQuote();
+  assert.equal(quote.price, 2510.42);
+  assert.equal(quote.provider, 'kraken');
+  assert.equal(quote.cached, false);
+  assert.equal(requested.length, 2);
+});
+
+test('ETH-USD quote resolver uses a successful quote for up to one hour when both providers fail', async () => {
+  let now = new Date('2026-10-14T08:00:00.000Z');
+  let providersAvailable = true;
+  const resolveQuote = createEthUsdQuoteResolver({
+    now: () => now,
+    fetcher: async (input) => {
+      if (!providersAvailable) throw new Error('network unavailable');
+      if (String(input).includes('coinbase')) {
+        return Response.json({ price: '2508.90', time: '2026-10-14T07:59:30.000Z' });
+      }
+      throw new Error('unexpected backup request');
+    },
+  });
+
+  const live = await resolveQuote();
+  providersAvailable = false;
+  now = new Date('2026-10-14T08:59:29.000Z');
+  const cached = await resolveQuote();
+
+  assert.equal(live.provider, 'coinbase');
+  assert.equal(cached.price, 2508.9);
+  assert.equal(cached.provider, 'coinbase');
+  assert.equal(cached.cached, true);
+  now = new Date('2026-10-14T09:00:01.000Z');
+  await assert.rejects(resolveQuote(), /unavailable/i);
 });
 
 test('live Statement metadata reconciles burn progress and stage counts', () => {
@@ -275,11 +322,13 @@ test('scheduled CREDITS protocol artifacts reconcile identity, supply, and State
 });
 
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
-  const [nav, home, overview, overviewLoader, valuePage, finder, css, overviewOg, valueOg] = await Promise.all([
+  const [nav, home, overview, overviewLoader, valueApi, ethUsdSource, valuePage, finder, css, overviewOg, valueOg] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/GridHome.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/credits-overview-live.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/credits/value/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/eth-usd.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/value/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/value/ValueFinder.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/credits.css', import.meta.url), 'utf8'),
@@ -321,6 +370,12 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overviewLoader, /unstable_cache/);
   assert.match(overviewLoader, /REFRESH_SECONDS = 10 \* 60/);
   assert.match(overviewLoader, /credits-statement-orders-v2/);
+  assert.match(overviewLoader, /fetchEthUsdQuote\(\)/);
+  assert.match(valueApi, /fetchEthUsdQuote\(\)/);
+  assert.match(valueApi, /ethUsdSource: ethUsdQuote\.provider/);
+  assert.match(ethUsdSource, /api\.kraken\.com\/0\/public\/Ticker/);
+  assert.match(ethUsdSource, /MAX_QUOTE_AGE_MS = 60 \* 60 \* 1000/);
+  assert.match(ethUsdSource, /lastGoodQuote/);
   assert.doesNotMatch(overviewLoader, /credits-overview-live-v/);
   assert.match(overview, /last completed candidate snapshot/);
   assert.match(overview, /Historical prices are not shown as live/);

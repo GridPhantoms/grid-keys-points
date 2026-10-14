@@ -2,9 +2,9 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
 import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
+import { fetchEthUsdQuote } from '@/lib/eth-usd';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
-const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
 const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
 const ORIGINAL_CREDITS_SUPPLY = 122_154;
 const USER_AGENT = 'GridPhantomsCredits/1.0';
@@ -151,12 +151,12 @@ const loadStatementProtocol = unstable_cache(
 );
 
 export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
-  const [officialPayload, tickerPayload] = await Promise.all([
+  const [officialPayload, ethUsdQuote] = await Promise.all([
     fetchJson(OFFICIAL_MARKET_URL),
-    fetchJson(COINBASE_TICKER_URL),
+    fetchEthUsdQuote(),
   ]);
   const officialStatus = officialPayload as { refreshing?: boolean; error?: unknown };
-  const ethUsd = Number((tickerPayload as { price?: string }).price);
+  const ethUsd = ethUsdQuote.price;
   const normalized = normalizeOfficialCreditSnapshot(officialPayload, ethUsd);
   const looseByPrice = [...normalized.items].sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId);
   if (looseByPrice.length < 80) throw new Error('The executable 80-CREDIT basket is unavailable');

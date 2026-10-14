@@ -13,12 +13,12 @@ import {
   type StatementListing,
   type StatementMetadata,
 } from '@/lib/credits-intelligence';
+import { fetchEthUsdQuote } from '@/lib/eth-usd';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
-const COINBASE_TICKER_URL = 'https://api.exchange.coinbase.com/products/ETH-USD/ticker';
 const CREDITS_SLUG = 'credits';
 const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
 const STATEMENTS_SLUG = 'statements';
@@ -39,13 +39,6 @@ async function fetchJson(url: string, headers: HeadersInit = {}) {
   });
   if (!response.ok) throw new Error(`Source request failed (${response.status})`);
   return response.json() as Promise<unknown>;
-}
-
-async function fetchEthUsd() {
-  const payload = await fetchJson(COINBASE_TICKER_URL) as { price?: string };
-  const price = Number(payload.price);
-  if (!Number.isFinite(price) || price <= 0) throw new Error('Coinbase ETH-USD ticker is unavailable');
-  return price;
 }
 
 function orderPriceEth(order: OpenSeaOrder) {
@@ -165,10 +158,11 @@ export async function GET(request: Request) {
   const validationMode = requestUrl.searchParams.get('refresh');
   const forceFresh = validationMode === 'auto' || validationMode === 'manual';
   try {
-    const [officialPayload, ethUsd] = await Promise.all([
+    const [officialPayload, ethUsdQuote] = await Promise.all([
       fetchJson(OFFICIAL_MARKET_URL),
-      fetchEthUsd(),
+      fetchEthUsdQuote(),
     ]);
+    const ethUsd = ethUsdQuote.price;
     const normalized = normalizeOfficialCreditSnapshot(officialPayload, ethUsd);
     const snapshotMatches = matchingCreditListings(normalized.items, query);
     let matchingCredits = snapshotMatches;
@@ -247,6 +241,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       fetchedAt: new Date().toISOString(),
       ethUsd,
+      ethUsdSource: ethUsdQuote.provider,
+      ethUsdCheckedAt: ethUsdQuote.checkedAt,
+      ethUsdCached: ethUsdQuote.cached,
       query,
       credits: {
         available: true,

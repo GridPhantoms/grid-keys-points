@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function CreditsHeader({ active }: { active: 'overview' | 'value' }) {
+export default function CreditsHeader({ active }: { active?: 'overview' | 'value' }) {
   return (
     <header className="cr-header">
       <div className="cr-header-inner">

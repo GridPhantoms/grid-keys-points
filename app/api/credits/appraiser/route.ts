@@ -11,12 +11,13 @@ import {
 import {
   BENCHMARK_MIN_SAMPLE_SIZE,
   BENCHMARK_SAMPLE_SIZE,
-  CREDITS_CONTRACT,
   STATEMENTS_CONTRACT,
   buildAskBenchmark,
   buildWalletAppraisal,
-  normalizeCreditDetail,
   normalizeOwnedNftPage,
+  normalizeRatedWalletPage,
+  selectHighestRatedCredits,
+  type OwnedCredit,
   type VerifiedAsk,
 } from '@/lib/credits-wallet-appraisal';
 
@@ -24,12 +25,15 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
+const OFFICIAL_WALLET_URL = 'https://jack.art/credits/rating/api/wallet';
 const OPEN_SEA_BASE = 'https://api.opensea.io/api/v2';
-const USER_AGENT = 'GridPhantomsCreditsAppraiser/1.0';
+const USER_AGENT = 'GridPhantomsCreditsAppraiser/1.1';
 const MAX_WALLET_INPUT = 128;
-const MAX_OWNED_CREDITS = 100;
+const MAX_OWNED_CREDITS = 1_000;
+const MAX_DISPLAYED_CREDITS = 100;
 const MAX_OWNED_STATEMENTS = 100;
 const MAX_OWNER_PAGES = 10;
+const OWNER_PAGE_DELAY_MS = 1_100;
 const BENCHMARK_CANDIDATES = 125;
 const BENCHMARK_BATCH_SIZE = 25;
 const RESPONSE_HEADERS = {
@@ -95,39 +99,36 @@ async function resolveWallet(input: string) {
   }
 }
 
-async function fetchOwnedCreditIds(wallet: string, apiKey: string) {
-  const tokenIds: number[] = [];
+async function fetchRatedWalletCredits(wallet: string) {
+  const credits: OwnedCredit[] = [];
   const seenTokens = new Set<number>();
   const seenCursors = new Set<string>();
   let cursor: string | null = null;
   let pages = 0;
   do {
-    const params = new URLSearchParams({
-      collection: 'credits',
-      limit: '200',
-      include_auto_hidden: 'true',
-    });
+    const params = new URLSearchParams({ v: 'filter-traits', address: wallet });
     if (cursor) params.set('next', cursor);
-    const payload = await fetchJson(
-      `${OPEN_SEA_BASE}/chain/ethereum/account/${wallet}/nfts?${params}`,
-      { 'x-api-key': apiKey },
-    );
-    const page = normalizeOwnedNftPage(payload, CREDITS_CONTRACT);
-    for (const tokenId of page.tokenIds) {
-      if (seenTokens.has(tokenId)) throw new Error('OpenSea ownership pagination returned a duplicate token');
-      seenTokens.add(tokenId);
-      tokenIds.push(tokenId);
-      if (tokenIds.length > MAX_OWNED_CREDITS) throw new PublicError(422, 'This appraiser currently supports wallets with up to 100 loose CREDITS.');
+    const payload = await fetchJson(`${OFFICIAL_WALLET_URL}?${params}`);
+    const page = normalizeRatedWalletPage(payload);
+    for (const credit of page.credits) {
+      if (seenTokens.has(credit.tokenId)) throw new Error('Official wallet rating pagination returned a duplicate token');
+      seenTokens.add(credit.tokenId);
+      credits.push(credit);
+      if (credits.length > MAX_OWNED_CREDITS) {
+        throw new PublicError(422, 'This appraiser currently supports complete wallets with up to 1,000 loose CREDITS.');
+      }
     }
     pages += 1;
     if (page.next && (seenCursors.has(page.next) || pages >= MAX_OWNER_PAGES)) {
-      throw new Error('OpenSea ownership pagination did not complete');
+      throw new PublicError(422, 'This appraiser currently supports complete wallets with up to 1,000 loose CREDITS.');
     }
-    if (page.next) seenCursors.add(page.next);
+    if (page.next) {
+      seenCursors.add(page.next);
+      await new Promise((resolve) => setTimeout(resolve, OWNER_PAGE_DELAY_MS));
+    }
     cursor = page.next;
   } while (cursor);
-  tokenIds.sort((a, b) => a - b);
-  return tokenIds;
+  return { credits, pages };
 }
 
 async function fetchOwnedStatements(wallet: string, apiKey: string) {
@@ -170,22 +171,6 @@ async function fetchOwnedStatements(wallet: string, apiKey: string) {
   } while (cursor);
   statements.sort((a, b) => a.tokenId - b.tokenId);
   return statements;
-}
-
-async function fetchOwnedCreditDetails(tokenIds: number[]) {
-  const results = new Array<ReturnType<typeof normalizeCreditDetail>>(tokenIds.length);
-  let cursor = 0;
-  const worker = async () => {
-    while (cursor < tokenIds.length) {
-      const index = cursor;
-      cursor += 1;
-      const tokenId = tokenIds[index];
-      const payload = await fetchJson(`https://jack.art/credits/rating/api/detail/${tokenId}`);
-      results[index] = normalizeCreditDetail(payload, tokenId);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(8, tokenIds.length) }, () => worker()));
-  return results;
 }
 
 function orderPriceEth(payload: unknown) {
@@ -344,31 +329,35 @@ export async function POST(request: Request) {
     const apiKey = process.env.OPENSEA_API_KEY;
     if (!apiKey) throw new PublicError(503, 'Wallet appraisal is temporarily unavailable.');
     const resolved = await resolveWallet(input);
-    const [tokenIds, statements, ethUsdQuote] = await Promise.all([
-      fetchOwnedCreditIds(resolved.wallet, apiKey),
+    const [creditOwnership, statements, ethUsdQuote] = await Promise.all([
+      fetchRatedWalletCredits(resolved.wallet),
       fetchOwnedStatements(resolved.wallet, apiKey),
       fetchEthUsdQuote(),
     ]);
-    const [credits, market, statementMarket] = await Promise.all([
-      fetchOwnedCreditDetails(tokenIds),
+    const [market, statementMarket] = await Promise.all([
       fetchBenchmark(apiKey, ethUsdQuote.price),
       statements.length > 0 ? fetchStatementBenchmark(apiKey) : Promise.resolve(null),
     ]);
     const capturedAt = new Date().toISOString();
+    const appraisal = buildWalletAppraisal({
+      wallet: resolved.wallet,
+      ens: resolved.ens,
+      credits: creditOwnership.credits,
+      statements,
+      benchmark: market.benchmark,
+      statementBenchmark: statementMarket?.benchmark,
+      ethUsd: ethUsdQuote.price,
+      capturedAt,
+    });
+    const displayedCredits = selectHighestRatedCredits(appraisal.credits, MAX_DISPLAYED_CREDITS);
     return NextResponse.json({
-      ...buildWalletAppraisal({
-        wallet: resolved.wallet,
-        ens: resolved.ens,
-        credits,
-        statements,
-        benchmark: market.benchmark,
-        statementBenchmark: statementMarket?.benchmark,
-        ethUsd: ethUsdQuote.price,
-        capturedAt,
-      }),
+      ...appraisal,
+      credits: displayedCredits,
       ownership: {
-        source: 'OpenSea-visible direct holdings',
-        credits: tokenIds.length,
+        source: 'Jack.art rated wallet index + OpenSea-visible Statement holdings',
+        credits: creditOwnership.credits.length,
+        creditsShown: displayedCredits.length,
+        creditPages: creditOwnership.pages,
         statements: statements.length,
       },
       statementMarket: statementMarket ? {

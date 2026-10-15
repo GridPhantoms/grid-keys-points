@@ -54,7 +54,13 @@ type Appraisal = {
   portfolio: Omit<ValueSummary, 'count'> & { assetCount: number };
   credits: CreditRow[];
   statements: StatementRow[];
-  ownership: { source: string; credits: number; statements: number };
+  ownership: {
+    source: string;
+    credits: number;
+    creditsShown: number;
+    creditPages: number;
+    statements: number;
+  };
   market: {
     source: string;
     sourceUpdatedAt: string | null;
@@ -157,7 +163,7 @@ export default function WalletAppraiser() {
         <section className="cr-appraisal" aria-live="polite">
           <div className="cr-appraisal-head">
             <div>
-              <p className="cr-kicker">OpenSea-visible direct holdings</p>
+              <p className="cr-kicker">Verified direct holdings</p>
               <h2>{data.ens || walletLabel(data.wallet)}</h2>
               {data.ens && <small>{walletLabel(data.wallet)}</small>}
             </div>
@@ -167,7 +173,7 @@ export default function WalletAppraiser() {
           {data.portfolio.assetCount === 0 ? (
             <div className="cr-wallet-empty">
               <strong>No CREDITS or Statements found</strong>
-              <p>OpenSea returned no visible direct holdings from either collection for this wallet. Manually hidden assets may not appear.</p>
+              <p>The live providers returned no visible direct holdings from either collection for this wallet. Manually hidden Statements may not appear.</p>
             </div>
           ) : (
             <>
@@ -192,6 +198,7 @@ export default function WalletAppraiser() {
                     <div><span>Loose replacement range</span><strong>{eth(data.summary.rangeLowEth)}–{eth(data.summary.rangeHighEth)}Ξ</strong><small>{money(data.summary.rangeLowUsd)}–{money(data.summary.rangeHighUsd)}</small></div>
                     <div><span>Loose benchmark</span><strong>{data.benchmark.midEthPer1kCr.toFixed(5)}Ξ</strong><small>per 1K CR</small></div>
                   </div>
+                  {data.ownership.credits > data.ownership.creditsShown && <p className="cr-scope-note">{data.ownership.credits.toLocaleString()} loose CREDITS held · highest-rated 100 shown · all holdings included in wallet totals</p>}
                   <div className="cr-table-wrap"><table><thead><tr><th>Token</th><th>Official rank</th><th>Credit Rating</th><th>Rating-implied estimate</th><th>Approx. USD</th><th>Asset</th></tr></thead><tbody>{data.credits.map((credit) => <tr key={credit.tokenId}><td>#{credit.tokenId}</td><td>#{credit.officialRank.toLocaleString()}</td><td>{cr(credit.creditRating)}</td><td>{eth(credit.estimateEth)}Ξ</td><td>{money(credit.estimateUsd)}</td><td><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></td></tr>)}</tbody></table></div>
                   <div className="cr-card-list">{data.credits.map((credit) => <article key={credit.tokenId}><header><strong>CREDIT #{credit.tokenId}</strong><span>Rank #{credit.officialRank.toLocaleString()}</span></header><dl><div><dt>Credit Rating</dt><dd>{cr(credit.creditRating)}</dd></div><div><dt>Estimate</dt><dd>{eth(credit.estimateEth)}Ξ</dd></div><div><dt>Approx. USD</dt><dd>{money(credit.estimateUsd)}</dd></div></dl><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></article>)}</div>
                 </section>

@@ -89,6 +89,36 @@ export function normalizeCreditDetail(payload: unknown, expectedTokenId: number)
   return { tokenId: tokenId!, creditRating, officialRank: officialRank! };
 }
 
+export function normalizeRatedWalletPage(payload: unknown) {
+  const source = record(payload);
+  if (!source || !Array.isArray(source.items)) throw new Error('Official wallet rating page is malformed');
+  const credits = source.items.map((value) => {
+    const item = record(value);
+    const tokenId = positiveNumber(item?.id);
+    if (!Number.isSafeInteger(tokenId) || tokenId! > ORIGINAL_CREDITS_SUPPLY) {
+      throw new Error('Official wallet rating identity is invalid');
+    }
+    return normalizeCreditDetail(value, tokenId!);
+  });
+  if (new Set(credits.map((credit) => credit.tokenId)).size !== credits.length) {
+    throw new Error('Official wallet rating page contains duplicate tokens');
+  }
+  const next = source.next === null || source.next === undefined || source.next === ''
+    ? null
+    : typeof source.next === 'string' ? source.next : null;
+  if (source.next !== null && source.next !== undefined && source.next !== '' && next === null) {
+    throw new Error('Official wallet rating cursor is malformed');
+  }
+  return { credits, next };
+}
+
+export function selectHighestRatedCredits<T extends OwnedCredit>(credits: T[], limit: number) {
+  if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Displayed CREDIT limit is invalid');
+  return [...credits]
+    .sort((a, b) => a.officialRank - b.officialRank || a.tokenId - b.tokenId)
+    .slice(0, limit);
+}
+
 export function buildAskBenchmark(listings: VerifiedAsk[]): AskBenchmark {
   const normalized = listings.map((listing) => {
     if (!Number.isSafeInteger(listing.tokenId) || listing.tokenId < 1

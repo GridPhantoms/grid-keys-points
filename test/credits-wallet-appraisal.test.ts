@@ -6,6 +6,8 @@ import {
   buildWalletAppraisal,
   normalizeCreditDetail,
   normalizeOwnedNftPage,
+  normalizeRatedWalletPage,
+  selectHighestRatedCredits,
 } from '../lib/credits-wallet-appraisal.ts';
 
 const CREDITS_CONTRACT = '0x97630aa70ab14ed9883b41dafccbc11349723043';
@@ -43,6 +45,36 @@ test('official detail normalization validates token identity, score and rank', (
   assert.throws(() => normalizeCreditDetail({ id: 13, score: 654.5233, rank: 24857 }, 12), /identity/i);
   assert.throws(() => normalizeCreditDetail({ id: 12, score: 0, rank: 24857 }, 12), /rating/i);
   assert.throws(() => normalizeCreditDetail({ id: 12, score: 654.5233, rank: 0 }, 12), /rank/i);
+});
+
+test('rated wallet pages validate official score/rank data and top-100 selection', () => {
+  const page = normalizeRatedWalletPage({
+    items: [
+      { id: 12, score: 744.6922, rank: 9356 },
+      { id: 99, score: 800, rank: 1 },
+    ],
+    next: 'cursor-2',
+  });
+  assert.deepEqual(page, {
+    credits: [
+      { tokenId: 12, creditRating: 744.6922, officialRank: 9356 },
+      { tokenId: 99, creditRating: 800, officialRank: 1 },
+    ],
+    next: 'cursor-2',
+  });
+  assert.throws(() => normalizeRatedWalletPage({ items: [{ id: 12, score: 0, rank: 9356 }] }), /rating/i);
+  assert.throws(() => normalizeRatedWalletPage({ items: [{ id: 12, score: 744.6922, rank: 0 }] }), /rank/i);
+  assert.throws(() => normalizeRatedWalletPage({ items: [{ id: 12, score: 744.6922, rank: 9356 }, { id: 12, score: 744.6922, rank: 9356 }] }), /duplicate/i);
+
+  const credits = Array.from({ length: 365 }, (_, index) => ({
+    tokenId: index + 1,
+    creditRating: 100 + index,
+    officialRank: 365 - index,
+  }));
+  const shown = selectHighestRatedCredits(credits, 100);
+  assert.equal(shown.length, 100);
+  assert.deepEqual(shown.slice(0, 3).map((credit) => credit.tokenId), [365, 364, 363]);
+  assert.equal(shown.at(-1)?.tokenId, 266);
 });
 
 test('ask benchmark uses a deterministic five-listing normalized band', () => {
@@ -158,6 +190,12 @@ test('public Appraiser release is discoverable, private-safe and backwards compa
   assert.match(client, /Listing-based estimate—not a bid or expected sale price\./);
   assert.match(route, /private, no-store/);
   assert.match(route, /X-Robots-Tag/);
+  assert.match(route, /\/credits\/rating\/api\/wallet/);
+  assert.match(route, /MAX_OWNED_CREDITS = 1_000/);
+  assert.match(route, /MAX_DISPLAYED_CREDITS = 100/);
+  assert.match(route, /creditsShown/);
+  assert.match(client, /highest-rated 100 shown/i);
+  assert.match(client, /included in wallet totals/i);
   assert.doesNotMatch(client, /localStorage|sessionStorage|document\.cookie|walletconnect/i);
   assert.match(header, /active\?: 'overview' \| 'value' \| 'appraiser'/);
   assert.match(header, /href="\/credits\/appraiser"/);

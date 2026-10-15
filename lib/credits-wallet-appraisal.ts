@@ -1,4 +1,5 @@
 export const CREDITS_CONTRACT = '0x97630aa70ab14ed9883b41dafccbc11349723043';
+export const STATEMENTS_CONTRACT = '0x75edd94b7e49b3bd5c8047b91f165a5e265a069b';
 export const ORIGINAL_CREDITS_SUPPLY = 122_154;
 export const BENCHMARK_SAMPLE_SIZE = 5;
 export const BENCHMARK_MIN_SAMPLE_SIZE = 2;
@@ -9,6 +10,15 @@ export type OwnedCredit = {
   tokenId: number;
   creditRating: number;
   officialRank: number;
+};
+
+export type OwnedStatement = {
+  tokenId: number;
+  format: string;
+  stage: string;
+  credits: number;
+  layers: number;
+  creditRating: number;
 };
 
 export type VerifiedAsk = {
@@ -113,7 +123,9 @@ export function buildWalletAppraisal(input: {
   wallet: string;
   ens: string | null;
   credits: OwnedCredit[];
+  statements?: OwnedStatement[];
   benchmark: AskBenchmark;
+  statementBenchmark?: AskBenchmark | null;
   ethUsd: number;
   capturedAt: string;
 }) {
@@ -140,12 +152,54 @@ export function buildWalletAppraisal(input: {
   const estimateEth = rounded(totalCr / 1_000 * input.benchmark.midEthPer1kCr);
   const rangeLowEth = rounded(totalCr / 1_000 * input.benchmark.lowEthPer1kCr);
   const rangeHighEth = rounded(totalCr / 1_000 * input.benchmark.highEthPer1kCr);
+
+  const ownedStatements = input.statements ?? [];
+  if (ownedStatements.length > 0 && !input.statementBenchmark) {
+    throw new Error('Statement-market benchmark is unavailable');
+  }
+  const statementTokenIds = new Set<number>();
+  const statements = ownedStatements.map((statement) => {
+    if (statementTokenIds.has(statement.tokenId)) throw new Error('Owned Statements contain a duplicate token');
+    statementTokenIds.add(statement.tokenId);
+    if (!Number.isSafeInteger(statement.tokenId) || statement.tokenId < 0
+      || typeof statement.format !== 'string' || statement.format.length === 0
+      || typeof statement.stage !== 'string' || statement.stage.length === 0
+      || !Number.isSafeInteger(statement.credits) || statement.credits <= 0
+      || !Number.isSafeInteger(statement.layers) || statement.layers <= 0
+      || statement.credits !== statement.layers * 80
+      || !Number.isFinite(statement.creditRating) || statement.creditRating <= 0) {
+      throw new Error('Owned Statement metadata is incomplete');
+    }
+    const estimateEth = rounded(statement.creditRating / 1_000 * input.statementBenchmark!.midEthPer1kCr);
+    return {
+      ...statement,
+      estimateEth,
+      estimateUsd: rounded(estimateEth * input.ethUsd),
+      url: `https://opensea.io/assets/ethereum/${STATEMENTS_CONTRACT}/${statement.tokenId}`,
+    };
+  }).sort((a, b) => b.creditRating - a.creditRating || a.tokenId - b.tokenId);
+  const statementTotalCr = rounded(statements.reduce((sum, statement) => sum + statement.creditRating, 0), 4);
+  const statementEstimateEth = statements.length > 0
+    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.midEthPer1kCr)
+    : 0;
+  const statementRangeLowEth = statements.length > 0
+    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.lowEthPer1kCr)
+    : 0;
+  const statementRangeHighEth = statements.length > 0
+    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.highEthPer1kCr)
+    : 0;
+  const portfolioTotalCr = rounded(totalCr + statementTotalCr, 4);
+  const portfolioEstimateEth = rounded(estimateEth + statementEstimateEth);
+  const portfolioRangeLowEth = rounded(rangeLowEth + statementRangeLowEth);
+  const portfolioRangeHighEth = rounded(rangeHighEth + statementRangeHighEth);
+
   return {
     wallet: input.wallet,
     ens: input.ens,
     capturedAt: input.capturedAt,
     ethUsd: input.ethUsd,
     benchmark: input.benchmark,
+    statementBenchmark: input.statementBenchmark ?? null,
     summary: {
       count: credits.length,
       totalCr,
@@ -156,7 +210,28 @@ export function buildWalletAppraisal(input: {
       rangeLowUsd: rounded(rangeLowEth * input.ethUsd),
       rangeHighUsd: rounded(rangeHighEth * input.ethUsd),
     },
+    statementSummary: {
+      count: statements.length,
+      totalCr: statementTotalCr,
+      estimateEth: statementEstimateEth,
+      estimateUsd: rounded(statementEstimateEth * input.ethUsd),
+      rangeLowEth: statementRangeLowEth,
+      rangeHighEth: statementRangeHighEth,
+      rangeLowUsd: rounded(statementRangeLowEth * input.ethUsd),
+      rangeHighUsd: rounded(statementRangeHighEth * input.ethUsd),
+    },
+    portfolio: {
+      assetCount: credits.length + statements.length,
+      totalCr: portfolioTotalCr,
+      estimateEth: portfolioEstimateEth,
+      estimateUsd: rounded(portfolioEstimateEth * input.ethUsd),
+      rangeLowEth: portfolioRangeLowEth,
+      rangeHighEth: portfolioRangeHighEth,
+      rangeLowUsd: rounded(portfolioRangeLowEth * input.ethUsd),
+      rangeHighUsd: rounded(portfolioRangeHighEth * input.ethUsd),
+    },
     credits,
-    methodology: 'Ask-based CR replacement benchmark from up to five of the lowest currently verified ETH-per-1K-CR listings. It is not a bid, guaranteed sale price, or liquidation value.',
+    statements,
+    methodology: 'Loose CREDITS and Statements use separate ask-based CR replacement benchmarks, each drawn from up to five of the lowest currently verified ETH-per-1K-CR listings. Results are not bids, guaranteed sale prices, or liquidation values.',
   };
 }

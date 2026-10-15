@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { FetchRequest, JsonRpcProvider, getAddress, isAddress } from 'ethers';
+import statementData from '@/data/credits-statements.json';
 import { fetchEthUsdQuote } from '@/lib/eth-usd';
-import { matchingCreditListings, normalizeOfficialCreditSnapshot } from '@/lib/credits-intelligence';
+import {
+  matchingCreditListings,
+  normalizeOfficialCreditSnapshot,
+  normalizeOpenSeaStatementMetadata,
+  type StatementMetadata,
+} from '@/lib/credits-intelligence';
 import {
   BENCHMARK_MIN_SAMPLE_SIZE,
   BENCHMARK_SAMPLE_SIZE,
   CREDITS_CONTRACT,
+  STATEMENTS_CONTRACT,
   buildAskBenchmark,
   buildWalletAppraisal,
   normalizeCreditDetail,
@@ -18,9 +25,10 @@ export const dynamic = 'force-dynamic';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
 const OPEN_SEA_BASE = 'https://api.opensea.io/api/v2';
-const USER_AGENT = 'GridPhantomsCreditsWalletLab/0.1';
+const USER_AGENT = 'GridPhantomsCreditsWalletLab/0.2';
 const MAX_WALLET_INPUT = 128;
 const MAX_OWNED_CREDITS = 100;
+const MAX_OWNED_STATEMENTS = 100;
 const MAX_OWNER_PAGES = 10;
 const BENCHMARK_CANDIDATES = 125;
 const BENCHMARK_BATCH_SIZE = 25;
@@ -33,6 +41,7 @@ const RESPONSE_HEADERS = {
 type UnknownRecord = Record<string, unknown>;
 type OpenSeaOrder = {
   price?: { current?: { currency?: string; value?: string; decimals?: number } };
+  protocol_data?: { parameters?: { offer?: Array<{ token?: string; identifierOrCriteria?: string }> } };
 };
 
 class PublicError extends Error {
@@ -119,6 +128,48 @@ async function fetchOwnedCreditIds(wallet: string, apiKey: string) {
   } while (cursor);
   tokenIds.sort((a, b) => a - b);
   return tokenIds;
+}
+
+async function fetchOwnedStatements(wallet: string, apiKey: string) {
+  const statements: StatementMetadata[] = [];
+  const seenTokens = new Set<number>();
+  const seenCursors = new Set<string>();
+  let cursor: string | null = null;
+  let pages = 0;
+  do {
+    const params = new URLSearchParams({
+      collection: 'statements',
+      limit: '200',
+      include_auto_hidden: 'true',
+    });
+    if (cursor) params.set('next', cursor);
+    const payload = await fetchJson(
+      `${OPEN_SEA_BASE}/chain/ethereum/account/${wallet}/nfts?${params}`,
+      { 'x-api-key': apiKey },
+    );
+    const page = normalizeOwnedNftPage(payload, STATEMENTS_CONTRACT);
+    const source = record(payload);
+    const nfts = source?.nfts;
+    if (!Array.isArray(nfts) || nfts.length !== page.tokenIds.length) {
+      throw new Error('OpenSea Statement ownership page is malformed');
+    }
+    page.tokenIds.forEach((tokenId, index) => {
+      if (seenTokens.has(tokenId)) throw new Error('OpenSea Statement pagination returned a duplicate token');
+      seenTokens.add(tokenId);
+      statements.push(normalizeOpenSeaStatementMetadata(tokenId, { nft: nfts[index] }));
+      if (statements.length > MAX_OWNED_STATEMENTS) {
+        throw new PublicError(422, 'This prototype currently supports wallets with up to 100 Statements.');
+      }
+    });
+    pages += 1;
+    if (page.next && (seenCursors.has(page.next) || pages >= MAX_OWNER_PAGES)) {
+      throw new Error('OpenSea Statement ownership pagination did not complete');
+    }
+    if (page.next) seenCursors.add(page.next);
+    cursor = page.next;
+  } while (cursor);
+  statements.sort((a, b) => a.tokenId - b.tokenId);
+  return statements;
 }
 
 async function fetchOwnedCreditDetails(tokenIds: number[]) {
@@ -210,6 +261,76 @@ async function fetchBenchmark(apiKey: string, ethUsd: number) {
   };
 }
 
+async function fetchMissingStatementMetadata(apiKey: string, tokenIds: number[]) {
+  const metadata = new Array<StatementMetadata>(tokenIds.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < tokenIds.length) {
+      const index = cursor;
+      cursor += 1;
+      const tokenId = tokenIds[index];
+      const payload = await fetchJson(
+        `${OPEN_SEA_BASE}/chain/ethereum/contract/${STATEMENTS_CONTRACT}/nfts/${tokenId}`,
+        { 'x-api-key': apiKey },
+      );
+      metadata[index] = normalizeOpenSeaStatementMetadata(tokenId, payload);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(8, tokenIds.length) }, () => worker()));
+  return metadata;
+}
+
+async function fetchStatementBenchmark(apiKey: string) {
+  let cursor: string | null = null;
+  let pages = 0;
+  const seenCursors = new Set<string>();
+  const lowestByToken = new Map<number, { tokenId: number; priceEth: number }>();
+  do {
+    const params = new URLSearchParams({ limit: '100' });
+    if (cursor) params.set('next', cursor);
+    const payload = await fetchJson(
+      `${OPEN_SEA_BASE}/listings/collection/statements/all?${params}`,
+      { 'x-api-key': apiKey },
+    );
+    const source = record(payload);
+    if (!source || !Array.isArray(source.listings)) throw new Error('OpenSea Statement listings are malformed');
+    for (const value of source.listings) {
+      const order = record(value) as OpenSeaOrder | null;
+      const offered = order?.protocol_data?.parameters?.offer?.[0];
+      if (String(offered?.token).toLowerCase() !== STATEMENTS_CONTRACT) continue;
+      const identifier = offered?.identifierOrCriteria;
+      if (typeof identifier !== 'string' || !/^\d+$/.test(identifier)) continue;
+      const tokenId = Number(identifier);
+      const priceEth = orderPriceEth(value);
+      if (!Number.isSafeInteger(tokenId) || tokenId < 0 || !priceEth) continue;
+      const prior = lowestByToken.get(tokenId);
+      if (!prior || priceEth < prior.priceEth) lowestByToken.set(tokenId, { tokenId, priceEth });
+    }
+    pages += 1;
+    const next = typeof source.next === 'string' && source.next.length > 0 ? source.next : null;
+    if (next && (seenCursors.has(next) || pages >= 10)) throw new Error('OpenSea Statement listing pagination did not complete');
+    if (next) seenCursors.add(next);
+    cursor = next;
+  } while (cursor);
+
+  const listings = [...lowestByToken.values()];
+  const baseline = statementData.items as StatementMetadata[];
+  const metadataById = new Map(baseline.map((item) => [item.tokenId, item]));
+  const missingIds = listings.map((item) => item.tokenId).filter((tokenId) => !metadataById.has(tokenId));
+  for (const item of await fetchMissingStatementMetadata(apiKey, missingIds)) metadataById.set(item.tokenId, item);
+  const asks = listings.map((listing) => {
+    const metadata = metadataById.get(listing.tokenId);
+    if (!metadata) throw new Error('Current Statement metadata coverage is incomplete');
+    return { tokenId: listing.tokenId, creditRating: metadata.creditRating, priceEth: listing.priceEth };
+  });
+  return {
+    benchmark: buildAskBenchmark(asks),
+    listingCheckedAt: new Date().toISOString(),
+    listingCount: listings.length,
+    pages,
+  };
+}
+
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get('content-length') ?? 0);
   if (Number.isFinite(contentLength) && contentLength > 1_024) return jsonError(413, 'Request is too large.');
@@ -223,13 +344,15 @@ export async function POST(request: Request) {
     const apiKey = process.env.OPENSEA_API_KEY;
     if (!apiKey) throw new PublicError(503, 'Wallet appraisal is temporarily unavailable.');
     const resolved = await resolveWallet(input);
-    const [tokenIds, ethUsdQuote] = await Promise.all([
+    const [tokenIds, statements, ethUsdQuote] = await Promise.all([
       fetchOwnedCreditIds(resolved.wallet, apiKey),
+      fetchOwnedStatements(resolved.wallet, apiKey),
       fetchEthUsdQuote(),
     ]);
-    const [credits, market] = await Promise.all([
+    const [credits, market, statementMarket] = await Promise.all([
       fetchOwnedCreditDetails(tokenIds),
       fetchBenchmark(apiKey, ethUsdQuote.price),
+      statements.length > 0 ? fetchStatementBenchmark(apiKey) : Promise.resolve(null),
     ]);
     const capturedAt = new Date().toISOString();
     return NextResponse.json({
@@ -237,14 +360,25 @@ export async function POST(request: Request) {
         wallet: resolved.wallet,
         ens: resolved.ens,
         credits,
+        statements,
         benchmark: market.benchmark,
+        statementBenchmark: statementMarket?.benchmark,
         ethUsd: ethUsdQuote.price,
         capturedAt,
       }),
       ownership: {
         source: 'OpenSea-visible direct holdings',
-        count: tokenIds.length,
+        credits: tokenIds.length,
+        statements: statements.length,
       },
+      statementMarket: statementMarket ? {
+        source: 'Current OpenSea Statement listings + verified Statement metadata',
+        listingCheckedAt: statementMarket.listingCheckedAt,
+        listingCount: statementMarket.listingCount,
+        pages: statementMarket.pages,
+        sampleCount: statementMarket.benchmark.sampleTokenIds.length,
+        confidence: statementMarket.benchmark.sampleTokenIds.length >= BENCHMARK_SAMPLE_SIZE ? 'moderate' : 'limited',
+      } : null,
       market: {
         source: 'Official CREDITS market snapshot + direct OpenSea listing verification',
         sourceUpdatedAt: market.sourceUpdatedAt,

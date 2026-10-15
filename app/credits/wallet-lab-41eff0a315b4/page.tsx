@@ -24,9 +24,9 @@ export default function CreditsWalletLabPage() {
       <main className="cr-main cr-wallet-main">
         <section className="cr-wallet-hero">
           <div>
-            <p className="cr-kicker">Private review build · loose CREDITS</p>
+            <p className="cr-kicker">Private review build · CREDITS + Statements</p>
             <h1>Wallet Appraiser</h1>
-            <p>Look up a public wallet, total its official Credit Rating and compare it with a live band of verified asks. No connection required.</p>
+            <p>Look up a public wallet, total its official Credit Rating across loose CREDITS and Statements, then compare each collection with its own live band of verified asks.</p>
           </div>
           <aside>
             <span>Prototype scope</span>
@@ -36,7 +36,7 @@ export default function CreditsWalletLabPage() {
         </section>
         <WalletLab />
       </main>
-      <footer className="cr-footer">Private prototype. Ask-based research only—not a bid, offer or guaranteed sale value.</footer>
+      <footer className="cr-footer">Private prototype. Separate CREDITS and Statement ask-based research—not a bid, offer or guaranteed sale value.</footer>
     </>
   );
 }

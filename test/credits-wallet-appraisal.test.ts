@@ -96,6 +96,45 @@ test('wallet appraisal reports an ask-based range without implying sale proceeds
   assert.deepEqual(appraisal.credits.map((credit) => credit.estimateEth), [0.044, 0.0359987815]);
 });
 
+test('wallet appraisal includes Statement-market CR estimates in the portfolio total', () => {
+  const appraisal = buildWalletAppraisal({
+    wallet: '0x0B5Bfb355f553a267460BB4Cb1c768A8d4940687',
+    ens: '690069.eth',
+    credits: [],
+    statements: [{
+      tokenId: 91,
+      format: 'Issued',
+      stage: 'BASE',
+      credits: 80,
+      layers: 1,
+      creditRating: 54_274,
+    }],
+    benchmark: {
+      sampleTokenIds: [1, 2, 3, 4, 5],
+      lowEthPer1kCr: 0.05,
+      midEthPer1kCr: 0.055,
+      highEthPer1kCr: 0.06,
+    },
+    statementBenchmark: {
+      sampleTokenIds: [194, 49, 105, 199, 168],
+      lowEthPer1kCr: 0.05475829099148585,
+      midEthPer1kCr: 0.05860999773122589,
+      highEthPer1kCr: 0.06831092255698569,
+    },
+    ethUsd: 2368.38,
+    capturedAt: '2026-10-15T02:23:48.730Z',
+  });
+
+  assert.equal(appraisal.statements.length, 1);
+  assert.equal(appraisal.statements[0].estimateEth, 3.180999016865);
+  assert.equal(appraisal.statementSummary.totalCr, 54_274);
+  assert.equal(appraisal.statementSummary.rangeLowEth, 2.971951485272);
+  assert.equal(appraisal.statementSummary.rangeHighEth, 3.707507010858);
+  assert.equal(appraisal.portfolio.totalCr, 54_274);
+  assert.equal(appraisal.portfolio.estimateEth, 3.180999016865);
+  assert.equal(appraisal.portfolio.estimateUsd, 7533.814451562729);
+});
+
 test('private prototype stays unlinked, unindexed and does not persist wallet input', async () => {
   const [page, client, route, header, sitemap] = await Promise.all([
     readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/page.tsx', import.meta.url), 'utf8'),

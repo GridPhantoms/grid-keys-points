@@ -188,6 +188,8 @@ test('public Appraiser release is discoverable, private-safe and backwards compa
   assert.match(page, /\/credits\/appraiser\/opengraph-image/);
   assert.match(client, /\/api\/credits\/appraiser/);
   assert.match(client, /Listing-based estimate—not a bid or expected sale price\./);
+  assert.match(client, /calculated solely from each asset’s Credit Rating × the current listing rate per 1,000 CR/i);
+  assert.match(client, /do not add collector premiums for specific traits, visual appeal, provenance, or rarity beyond what the official Credit Rating captures/i);
   assert.match(route, /private, no-store/);
   assert.match(route, /X-Robots-Tag/);
   assert.match(route, /\/credits\/rating\/api\/wallet/);

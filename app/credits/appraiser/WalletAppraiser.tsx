@@ -138,6 +138,11 @@ export default function WalletAppraiser() {
 
   return (
     <div className="cr-wallet-lab">
+      <aside className="cr-methodology-limit" aria-label="Appraisal methodology limit">
+        <strong>CR-rate estimate only</strong>
+        <p>Estimates are calculated solely from each asset’s Credit Rating × the current listing rate per 1,000 CR.</p>
+        <small>They do not add collector premiums for specific traits, visual appeal, provenance, or rarity beyond what the official Credit Rating captures. A distinctive asset may trade materially above or below this model.</small>
+      </aside>
       <form className="cr-wallet-form" onSubmit={submit}>
         <label htmlFor="wallet-lab-input">Ethereum wallet or ENS</label>
         <div>

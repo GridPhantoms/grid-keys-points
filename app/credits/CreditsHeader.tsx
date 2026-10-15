@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function CreditsHeader({ active }: { active?: 'overview' | 'value' }) {
+export default function CreditsHeader({ active }: { active?: 'overview' | 'value' | 'appraiser' }) {
   return (
     <header className="cr-header">
       <div className="cr-header-inner">
@@ -11,6 +11,7 @@ export default function CreditsHeader({ active }: { active?: 'overview' | 'value
         <nav className="cr-nav" aria-label="CREDITS Intelligence">
           <Link href="/credits" aria-current={active === 'overview' ? 'page' : undefined}>Overview</Link>
           <Link href="/credits/value" aria-current={active === 'value' ? 'page' : undefined}>Value Finder</Link>
+          <Link href="/credits/appraiser" aria-current={active === 'appraiser' ? 'page' : undefined}>Appraiser</Link>
         </nav>
         <Link href="/" className="cr-built">Built by Grid Phantoms</Link>
       </div>

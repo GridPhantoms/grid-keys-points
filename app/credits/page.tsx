@@ -79,6 +79,7 @@ export default async function CreditsOverviewPage() {
             <p className="cr-lede">Compare live asks across loose CREDITS and Statements to spot better-rated pieces and lower-cost CR before you buy.</p>
             <div className="cr-hero-actions">
               <Link href="/credits/value" className="cr-primary">Open Value Finder <span aria-hidden="true">→</span></Link>
+              <Link href="/credits/appraiser" className="cr-primary">Open Appraiser <span aria-hidden="true">→</span></Link>
               <a href="#market-pulse" className="cr-primary">View market stats <span aria-hidden="true">↓</span></a>
             </div>
           </div>

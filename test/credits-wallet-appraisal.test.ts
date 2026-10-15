@@ -135,29 +135,40 @@ test('wallet appraisal includes Statement-market CR estimates in the portfolio t
   assert.equal(appraisal.portfolio.estimateUsd, 7533.814451562729);
 });
 
-test('private prototype stays unlinked, unindexed and does not persist wallet input', async () => {
-  const [page, client, route, header, sitemap, openGraphImage] = await Promise.all([
-    readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/page.tsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/WalletLab.tsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/api/credits/wallet-lab-41eff0a315b4/route.ts', import.meta.url), 'utf8'),
+test('public Appraiser release is discoverable, private-safe and backwards compatible', async () => {
+  const [page, client, route, header, sitemap, overview, openGraphImage, legacyPage, legacyRoute] = await Promise.all([
+    readFile(new URL('../app/credits/appraiser/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/appraiser/WalletAppraiser.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/credits/appraiser/route.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/CreditsHeader.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/sitemap.ts', import.meta.url), 'utf8'),
-    readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/opengraph-image.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/appraiser/opengraph-image.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/credits/wallet-lab-41eff0a315b4/route.ts', import.meta.url), 'utf8'),
   ]);
-  assert.match(page, /index:\s*false/);
-  assert.match(page, /referrer:\s*'no-referrer'/);
+  assert.match(page, /alternates:\s*\{ canonical: '\/credits\/appraiser' \}/);
+  assert.doesNotMatch(page, /index:\s*false|Private prototype|Private review build/);
+  assert.match(page, /Market intelligence provided by GridPhantoms/);
+  assert.match(page, /estimated replacement range based on current listings/);
   assert.match(page, /openGraph:/);
   assert.match(page, /twitter:/);
-  assert.match(page, /\/credits\/wallet-lab-41eff0a315b4\/opengraph-image/);
+  assert.match(page, /\/credits\/appraiser\/opengraph-image/);
+  assert.match(client, /\/api\/credits\/appraiser/);
+  assert.match(client, /Listing-based estimate—not a bid or expected sale price\./);
+  assert.match(route, /private, no-store/);
+  assert.match(route, /X-Robots-Tag/);
+  assert.doesNotMatch(client, /localStorage|sessionStorage|document\.cookie|walletconnect/i);
+  assert.match(header, /active\?: 'overview' \| 'value' \| 'appraiser'/);
+  assert.match(header, /href="\/credits\/appraiser"/);
+  assert.match(overview, /Open Appraiser/);
+  assert.match(sitemap, /\/credits\/appraiser/);
+  assert.match(legacyPage, /redirect\('\/credits\/appraiser'\)/);
+  assert.match(legacyRoute, /from '\.\.\/appraiser\/route'/);
   assert.match(openGraphImage, /APPRAISE YOUR/);
   assert.match(openGraphImage, /CREDITS WALLET\./);
   assert.match(openGraphImage, /LOOSE/);
   assert.match(openGraphImage, /STATEMENTS/);
   assert.match(openGraphImage, /NO CONNECT/);
   assert.doesNotMatch(openGraphImage, /0x[a-fA-F0-9]{40}|690069\.eth|\d+\.\d+\s*ETH/);
-  assert.match(route, /private, no-store/);
-  assert.match(route, /X-Robots-Tag/);
-  assert.doesNotMatch(client, /localStorage|sessionStorage|document\.cookie|walletconnect/i);
-  assert.doesNotMatch(header, /wallet-lab-41eff0a315b4/);
-  assert.doesNotMatch(sitemap, /wallet-lab-41eff0a315b4/);
 });

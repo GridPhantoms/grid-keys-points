@@ -13,6 +13,7 @@ const routes = [
   { path: '/citizen/market', changeFrequency: 'daily', priority: 0.8 },
   { path: '/credits', changeFrequency: 'daily', priority: 0.7 },
   { path: '/credits/value', changeFrequency: 'hourly', priority: 0.7 },
+  { path: '/credits/appraiser', changeFrequency: 'hourly', priority: 0.7 },
   { path: '/leaderboard', changeFrequency: 'daily', priority: 0.8 },
   { path: '/trait-charts', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/raffle', changeFrequency: 'daily', priority: 0.7 },

@@ -136,15 +136,25 @@ test('wallet appraisal includes Statement-market CR estimates in the portfolio t
 });
 
 test('private prototype stays unlinked, unindexed and does not persist wallet input', async () => {
-  const [page, client, route, header, sitemap] = await Promise.all([
+  const [page, client, route, header, sitemap, openGraphImage] = await Promise.all([
     readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/WalletLab.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/credits/wallet-lab-41eff0a315b4/route.ts', import.meta.url), 'utf8'),
     readFile(new URL('../app/credits/CreditsHeader.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/sitemap.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/credits/wallet-lab-41eff0a315b4/opengraph-image.tsx', import.meta.url), 'utf8'),
   ]);
   assert.match(page, /index:\s*false/);
   assert.match(page, /referrer:\s*'no-referrer'/);
+  assert.match(page, /openGraph:/);
+  assert.match(page, /twitter:/);
+  assert.match(page, /\/credits\/wallet-lab-41eff0a315b4\/opengraph-image/);
+  assert.match(openGraphImage, /APPRAISE YOUR/);
+  assert.match(openGraphImage, /CREDITS WALLET\./);
+  assert.match(openGraphImage, /LOOSE/);
+  assert.match(openGraphImage, /STATEMENTS/);
+  assert.match(openGraphImage, /NO CONNECT/);
+  assert.doesNotMatch(openGraphImage, /0x[a-fA-F0-9]{40}|690069\.eth|\d+\.\d+\s*ETH/);
   assert.match(route, /private, no-store/);
   assert.match(route, /X-Robots-Tag/);
   assert.doesNotMatch(client, /localStorage|sessionStorage|document\.cookie|walletconnect/i);

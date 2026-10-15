@@ -1,16 +1,16 @@
 {
   "schemaVersion": 2,
-  "snapshotAsOf": "2026-10-14T13:20:22.213041+00:00",
+  "snapshotAsOf": "2026-10-15T13:20:39.675840+00:00",
   "provenance": {
-    "snapshotId": "20261014T132022Z-credits-daily-oct14-scheduled",
+    "snapshotId": "20261015T132039Z-credits-daily-oct15-scheduled",
     "status": "verified",
     "cadence": "scheduled",
-    "protocolBlock": 26190975,
-    "protocolBlockHash": "0x41d212de5a292f787068c7d8acc08e77b9a4edccb46069ddc194a47f407fff73",
-    "protocolBlockTime": "2026-10-14T13:15:35+00:00",
-    "marketStartedAt": "2026-10-14T13:19:31.205906+00:00",
-    "marketCompletedAt": "2026-10-14T13:20:22.213041+00:00",
-    "ethUsdCandleStart": "2026-10-14T13:19:00+00:00",
+    "protocolBlock": 26198150,
+    "protocolBlockHash": "0xb6eb0c2d4a6a94f0188eaac9c53a692cecf678b9a14a6e183561f4fd996d26cb",
+    "protocolBlockTime": "2026-10-15T13:15:47+00:00",
+    "marketStartedAt": "2026-10-15T13:19:57.589226+00:00",
+    "marketCompletedAt": "2026-10-15T13:20:39.675840+00:00",
+    "ethUsdCandleStart": "2026-10-15T13:19:00+00:00",
     "sourceFiles": [
       "verification.json",
       "live-snapshot.json",
@@ -18,7 +18,7 @@
       "ownership-snapshot-post-statements.json"
     ]
   },
-  "activeCount": 212,
+  "activeCount": 225,
   "items": [
     {
       "tokenId": 1,
@@ -1642,7 +1642,7 @@
     },
     {
       "tokenId": 175,
-      "format": "Reconciled",
+      "format": "Liquidated",
       "credits": 80,
       "overprints": 0,
       "layers": 1,
@@ -1972,7 +1972,7 @@
     },
     {
       "tokenId": 211,
-      "format": "Issued",
+      "format": "Accrued",
       "credits": 80,
       "overprints": 0,
       "layers": 1,
@@ -2139,7 +2139,137 @@
       "creditRating": 28138,
       "avgRatingPerCredit": 351.725,
       "stage": "BASE"
+    },
+    {
+      "tokenId": 228,
+      "format": "Accrued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 50754,
+      "avgRatingPerCredit": 634.425,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 229,
+      "format": "Liquidated",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 15877,
+      "avgRatingPerCredit": 198.4625,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 230,
+      "format": "Amortized",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 10919,
+      "avgRatingPerCredit": 136.4875,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 231,
+      "format": "Accrued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 26616,
+      "avgRatingPerCredit": 332.7,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 232,
+      "format": "Consolidated",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 18494,
+      "avgRatingPerCredit": 231.175,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 233,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 61370,
+      "avgRatingPerCredit": 767.125,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 234,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 57751,
+      "avgRatingPerCredit": 721.8875,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 235,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 55575,
+      "avgRatingPerCredit": 694.6875,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 236,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 52964,
+      "avgRatingPerCredit": 662.05,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 237,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 47861,
+      "avgRatingPerCredit": 598.2625,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 238,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 42617,
+      "avgRatingPerCredit": 532.7125,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 239,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 34306,
+      "avgRatingPerCredit": 428.825,
+      "stage": "BASE"
+    },
+    {
+      "tokenId": 240,
+      "format": "Issued",
+      "credits": 80,
+      "overprints": 0,
+      "layers": 1,
+      "creditRating": 51821,
+      "avgRatingPerCredit": 647.7625,
+      "stage": "BASE"
     }
   ],
-  "artifactSetDigest": "d8db0a7e1b20680689ac538ef6401169b4faff885aa35b7b7558794e92aad899"
+  "artifactSetDigest": "bf21434d71c4a4a2ea71a5c7305765df2527746bca2ce48b39256cc57cd06cc2"
 }

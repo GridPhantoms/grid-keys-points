@@ -115,17 +115,22 @@ test('wallet appraisal reports an ask-based range without implying sale proceeds
       midEthPer1kCr: 0.055,
       highEthPer1kCr: 0.06,
     },
+    creditFloorEth: 0.04,
     ethUsd: 2500,
     capturedAt: '2026-10-14T17:00:00.000Z',
   });
 
   assert.equal(appraisal.summary.count, 2);
   assert.equal(appraisal.summary.totalCr, 1454.5233);
-  assert.equal(appraisal.summary.estimateEth, 0.0799987815);
-  assert.equal(appraisal.summary.rangeLowEth, 0.072726165);
-  assert.equal(appraisal.summary.rangeHighEth, 0.087271398);
-  assert.equal(appraisal.summary.estimateUsd, 199.99695375);
-  assert.deepEqual(appraisal.credits.map((credit) => credit.estimateEth), [0.044, 0.0359987815]);
+  assert.equal(appraisal.summary.estimateEth, 0.084);
+  assert.equal(appraisal.summary.rangeLowEth, 0.08);
+  assert.equal(appraisal.summary.rangeHighEth, 0.088);
+  assert.equal(appraisal.summary.estimateUsd, 210);
+  assert.deepEqual(appraisal.credits.map((credit) => credit.estimateEth), [0.044, 0.04]);
+  assert.deepEqual(appraisal.credits.map((credit) => credit.crEstimateEth), [0.044, 0.0359987815]);
+  assert.deepEqual(appraisal.credits.map((credit) => credit.floorApplied), [false, true]);
+  assert.equal(appraisal.floors.creditEth, 0.04);
+  assert.match(appraisal.methodology, /do not model order-book depth or slippage/i);
 });
 
 test('wallet appraisal includes Statement-market CR estimates in the portfolio total', () => {
@@ -153,12 +158,16 @@ test('wallet appraisal includes Statement-market CR estimates in the portfolio t
       midEthPer1kCr: 0.05860999773122589,
       highEthPer1kCr: 0.06831092255698569,
     },
+    creditFloorEth: 0.0166,
+    statementFloorEth: 1.545,
     ethUsd: 2368.38,
     capturedAt: '2026-10-15T02:23:48.730Z',
   });
 
   assert.equal(appraisal.statements.length, 1);
   assert.equal(appraisal.statements[0].estimateEth, 3.180999016865);
+  assert.equal(appraisal.statements[0].floorApplied, false);
+  assert.equal(appraisal.floors.statementEth, 1.545);
   assert.equal(appraisal.statementSummary.totalCr, 54_274);
   assert.equal(appraisal.statementSummary.rangeLowEth, 2.971951485272);
   assert.equal(appraisal.statementSummary.rangeHighEth, 3.707507010858);
@@ -188,13 +197,17 @@ test('public Appraiser release is discoverable, private-safe and backwards compa
   assert.match(page, /\/credits\/appraiser\/opengraph-image/);
   assert.match(client, /\/api\/credits\/appraiser/);
   assert.match(client, /Listing-based estimate—not a bid or expected sale price\./);
-  assert.match(client, /calculated solely from each asset’s Credit Rating × the current listing rate per 1,000 CR/i);
+  assert.match(client, /greater of its CR-rate estimate or a directly verified floor benchmark/i);
+  assert.match(client, /Floor minimum · CR model/);
   assert.match(client, /do not add collector premiums for specific traits, visual appeal, provenance, or rarity beyond what the official Credit Rating captures/i);
   assert.match(route, /private, no-store/);
   assert.match(route, /X-Robots-Tag/);
   assert.match(route, /\/credits\/rating\/api\/wallet/);
   assert.match(route, /MAX_OWNED_CREDITS = 1_000/);
   assert.match(route, /MAX_DISPLAYED_CREDITS = 100/);
+  assert.match(route, /FLOOR_CANDIDATES = 25/);
+  assert.match(route, /sort: 'lowest-price'/);
+  assert.match(route, /floorCandidatesChecked/);
   assert.match(route, /creditsShown/);
   assert.match(client, /highest-rated 100 shown/i);
   assert.match(client, /included in wallet totals/i);

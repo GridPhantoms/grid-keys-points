@@ -149,6 +149,17 @@ function rounded(value: number, digits = 12) {
   return Number(value.toFixed(digits));
 }
 
+function floorProtectedBand(creditRating: number, benchmark: AskBenchmark, floorEth: number) {
+  const estimateFromRate = creditRating / 1_000 * benchmark.midEthPer1kCr;
+  return {
+    crEstimateEth: rounded(estimateFromRate),
+    estimateEth: rounded(Math.max(estimateFromRate, floorEth)),
+    rangeLowEth: rounded(Math.max(creditRating / 1_000 * benchmark.lowEthPer1kCr, floorEth)),
+    rangeHighEth: rounded(Math.max(creditRating / 1_000 * benchmark.highEthPer1kCr, floorEth)),
+    floorApplied: estimateFromRate < floorEth,
+  };
+}
+
 export function buildWalletAppraisal(input: {
   wallet: string;
   ens: string | null;
@@ -156,11 +167,14 @@ export function buildWalletAppraisal(input: {
   statements?: OwnedStatement[];
   benchmark: AskBenchmark;
   statementBenchmark?: AskBenchmark | null;
+  creditFloorEth: number;
+  statementFloorEth?: number | null;
   ethUsd: number;
   capturedAt: string;
 }) {
   if (!/^0x[0-9a-fA-F]{40}$/.test(input.wallet)) throw new Error('Wallet address is invalid');
   if (!Number.isFinite(input.ethUsd) || input.ethUsd <= 0) throw new Error('ETH-USD price is unavailable');
+  if (!Number.isFinite(input.creditFloorEth) || input.creditFloorEth <= 0) throw new Error('CREDITS floor is unavailable');
   if (!Number.isFinite(Date.parse(input.capturedAt))) throw new Error('Appraisal timestamp is invalid');
   const tokenIds = new Set<number>();
   const credits = input.credits.map((credit) => {
@@ -170,22 +184,25 @@ export function buildWalletAppraisal(input: {
       || !Number.isSafeInteger(credit.officialRank) || credit.officialRank <= 0) {
       throw new Error('Owned CREDITS metadata is incomplete');
     }
-    const estimateEth = rounded(credit.creditRating / 1_000 * input.benchmark.midEthPer1kCr);
+    const band = floorProtectedBand(credit.creditRating, input.benchmark, input.creditFloorEth);
     return {
       ...credit,
-      estimateEth,
-      estimateUsd: rounded(estimateEth * input.ethUsd),
+      ...band,
+      estimateUsd: rounded(band.estimateEth * input.ethUsd),
       url: `https://opensea.io/assets/ethereum/${CREDITS_CONTRACT}/${credit.tokenId}`,
     };
   }).sort((a, b) => a.officialRank - b.officialRank || a.tokenId - b.tokenId);
   const totalCr = rounded(credits.reduce((sum, credit) => sum + credit.creditRating, 0), 4);
-  const estimateEth = rounded(totalCr / 1_000 * input.benchmark.midEthPer1kCr);
-  const rangeLowEth = rounded(totalCr / 1_000 * input.benchmark.lowEthPer1kCr);
-  const rangeHighEth = rounded(totalCr / 1_000 * input.benchmark.highEthPer1kCr);
+  const estimateEth = rounded(credits.reduce((sum, credit) => sum + credit.estimateEth, 0));
+  const rangeLowEth = rounded(credits.reduce((sum, credit) => sum + credit.rangeLowEth, 0));
+  const rangeHighEth = rounded(credits.reduce((sum, credit) => sum + credit.rangeHighEth, 0));
 
   const ownedStatements = input.statements ?? [];
   if (ownedStatements.length > 0 && !input.statementBenchmark) {
     throw new Error('Statement-market benchmark is unavailable');
+  }
+  if (ownedStatements.length > 0 && (!input.statementFloorEth || !Number.isFinite(input.statementFloorEth))) {
+    throw new Error('Statement floor is unavailable');
   }
   const statementTokenIds = new Set<number>();
   const statements = ownedStatements.map((statement) => {
@@ -200,23 +217,23 @@ export function buildWalletAppraisal(input: {
       || !Number.isFinite(statement.creditRating) || statement.creditRating <= 0) {
       throw new Error('Owned Statement metadata is incomplete');
     }
-    const estimateEth = rounded(statement.creditRating / 1_000 * input.statementBenchmark!.midEthPer1kCr);
+    const band = floorProtectedBand(statement.creditRating, input.statementBenchmark!, input.statementFloorEth!);
     return {
       ...statement,
-      estimateEth,
-      estimateUsd: rounded(estimateEth * input.ethUsd),
+      ...band,
+      estimateUsd: rounded(band.estimateEth * input.ethUsd),
       url: `https://opensea.io/assets/ethereum/${STATEMENTS_CONTRACT}/${statement.tokenId}`,
     };
   }).sort((a, b) => b.creditRating - a.creditRating || a.tokenId - b.tokenId);
   const statementTotalCr = rounded(statements.reduce((sum, statement) => sum + statement.creditRating, 0), 4);
   const statementEstimateEth = statements.length > 0
-    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.midEthPer1kCr)
+    ? rounded(statements.reduce((sum, statement) => sum + statement.estimateEth, 0))
     : 0;
   const statementRangeLowEth = statements.length > 0
-    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.lowEthPer1kCr)
+    ? rounded(statements.reduce((sum, statement) => sum + statement.rangeLowEth, 0))
     : 0;
   const statementRangeHighEth = statements.length > 0
-    ? rounded(statementTotalCr / 1_000 * input.statementBenchmark!.highEthPer1kCr)
+    ? rounded(statements.reduce((sum, statement) => sum + statement.rangeHighEth, 0))
     : 0;
   const portfolioTotalCr = rounded(totalCr + statementTotalCr, 4);
   const portfolioEstimateEth = rounded(estimateEth + statementEstimateEth);
@@ -230,6 +247,10 @@ export function buildWalletAppraisal(input: {
     ethUsd: input.ethUsd,
     benchmark: input.benchmark,
     statementBenchmark: input.statementBenchmark ?? null,
+    floors: {
+      creditEth: input.creditFloorEth,
+      statementEth: input.statementFloorEth ?? null,
+    },
     summary: {
       count: credits.length,
       totalCr,
@@ -262,6 +283,6 @@ export function buildWalletAppraisal(input: {
     },
     credits,
     statements,
-    methodology: 'Loose CREDITS and Statements use separate ask-based CR replacement benchmarks, each drawn from up to five of the lowest currently verified ETH-per-1K-CR listings. Results are not bids, guaranteed sale prices, or liquidation values.',
+    methodology: 'Loose CREDITS and Statements use separate ask-based CR replacement benchmarks, each drawn from up to five of the lowest currently verified ETH-per-1K-CR listings. Every asset uses the greater of its CR-rate estimate or a directly verified floor benchmark. Portfolio totals sum those per-asset estimates and do not model order-book depth or slippage. Results are not bids, guaranteed sale prices, or liquidation values.',
   };
 }

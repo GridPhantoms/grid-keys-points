@@ -6,8 +6,10 @@ type CreditRow = {
   tokenId: number;
   creditRating: number;
   officialRank: number;
+  crEstimateEth: number;
   estimateEth: number;
   estimateUsd: number;
+  floorApplied: boolean;
   url: string;
 };
 
@@ -18,8 +20,10 @@ type StatementRow = {
   credits: number;
   layers: number;
   creditRating: number;
+  crEstimateEth: number;
   estimateEth: number;
   estimateUsd: number;
+  floorApplied: boolean;
   url: string;
 };
 
@@ -49,6 +53,7 @@ type Appraisal = {
   methodology: string;
   benchmark: Benchmark;
   statementBenchmark: Benchmark | null;
+  floors: { creditEth: number; statementEth: number | null };
   summary: ValueSummary;
   statementSummary: ValueSummary;
   portfolio: Omit<ValueSummary, 'count'> & { assetCount: number };
@@ -64,6 +69,9 @@ type Appraisal = {
   market: {
     source: string;
     sourceUpdatedAt: string | null;
+    floorEth: number;
+    floorTokenId: number;
+    floorCandidatesChecked: number;
     candidatesChecked: number;
     verifiedCount: number;
     confidence: 'moderate' | 'limited';
@@ -139,8 +147,8 @@ export default function WalletAppraiser() {
   return (
     <div className="cr-wallet-lab">
       <aside className="cr-methodology-limit" aria-label="Appraisal methodology limit">
-        <strong>CR-rate estimate only</strong>
-        <p>Estimates are calculated solely from each asset’s Credit Rating × the current listing rate per 1,000 CR.</p>
+        <strong>CR-rate estimate + floor minimum</strong>
+        <p>Each asset uses the greater of its CR-rate estimate or a directly verified floor benchmark.</p>
         <small>They do not add collector premiums for specific traits, visual appeal, provenance, or rarity beyond what the official Credit Rating captures. A distinctive asset may trade materially above or below this model.</small>
       </aside>
       <form className="cr-wallet-form" onSubmit={submit}>
@@ -201,11 +209,11 @@ export default function WalletAppraiser() {
                   </div>
                   <div className="cr-range-card cr-subrange-card">
                     <div><span>Loose replacement range</span><strong>{eth(data.summary.rangeLowEth)}–{eth(data.summary.rangeHighEth)}Ξ</strong><small>{money(data.summary.rangeLowUsd)}–{money(data.summary.rangeHighUsd)}</small></div>
-                    <div><span>Loose benchmark</span><strong>{data.benchmark.midEthPer1kCr.toFixed(5)}Ξ</strong><small>per 1K CR</small></div>
+                    <div><span>Loose benchmark</span><strong>{data.benchmark.midEthPer1kCr.toFixed(5)}Ξ</strong><small>per 1K CR · {eth(data.floors.creditEth)}Ξ floor benchmark</small></div>
                   </div>
                   {data.ownership.credits > data.ownership.creditsShown && <p className="cr-scope-note">{data.ownership.credits.toLocaleString()} loose CREDITS held · highest-rated 100 shown · all holdings included in wallet totals</p>}
-                  <div className="cr-table-wrap"><table><thead><tr><th>Token</th><th>Official rank</th><th>Credit Rating</th><th>Rating-implied estimate</th><th>Approx. USD</th><th>Asset</th></tr></thead><tbody>{data.credits.map((credit) => <tr key={credit.tokenId}><td>#{credit.tokenId}</td><td>#{credit.officialRank.toLocaleString()}</td><td>{cr(credit.creditRating)}</td><td>{eth(credit.estimateEth)}Ξ</td><td>{money(credit.estimateUsd)}</td><td><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></td></tr>)}</tbody></table></div>
-                  <div className="cr-card-list">{data.credits.map((credit) => <article key={credit.tokenId}><header><strong>CREDIT #{credit.tokenId}</strong><span>Rank #{credit.officialRank.toLocaleString()}</span></header><dl><div><dt>Credit Rating</dt><dd>{cr(credit.creditRating)}</dd></div><div><dt>Estimate</dt><dd>{eth(credit.estimateEth)}Ξ</dd></div><div><dt>Approx. USD</dt><dd>{money(credit.estimateUsd)}</dd></div></dl><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></article>)}</div>
+                  <div className="cr-table-wrap"><table><thead><tr><th>Token</th><th>Official rank</th><th>Credit Rating</th><th>CR / floor estimate</th><th>Approx. USD</th><th>Asset</th></tr></thead><tbody>{data.credits.map((credit) => <tr key={credit.tokenId}><td>#{credit.tokenId}</td><td>#{credit.officialRank.toLocaleString()}</td><td>{cr(credit.creditRating)}</td><td>{eth(credit.estimateEth)}Ξ{credit.floorApplied && <small className="cr-floor-note">Floor minimum · CR model {eth(credit.crEstimateEth)}Ξ</small>}</td><td>{money(credit.estimateUsd)}</td><td><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></td></tr>)}</tbody></table></div>
+                  <div className="cr-card-list">{data.credits.map((credit) => <article key={credit.tokenId}><header><strong>CREDIT #{credit.tokenId}</strong><span>Rank #{credit.officialRank.toLocaleString()}</span></header><dl><div><dt>Credit Rating</dt><dd>{cr(credit.creditRating)}</dd></div><div><dt>Estimate</dt><dd>{eth(credit.estimateEth)}Ξ{credit.floorApplied && <small className="cr-floor-note">Floor minimum · CR model {eth(credit.crEstimateEth)}Ξ</small>}</dd></div><div><dt>Approx. USD</dt><dd>{money(credit.estimateUsd)}</dd></div></dl><a href={credit.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></article>)}</div>
                 </section>
               )}
 
@@ -217,10 +225,10 @@ export default function WalletAppraiser() {
                   </div>
                   <div className="cr-range-card cr-subrange-card">
                     <div><span>Statement replacement range</span><strong>{eth(data.statementSummary.rangeLowEth)}–{eth(data.statementSummary.rangeHighEth)}Ξ</strong><small>{money(data.statementSummary.rangeLowUsd)}–{money(data.statementSummary.rangeHighUsd)}</small></div>
-                    <div><span>Statement benchmark</span><strong>{data.statementBenchmark.midEthPer1kCr.toFixed(5)}Ξ</strong><small>per 1K CR</small></div>
+                    <div><span>Statement benchmark</span><strong>{data.statementBenchmark.midEthPer1kCr.toFixed(5)}Ξ</strong><small>per 1K CR · {data.floors.statementEth ? `${eth(data.floors.statementEth)}Ξ floor benchmark` : ''}</small></div>
                   </div>
-                  <div className="cr-table-wrap"><table><thead><tr><th>Statement</th><th>Format / stage</th><th>CREDITS / layers</th><th>Credit Rating</th><th>Rating-implied estimate</th><th>Approx. USD</th><th>Asset</th></tr></thead><tbody>{data.statements.map((statement) => <tr key={statement.tokenId}><td>#{statement.tokenId}</td><td>{statement.format}<small>{statement.stage}</small></td><td>{statement.credits} / {statement.layers}</td><td>{cr(statement.creditRating)}</td><td>{eth(statement.estimateEth)}Ξ</td><td>{money(statement.estimateUsd)}</td><td><a href={statement.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></td></tr>)}</tbody></table></div>
-                  <div className="cr-card-list">{data.statements.map((statement) => <article key={statement.tokenId}><header><strong>STATEMENT #{statement.tokenId}</strong><span>{statement.format} · {statement.stage}</span></header><dl><div><dt>CREDITS / layers</dt><dd>{statement.credits} / {statement.layers}</dd></div><div><dt>Credit Rating</dt><dd>{cr(statement.creditRating)}</dd></div><div><dt>Estimate</dt><dd>{eth(statement.estimateEth)}Ξ</dd></div><div><dt>Approx. USD</dt><dd>{money(statement.estimateUsd)}</dd></div></dl><a href={statement.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></article>)}</div>
+                  <div className="cr-table-wrap"><table><thead><tr><th>Statement</th><th>Format / stage</th><th>CREDITS / layers</th><th>Credit Rating</th><th>CR / floor estimate</th><th>Approx. USD</th><th>Asset</th></tr></thead><tbody>{data.statements.map((statement) => <tr key={statement.tokenId}><td>#{statement.tokenId}</td><td>{statement.format}<small>{statement.stage}</small></td><td>{statement.credits} / {statement.layers}</td><td>{cr(statement.creditRating)}</td><td>{eth(statement.estimateEth)}Ξ{statement.floorApplied && <small className="cr-floor-note">Floor minimum · CR model {eth(statement.crEstimateEth)}Ξ</small>}</td><td>{money(statement.estimateUsd)}</td><td><a href={statement.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></td></tr>)}</tbody></table></div>
+                  <div className="cr-card-list">{data.statements.map((statement) => <article key={statement.tokenId}><header><strong>STATEMENT #{statement.tokenId}</strong><span>{statement.format} · {statement.stage}</span></header><dl><div><dt>CREDITS / layers</dt><dd>{statement.credits} / {statement.layers}</dd></div><div><dt>Credit Rating</dt><dd>{cr(statement.creditRating)}</dd></div><div><dt>Estimate</dt><dd>{eth(statement.estimateEth)}Ξ{statement.floorApplied && <small className="cr-floor-note">Floor minimum · CR model {eth(statement.crEstimateEth)}Ξ</small>}</dd></div><div><dt>Approx. USD</dt><dd>{money(statement.estimateUsd)}</dd></div></dl><a href={statement.url} target="_blank" rel="noopener noreferrer">OpenSea ↗</a></article>)}</div>
                 </section>
               )}
             </>
@@ -228,7 +236,7 @@ export default function WalletAppraiser() {
 
           <div className="cr-appraisal-notes">
             <p><strong>How this appraiser reads value.</strong> {data.methodology}</p>
-            <p>Loose benchmark: {data.benchmark.lowEthPer1kCr.toFixed(5)}–{data.benchmark.highEthPer1kCr.toFixed(5)}Ξ per 1K CR · {data.market.verifiedCount} current asks verified from {data.market.candidatesChecked} candidates · Confidence: {data.market.confidence}</p>
+            <p>Loose benchmark: {data.benchmark.lowEthPer1kCr.toFixed(5)}–{data.benchmark.highEthPer1kCr.toFixed(5)}Ξ per 1K CR · verified floor benchmark {eth(data.floors.creditEth)}Ξ · {data.market.verifiedCount} current asks verified from {data.market.candidatesChecked} candidates · Confidence: {data.market.confidence}</p>
             {data.statementBenchmark && data.statementMarket && <p>Statement benchmark: {data.statementBenchmark.lowEthPer1kCr.toFixed(5)}–{data.statementBenchmark.highEthPer1kCr.toFixed(5)}Ξ per 1K CR · {data.statementMarket.listingCount} current listings checked · {data.statementMarket.sampleCount} used · Confidence: {data.statementMarket.confidence}</p>}
             <p>Approximate USD uses {data.market.ethUsdSource}. Completed-sale calibration is not included.</p>
           </div>

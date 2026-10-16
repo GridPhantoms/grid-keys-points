@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic';
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
 const OFFICIAL_WALLET_URL = 'https://jack.art/credits/rating/api/wallet';
 const OPEN_SEA_BASE = 'https://api.opensea.io/api/v2';
-const USER_AGENT = 'GridPhantomsCreditsAppraiser/1.1';
+const USER_AGENT = 'GridPhantomsCreditsAppraiser/1.2';
 const MAX_WALLET_INPUT = 128;
 const MAX_OWNED_CREDITS = 1_000;
 const MAX_DISPLAYED_CREDITS = 100;
@@ -36,6 +36,7 @@ const MAX_OWNER_PAGES = 10;
 const OWNER_PAGE_DELAY_MS = 1_100;
 const BENCHMARK_CANDIDATES = 125;
 const BENCHMARK_BATCH_SIZE = 25;
+const FLOOR_CANDIDATES = 25;
 const RESPONSE_HEADERS = {
   'Cache-Control': 'private, no-store, max-age=0',
   'Referrer-Policy': 'no-referrer',
@@ -220,6 +221,22 @@ async function revalidateBenchmarkBatch(candidates: Array<{ tokenId: number; cre
   return results.filter((item): item is VerifiedAsk => item !== null);
 }
 
+async function fetchVerifiedCreditFloor(
+  items: Parameters<typeof matchingCreditListings>[0],
+  apiKey: string,
+) {
+  const candidates = matchingCreditListings(items, {
+    minCr: 0,
+    maxEth: null,
+    sort: 'lowest-price',
+    limit: FLOOR_CANDIDATES,
+  }).slice(0, FLOOR_CANDIDATES);
+  const verified = await revalidateBenchmarkBatch(candidates, apiKey);
+  if (verified.length === 0) throw new Error('Current CREDITS floor coverage is insufficient');
+  const floor = verified.reduce((lowest, ask) => ask.priceEth < lowest.priceEth ? ask : lowest);
+  return { floorEth: floor.priceEth, floorTokenId: floor.tokenId, floorCandidatesChecked: candidates.length };
+}
+
 async function fetchBenchmark(apiKey: string, ethUsd: number) {
   const payload = await fetchJson(OFFICIAL_MARKET_URL);
   const normalized = normalizeOfficialCreditSnapshot(payload, ethUsd);
@@ -238,8 +255,10 @@ async function fetchBenchmark(apiKey: string, ethUsd: number) {
     if (asks.length >= BENCHMARK_SAMPLE_SIZE) break;
   }
   if (asks.length < BENCHMARK_MIN_SAMPLE_SIZE) throw new Error('Current appraisal benchmark coverage is insufficient');
+  const floor = await fetchVerifiedCreditFloor(normalized.items, apiKey);
   return {
     benchmark: buildAskBenchmark(asks),
+    ...floor,
     sourceUpdatedAt: normalized.updatedAt,
     candidatesChecked,
     verifiedCount: asks.length,
@@ -310,6 +329,7 @@ async function fetchStatementBenchmark(apiKey: string) {
   });
   return {
     benchmark: buildAskBenchmark(asks),
+    floorEth: Math.min(...listings.map((listing) => listing.priceEth)),
     listingCheckedAt: new Date().toISOString(),
     listingCount: listings.length,
     pages,
@@ -346,6 +366,8 @@ export async function POST(request: Request) {
       statements,
       benchmark: market.benchmark,
       statementBenchmark: statementMarket?.benchmark,
+      creditFloorEth: market.floorEth,
+      statementFloorEth: statementMarket?.floorEth,
       ethUsd: ethUsdQuote.price,
       capturedAt,
     });
@@ -371,6 +393,9 @@ export async function POST(request: Request) {
       market: {
         source: 'Official CREDITS market snapshot + direct OpenSea listing verification',
         sourceUpdatedAt: market.sourceUpdatedAt,
+        floorEth: market.floorEth,
+        floorTokenId: market.floorTokenId,
+        floorCandidatesChecked: market.floorCandidatesChecked,
         candidatesChecked: market.candidatesChecked,
         verifiedCount: market.verifiedCount,
         confidence: market.verifiedCount >= BENCHMARK_SAMPLE_SIZE ? 'moderate' : 'limited',

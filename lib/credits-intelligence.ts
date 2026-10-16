@@ -244,18 +244,31 @@ export function summarizeStatementSupply(metadata: StatementMetadata[], original
   };
 }
 
+export function selectMostCrEfficientStatement<T extends { tokenId: number; priceEth: number; creditRating: number }>(candidates: T[]) {
+  if (candidates.length === 0) throw new Error('No verified Statement value candidates are available');
+  const ranked = candidates.map((candidate) => {
+    const values = [candidate.tokenId, candidate.priceEth, candidate.creditRating];
+    if (!Number.isInteger(candidate.tokenId) || candidate.tokenId < 0
+      || values.slice(1).some((value) => !Number.isFinite(value) || value <= 0)) {
+      throw new Error('Statement value candidate is invalid');
+    }
+    return { ...candidate, ethPer1kCr: candidate.priceEth / candidate.creditRating * 1_000 };
+  }).sort((a, b) => a.ethPer1kCr - b.ethPer1kCr || a.priceEth - b.priceEth || a.tokenId - b.tokenId);
+  return ranked[0];
+}
+
 export function compareBuildAndBuyValue(input: {
   looseBasketEth: number;
   looseBasketCr: number;
-  statementFloorEth: number;
-  statementFloorCr: number;
+  statementValueEth: number;
+  statementValueCr: number;
 }) {
-  const values = [input.looseBasketEth, input.looseBasketCr, input.statementFloorEth, input.statementFloorCr];
+  const values = [input.looseBasketEth, input.looseBasketCr, input.statementValueEth, input.statementValueCr];
   if (values.some((value) => !Number.isFinite(value) || value <= 0)) {
     throw new Error('Build versus buy inputs must be positive');
   }
   const looseEthPer1kCr = input.looseBasketEth / input.looseBasketCr * 1_000;
-  const statementEthPer1kCr = input.statementFloorEth / input.statementFloorCr * 1_000;
+  const statementEthPer1kCr = input.statementValueEth / input.statementValueCr * 1_000;
   const cheaperMarket = looseEthPer1kCr <= statementEthPer1kCr ? 'loose' as const : 'statement' as const;
   const savingsPct = cheaperMarket === 'loose'
     ? (1 - looseEthPer1kCr / statementEthPer1kCr) * 100

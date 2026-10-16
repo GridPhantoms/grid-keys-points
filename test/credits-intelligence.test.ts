@@ -10,6 +10,7 @@ import {
   parseValueQuery,
   reconcileFreshCreditListings,
   rankStatementListings,
+  selectMostCrEfficientStatement,
   summarizeStatementSupply,
 } from '../lib/credits-intelligence.ts';
 import { createEthUsdQuoteResolver } from '../lib/eth-usd.ts';
@@ -288,13 +289,24 @@ test('build versus buy compares normalized ETH per 1K CR rather than headline co
   const comparison = compareBuildAndBuyValue({
     looseBasketEth: 0.620937129,
     looseBasketCr: 23863.7528,
-    statementFloorEth: 0.709,
-    statementFloorCr: 28581,
+    statementValueEth: 0.709,
+    statementValueCr: 28581,
   });
   assert.equal(comparison.cheaperMarket, 'statement');
   assert.ok(Math.abs(comparison.looseEthPer1kCr - 0.0260200956) < 1e-10);
   assert.ok(Math.abs(comparison.statementEthPer1kCr - 0.0248066898) < 1e-10);
   assert.ok(Math.abs(comparison.savingsPct - 4.66334117) < 1e-8);
+});
+
+test('Statement comparison selects the lowest ETH per 1K CR rather than the lowest total ask', () => {
+  const selected = selectMostCrEfficientStatement([
+    { tokenId: 241, priceEth: 1.45, creditRating: 7_664 },
+    { tokenId: 199, priceEth: 1.545, creditRating: 25_010 },
+    { tokenId: 300, priceEth: 1.6, creditRating: 10_000 },
+  ]);
+
+  assert.equal(selected.tokenId, 199);
+  assert.ok(Math.abs(selected.ethPer1kCr - 0.0617752899) < 1e-10);
 });
 
 test('scheduled CREDITS protocol artifacts reconcile identity, supply, and Statement metadata', async () => {
@@ -344,6 +356,9 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /CREDITS Burn Progress/);
   assert.match(overview, /Burned\/In Statements/);
   assert.match(overview, /Where does 1,000 CR cost less\?/);
+  assert.match(overview, /most CR-efficient verified base Statement/);
+  assert.match(overviewLoader, /selectMostCrEfficientStatement/);
+  assert.match(overviewLoader, /details\.stage === 'BASE'/);
   assert.match(overview, /completed loose-CREDIT snapshot and a separate check of Statement listings/);
   assert.match(overview, /The percentage compares cost per 1K CR—not total purchase price/);
   assert.match(overview, /Listings were checked separately, so this is not an executable quote/);

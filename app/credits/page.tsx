@@ -57,13 +57,16 @@ export default async function CreditsOverviewPage() {
   const statementFloor = live?.statementAvailable && live.statementFloorEth && live.statementFloorCr && live.statementFloorTokenId
     ? { eth: live.statementFloorEth, cr: live.statementFloorCr, tokenId: live.statementFloorTokenId }
     : null;
+  const statementValue = live?.statementAvailable && live.statementValueEth && live.statementValueCr && live.statementValueTokenId
+    ? { eth: live.statementValueEth, cr: live.statementValueCr, tokenId: live.statementValueTokenId }
+    : null;
   const basket = live ? { credits: live.looseBasketCredits, eth: live.looseBasketEth, cr: live.looseBasketCr } : null;
   const listedPct = market ? market.looseListings / supply.loose * 100 : null;
-  const comparison = basket && statementFloor ? compareBuildAndBuyValue({
+  const comparison = basket && statementValue ? compareBuildAndBuyValue({
     looseBasketEth: basket.eth,
     looseBasketCr: basket.cr,
-    statementFloorEth: statementFloor.eth,
-    statementFloorCr: statementFloor.cr,
+    statementValueEth: statementValue.eth,
+    statementValueCr: statementValue.cr,
   }) : null;
   const cheaperLabel = comparison?.cheaperMarket === 'loose' ? 'Loose basket' : 'Statement';
 
@@ -129,7 +132,7 @@ export default async function CreditsOverviewPage() {
         </div>
 
         <section className="cr-section cr-build" aria-labelledby="build-title">
-          {basket && statementFloor && comparison ? <><div><p className="cr-kicker">80-CREDIT floor sweep vs. Statement</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p className="cr-build-copy">Using the latest completed loose-CREDIT snapshot and a separate check of Statement listings, the {basket.credits} lowest-priced loose listings totaled {eth.format(basket.eth)} ETH and carried {decimal.format(basket.cr)} CR—or {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR.</p><p className="cr-build-copy">The lowest-priced verified base Statement, #{statementFloor.tokenId}, was listed at {eth.format(statementFloor.eth)} ETH and carried {integer.format(statementFloor.cr)} CR—or {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR. The percentage compares cost per 1K CR—not total purchase price. Listings were checked separately, so this is not an executable quote; reverify each in Value Finder before buying.</p></div><strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% lower cost per 1K CR</small></strong></> : <div><p className="cr-kicker">80-CREDIT floor sweep vs. Statement</p><h2 id="build-title">Comparison temporarily unavailable</h2><p className="cr-build-copy">The comparison is hidden until loose listings, Statement orders, daily Statement metadata, and ETH/USD can all be verified together.</p></div>}
+          {basket && statementValue && comparison ? <><div><p className="cr-kicker">80-CREDIT floor sweep vs. best-value base Statement</p><h2 id="build-title">Where does 1,000 CR cost less?</h2><p className="cr-build-copy">Using the latest completed loose-CREDIT snapshot and a separate check of Statement listings, the {basket.credits} lowest-priced loose listings totaled {eth.format(basket.eth)} ETH and carried {decimal.format(basket.cr)} CR—or {ethPerCr.format(comparison.looseEthPer1kCr)} ETH per 1K CR.</p><p className="cr-build-copy">The most CR-efficient verified base Statement, #{statementValue.tokenId}, was listed at {eth.format(statementValue.eth)} ETH and carried {integer.format(statementValue.cr)} CR—or {ethPerCr.format(comparison.statementEthPer1kCr)} ETH per 1K CR. The percentage compares cost per 1K CR—not total purchase price. Listings were checked separately, so this is not an executable quote; reverify each in Value Finder before buying.</p></div><strong>{cheaperLabel}<small>{percent.format(comparison.savingsPct)}% lower cost per 1K CR</small></strong></> : <div><p className="cr-kicker">80-CREDIT floor sweep vs. best-value base Statement</p><h2 id="build-title">Comparison temporarily unavailable</h2><p className="cr-build-copy">The comparison is hidden until loose listings, Statement orders, daily Statement metadata, and ETH/USD can all be verified together.</p></div>}
         </section>
 
       </main>

@@ -1,7 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
-import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
+import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, selectMostCrEfficientStatement, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
 import { fetchEthUsdQuote } from '@/lib/eth-usd';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
@@ -31,6 +31,9 @@ export type LiveCreditsOverview = {
   statementFloorEth: number | null;
   statementFloorCr: number | null;
   statementFloorTokenId: number | null;
+  statementValueEth: number | null;
+  statementValueCr: number | null;
+  statementValueTokenId: number | null;
   looseBasketCredits: number;
   looseBasketEth: number;
   looseBasketCr: number;
@@ -171,6 +174,9 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   let statementFloorEth: number | null = null;
   let statementFloorCr: number | null = null;
   let statementFloorTokenId: number | null = null;
+  let statementValueEth: number | null = null;
+  let statementValueCr: number | null = null;
+  let statementValueTokenId: number | null = null;
   let protocolAvailable = false;
   let protocolCheckedAt: string | null = null;
   let protocolSupply: ReturnType<typeof summarizeStatementSupply> | null = null;
@@ -215,11 +221,19 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     }
     const floor = eligibleOrders.sort((a, b) => a.priceEth - b.priceEth || a.tokenId - b.tokenId)[0];
     if (!floor || listedIds.size === 0) throw new Error('No verified current Statement floor is available');
+    const bestValue = selectMostCrEfficientStatement(eligibleOrders.map((order) => ({
+      tokenId: order.tokenId,
+      priceEth: order.priceEth,
+      creditRating: order.metadata.creditRating,
+    })));
     statementAvailable = true;
     statementReason = null;
     statementFloorEth = floor.priceEth;
     statementFloorCr = floor.metadata.creditRating;
     statementFloorTokenId = floor.tokenId;
+    statementValueEth = bestValue.priceEth;
+    statementValueCr = bestValue.creditRating;
+    statementValueTokenId = bestValue.tokenId;
   } catch {
     statementAvailable = false;
   }
@@ -240,6 +254,9 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     statementFloorEth,
     statementFloorCr,
     statementFloorTokenId,
+    statementValueEth,
+    statementValueCr,
+    statementValueTokenId,
     looseBasketCredits: 80,
     looseBasketEth: looseBasket.reduce((sum, item) => sum + item.priceEth, 0),
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),

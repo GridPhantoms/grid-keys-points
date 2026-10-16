@@ -181,9 +181,12 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /If Community Staking Incentives were at maximum participation from here forward/i);
   assert.doesNotMatch(dashboard, /historical reference scenario begins|historical all-pool model ceiling/i);
   assert.match(dashboard, /contract does not execute automatically/i);
-  assert.match(dashboard, /Nearly five years after its 2021 origin, BYTES remains embedded in the Neo Tokyo economy/i);
+  assert.match(dashboard, /More than five years after its 2021 origin, BYTES remains embedded in the Neo Tokyo economy/i);
   assert.match(dashboard, /crossChainUniqueHolderCount/);
-  assert.match(dashboard, /more than two-thirds of S1 Citizens and nearly half of S2 Outer Citizens are staked/i);
+  assert.match(dashboard, /At the latest observed block/i);
+  assert.match(dashboard, /of original S1 collection supply/i);
+  assert.match(dashboard, /of original S2 collection supply/i);
+  assert.doesNotMatch(dashboard, /more than two-thirds of S1 Citizens and nearly half of S2 Outer Citizens are staked/i);
   assert.match(dashboard, /Distribution is another strength/);
   assert.match(dashboard, /100% allocated to the community/);
   assert.match(dashboard, /no team allocation or VC unlocks/);
@@ -199,8 +202,9 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /projectedIssuanceShare/);
   assert.match(dashboard, /Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted/i);
   assert.match(dashboard, /<strong>so the current stream creates less new inventory for the market to absorb\.<\/strong>/i);
-  assert.match(dashboard, /CoinMarketCap&apos;s ranked market snapshot places the <strong>\$1 million market-cap line around rank 1,917<\/strong>/i);
-  assert.match(dashboard, /seven figures clears much of crypto&apos;s ranked long tail/i);
+  assert.match(dashboard, /The Terminal&apos;s August 23, 2026 CoinMarketCap snapshot placed the <strong>\$1 million market-cap line around rank 1,917<\/strong>/i);
+  assert.match(dashboard, /seven figures cleared much of crypto&apos;s ranked long tail/i);
+  assert.match(dashboard, /More than five years after BYTES began/i);
   assert.match(dashboard, /first-party onchain market cap still sits around/i);
   assert.match(dashboard, /showed \$1\.00 million through rank 1,917 and \$993,544\.79 at rank 1,918 when checked on August 23, 2026/i);
   assert.match(dashboard, /much larger tracked-token count includes assets without ranked market caps, so it is not used as the denominator/i);

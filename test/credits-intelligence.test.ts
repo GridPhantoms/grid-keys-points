@@ -344,8 +344,10 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /CREDITS Burn Progress/);
   assert.match(overview, /Burned\/In Statements/);
   assert.match(overview, /Where does 1,000 CR cost less\?/);
-  assert.match(overview, /sweeping the \{basket\.credits\} lowest-priced loose CREDITS found on the floor/);
-  assert.match(overview, /snapshot comparison, not a live executable quote/);
+  assert.match(overview, /completed loose-CREDIT snapshot and a separate check of Statement listings/);
+  assert.match(overview, /The percentage compares cost per 1K CR—not total purchase price/);
+  assert.match(overview, /Listings were checked separately, so this is not an executable quote/);
+  assert.match(overview, /lower cost per 1K CR/);
   assert.match(overview, /Find more Credit Rating for less/);
   assert.match(overview, /View market stats/);
   assert.match(overview, /Market intelligence provided by GridPhantoms/);

@@ -244,6 +244,27 @@ export function summarizeStatementSupply(metadata: StatementMetadata[], original
   };
 }
 
+export function summarizeLooseValueHunt<T extends { tokenId: number; priceEth: number; creditRating: number; ethPer1kCr: number }>(candidates: T[], sampleSize = 5) {
+  if (!Number.isInteger(sampleSize) || sampleSize < 1 || candidates.length < sampleSize) {
+    throw new Error('Loose value-hunt sample is incomplete');
+  }
+  const ranked = candidates.map((candidate) => {
+    const values = [candidate.priceEth, candidate.creditRating, candidate.ethPer1kCr];
+    if (!Number.isInteger(candidate.tokenId) || candidate.tokenId < 0
+      || values.some((value) => !Number.isFinite(value) || value <= 0)) {
+      throw new Error('Loose value-hunt candidate is invalid');
+    }
+    return candidate;
+  }).sort((a, b) => a.ethPer1kCr - b.ethPer1kCr || a.priceEth - b.priceEth || a.tokenId - b.tokenId);
+  const sample = ranked.slice(0, sampleSize);
+  return {
+    best: sample[0],
+    rangeLowEthPer1kCr: sample[0].ethPer1kCr,
+    rangeHighEthPer1kCr: sample[sample.length - 1].ethPer1kCr,
+    sampleSize,
+  };
+}
+
 export function selectMostCrEfficientStatement<T extends { tokenId: number; priceEth: number; creditRating: number }>(candidates: T[]) {
   if (candidates.length === 0) throw new Error('No verified Statement value candidates are available');
   const ranked = candidates.map((candidate) => {

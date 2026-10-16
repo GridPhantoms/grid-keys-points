@@ -1,7 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import statementData from '@/data/credits-statements.json';
-import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, selectMostCrEfficientStatement, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
+import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, selectMostCrEfficientStatement, summarizeLooseValueHunt, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
 import { fetchEthUsdQuote } from '@/lib/eth-usd';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
@@ -37,6 +37,15 @@ export type LiveCreditsOverview = {
   looseBasketCredits: number;
   looseBasketEth: number;
   looseBasketCr: number;
+  looseValueHunt: {
+    bestTokenId: number;
+    bestPriceEth: number;
+    bestCr: number;
+    bestEthPer1kCr: number;
+    rangeLowEthPer1kCr: number;
+    rangeHighEthPer1kCr: number;
+    sampleSize: number;
+  };
   protocolAvailable: boolean;
   protocolCheckedAt: string | null;
   protocolSupply: ReturnType<typeof summarizeStatementSupply> | null;
@@ -165,6 +174,7 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   if (looseByPrice.length < 80) throw new Error('The executable 80-CREDIT basket is unavailable');
   const looseFloorEth = looseByPrice[0].priceEth;
   const looseBasket = looseByPrice.slice(0, 80);
+  const looseValue = summarizeLooseValueHunt(normalized.items, 5);
 
   const metadata = statementData.items as StatementMetadata[];
   const metadataById = new Map(metadata.map((item) => [item.tokenId, item]));
@@ -260,6 +270,15 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     looseBasketCredits: 80,
     looseBasketEth: looseBasket.reduce((sum, item) => sum + item.priceEth, 0),
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),
+    looseValueHunt: {
+      bestTokenId: looseValue.best.tokenId,
+      bestPriceEth: looseValue.best.priceEth,
+      bestCr: looseValue.best.creditRating,
+      bestEthPer1kCr: looseValue.best.ethPer1kCr,
+      rangeLowEthPer1kCr: looseValue.rangeLowEthPer1kCr,
+      rangeHighEthPer1kCr: looseValue.rangeHighEthPer1kCr,
+      sampleSize: looseValue.sampleSize,
+    },
     protocolAvailable,
     protocolCheckedAt,
     protocolSupply,

@@ -11,6 +11,7 @@ import {
   reconcileFreshCreditListings,
   rankStatementListings,
   selectMostCrEfficientStatement,
+  summarizeLooseValueHunt,
   summarizeStatementSupply,
 } from '../lib/credits-intelligence.ts';
 import { createEthUsdQuoteResolver } from '../lib/eth-usd.ts';
@@ -309,6 +310,22 @@ test('Statement comparison selects the lowest ETH per 1K CR rather than the lowe
   assert.ok(Math.abs(selected.ethPer1kCr - 0.0617752899) < 1e-10);
 });
 
+test('patient loose-CREDIT route reports the best listing and top-five value range', () => {
+  const summary = summarizeLooseValueHunt([
+    { tokenId: 1, priceEth: 0.02, creditRating: 800, ethPer1kCr: 0.025 },
+    { tokenId: 2, priceEth: 0.03, creditRating: 1_000, ethPer1kCr: 0.03 },
+    { tokenId: 3, priceEth: 0.04, creditRating: 1_000, ethPer1kCr: 0.04 },
+    { tokenId: 4, priceEth: 0.05, creditRating: 1_000, ethPer1kCr: 0.05 },
+    { tokenId: 5, priceEth: 0.06, creditRating: 1_000, ethPer1kCr: 0.06 },
+    { tokenId: 6, priceEth: 0.01, creditRating: 100, ethPer1kCr: 0.1 },
+  ], 5);
+
+  assert.equal(summary.best.tokenId, 1);
+  assert.equal(summary.best.priceEth, 0.02);
+  assert.equal(summary.rangeLowEthPer1kCr, 0.025);
+  assert.equal(summary.rangeHighEthPer1kCr, 0.06);
+});
+
 test('scheduled CREDITS protocol artifacts reconcile identity, supply, and Statement metadata', async () => {
   const [overview, statements] = await Promise.all([
     readFile(new URL('../data/credits-overview.json', import.meta.url), 'utf8').then(JSON.parse),
@@ -355,7 +372,14 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(overview, /Rating coverage/i);
   assert.match(overview, /CREDITS Burn Progress/);
   assert.match(overview, /Burned\/In Statements/);
-  assert.match(overview, /Where does 1,000 CR cost less\?/);
+  assert.match(overview, /Two immediate 80-CREDIT routes/);
+  assert.match(overview, /Floor sweep or ready-made Statement\?/);
+  assert.match(overview, /A patient buyer may find better CR efficiency by cherry-picking individual loose CREDITS over time/);
+  assert.match(overview, /Cherry-picked loose CREDITS/);
+  assert.match(overview, /Hunt for stronger CR value one piece at a time/);
+  assert.match(overview, /Best loose snapshot candidate/);
+  assert.match(overview, /\/credits\/value\?sort=best-value/);
+  assert.match(overviewLoader, /summarizeLooseValueHunt\(normalized\.items, 5\)/);
   assert.match(overview, /most CR-efficient verified base Statement/);
   assert.match(overviewLoader, /selectMostCrEfficientStatement/);
   assert.match(overviewLoader, /details\.stage === 'BASE'/);

@@ -94,6 +94,7 @@ export default async function CreditsOverviewPage() {
     <>
       <CreditsHeader active="overview" />
       <div className="cr-creditline"><Link href="/">Market intelligence provided by GridPhantoms <span aria-hidden="true">↗</span></Link></div>
+      <div className="cr-art-signal" aria-hidden="true" />
       <main className="cr-main cr-overview-main">
         <section className="cr-hero cr-overview-hero">
           <div>

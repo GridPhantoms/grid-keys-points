@@ -386,6 +386,9 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(home, /\/credits/);
   assert.doesNotMatch(overview, /why it surfaced/i);
   assert.doesNotMatch(overview, /Rating coverage/i);
+  assert.match(overview, /<div className="cr-art-signal" aria-hidden="true" \/>/);
+  assert.match(css, /yellow-pattern-strip-desktop\.svg/);
+  assert.match(css, /yellow-pattern-strip-mobile\.svg/);
   assert.match(overview, /CREDITS to Statements to BALANCE value path/);
   assert.match(overview, /<li><span>\$BALANCE<\/span><small>Announced 1:1 · Pre-TGE<\/small><\/li>/);
   assert.doesNotMatch(overview, /<span>Potential \$BALANCE<\/span>/);
@@ -463,4 +466,25 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(css, /\.cr-nav a\{[^}]*text-transform:uppercase/);
   assert.match(css, /\.cr-stat-grid \.cr-support-stat\{[^}]*font-size:14px/);
   assert.match(css, /\.cr-statement-details dd small\{[^}]*font-size:14px/);
+});
+
+test('Overview art signal uses transparent decoded yellow-only CREDITS patterns', async () => {
+  const [manifestRaw, desktop, mobile, generator] = await Promise.all([
+    readFile(new URL('../data/credits-yellow-patterns.json', import.meta.url), 'utf8'),
+    readFile(new URL('../public/images/credits/yellow-pattern-strip-desktop.svg', import.meta.url), 'utf8'),
+    readFile(new URL('../public/images/credits/yellow-pattern-strip-mobile.svg', import.meta.url), 'utf8'),
+    readFile(new URL('../scripts/generate-credits-yellow-pattern-strip.mjs', import.meta.url), 'utf8'),
+  ]);
+  const manifest = JSON.parse(manifestRaw);
+  assert.equal(manifest.desktopCount, 18);
+  assert.equal(manifest.mobileCount, 7);
+  assert.equal(manifest.items.length, manifest.desktopCount);
+  assert.ok(manifest.items.every((item: { colors: string; mask: string }) => item.colors === 'Y' && /^[0-9a-f]+$/i.test(item.mask)));
+  assert.equal((desktop.match(/data-token-id=/g) ?? []).length, manifest.desktopCount);
+  assert.equal((mobile.match(/data-token-id=/g) ?? []).length, manifest.mobileCount);
+  assert.match(desktop, /fill="#ffd100"/);
+  assert.match(mobile, /fill="#ffd100"/);
+  assert.doesNotMatch(desktop, /white|#fff/i);
+  assert.doesNotMatch(mobile, /white|#fff/i);
+  assert.match(generator, /manifest\.items\.slice\(0, manifest\.mobileCount\)/);
 });

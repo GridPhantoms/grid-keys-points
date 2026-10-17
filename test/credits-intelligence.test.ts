@@ -389,6 +389,8 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(overview, /<div className="cr-art-signal" aria-hidden="true" \/>/);
   assert.match(css, /yellow-pattern-strip-desktop\.svg/);
   assert.match(css, /yellow-pattern-strip-mobile\.svg/);
+  assert.match(css, /--cr-accent:#ffd100/);
+  assert.doesNotMatch(css, /#d8ff58|216,255,88/i);
   assert.match(overview, /CREDITS to Statements to BALANCE value path/);
   assert.match(overview, /<li><span>\$BALANCE<\/span><small>Announced 1:1 · Pre-TGE<\/small><\/li>/);
   assert.doesNotMatch(overview, /<span>Potential \$BALANCE<\/span>/);

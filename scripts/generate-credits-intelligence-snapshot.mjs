@@ -49,14 +49,32 @@ requireValue(verification.eth_usd_candle_start_utc, 'Verified archived ETH/USD c
 const original = Number(verification.ownership.reconciled_original_supply);
 const loose = Number(verification.ownership.unique_live_tokens);
 const burned = Number(verification.ownership.protocol_burned_tokens);
-const active = Number(verification.statements.active);
+const active = Number(live.statements.active);
+const listed = Number(live.statements.listed);
+const totalUnderlyingCredits = Number(live.statements.total_underlying_credits);
+const stageCounts = live.statements.stage_counts;
 requireValue(original === 122154 && loose + burned === original, 'Supply reconciliation failed');
 requireValue(ownership.unique_live_tokens === loose && ownership.protocol_burned_tokens === burned, 'Ownership export mismatch');
 requireValue(live.credits.loose_live_supply === loose && live.credits.burned_into_active_statements === burned, 'Live protocol export mismatch');
+requireValue(Number.isInteger(active) && active >= 0, 'Live active Statement count is invalid');
+requireValue(Number.isInteger(listed) && listed >= 0, 'Live listed Statement count is invalid');
+requireValue(Number.isInteger(totalUnderlyingCredits) && totalUnderlyingCredits >= 0, 'Live underlying CREDIT count is invalid');
+requireValue(stageCounts && typeof stageCounts === 'object' && !Array.isArray(stageCounts), 'Live Statement stage counts are missing');
 requireValue(Array.isArray(live.statements.all_active) && live.statements.all_active.length === active, 'Active Statement coverage mismatch');
-requireValue(live.statements.rating_value_listed.length === verification.statements.listed, 'Statement listing count mismatch');
+requireValue(Array.isArray(live.statements.rating_value_listed) && live.statements.rating_value_listed.length === listed, 'Statement listing count mismatch');
 requireValue(market.unique_listed_tokens === verification.market.unique_listed_tokens, 'Market listing count mismatch');
 requireValue(market.rating_listing_coverage_count === market.unique_listed_tokens, 'Archived market rating coverage is incomplete');
+
+// Older verification manifests duplicated the Statement summary. Newer report
+// manifests keep the canonical protocol export in live-snapshot.json. When the
+// duplicate block exists, retain it as an additional cross-check rather than a
+// required schema dependency.
+if (verification.statements !== undefined) {
+  requireValue(Number(verification.statements.active) === active, 'Verification/live active Statement mismatch');
+  requireValue(Number(verification.statements.listed) === listed, 'Verification/live listed Statement mismatch');
+  requireValue(Number(verification.statements.credits_burned_into_statements) === totalUnderlyingCredits, 'Verification/live underlying CREDIT mismatch');
+  requireValue(canonical(verification.statements.stage_counts) === canonical(stageCounts), 'Verification/live Statement stage-count mismatch');
+}
 
 const statementItems = live.statements.all_active.map((item) => ({
   tokenId: Number(item.token_id),
@@ -94,9 +112,9 @@ const overviewBase = {
   supply: { original, loose, burned, burnedPct: Number(((burned / original) * 100).toFixed(4)) },
   statements: {
     active,
-    listed: Number(verification.statements.listed),
-    totalUnderlyingCredits: Number(verification.statements.credits_burned_into_statements),
-    stageCounts: verification.statements.stage_counts,
+    listed,
+    totalUnderlyingCredits,
+    stageCounts,
   },
   archivedReferences: {
     marketAsOf: String(market.completed_at_utc),

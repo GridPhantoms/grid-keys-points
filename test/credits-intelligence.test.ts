@@ -368,6 +368,16 @@ test('scheduled CREDITS protocol artifacts reconcile identity, supply, and State
   assert.ok(Number.isFinite(Date.parse(overview.archivedReferences.ethUsdCandleStart)));
 });
 
+test('protocol snapshot generator accepts verification manifests without a duplicated Statement block', async () => {
+  const generator = await readFile(new URL('../scripts/generate-credits-intelligence-snapshot.mjs', import.meta.url), 'utf8');
+
+  assert.match(generator, /const active = Number\(live\.statements\.active\)/);
+  assert.match(generator, /const listed = Number\(live\.statements\.listed\)/);
+  assert.match(generator, /const totalUnderlyingCredits = Number\(live\.statements\.total_underlying_credits\)/);
+  assert.match(generator, /if \(verification\.statements !== undefined\)/);
+  assert.doesNotMatch(generator, /const active = Number\(verification\.statements\.active\)/);
+});
+
 test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async () => {
   const [nav, home, overview, overviewLoader, valueApi, ethUsdSource, valuePage, finder, css, overviewOg, valueOg] = await Promise.all([
     readFile(new URL('../app/components/SiteNav.tsx', import.meta.url), 'utf8'),

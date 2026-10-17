@@ -100,9 +100,11 @@ export default async function CreditsOverviewPage() {
             <p className="cr-kicker">Collector market view</p>
             <h1>Find more Credit Rating for less.</h1>
             <p className="cr-lede">Compare verified asks across loose CREDITS and Statements, then choose the route that fits your goal.</p>
-            <div className="cr-value-path" aria-label="CREDITS value path">
-              <span>CREDITS</span><i aria-hidden="true">→</i><span>STATEMENTS</span><i aria-hidden="true">→</i><span>Potential $BALANCE</span>
-            </div>
+            <ol className="cr-value-path" aria-label="CREDITS to Statements to BALANCE value path">
+              <li><span>CREDITS</span><small>Loose pieces</small></li>
+              <li><span>STATEMENTS</span><small>Packaged Credit Rating</small></li>
+              <li><span>$BALANCE</span><small>Announced 1:1 · Pre-TGE</small></li>
+            </ol>
             <p className="cr-path-note">Credit Rating is the common value layer across all three.</p>
             <div className="cr-hero-actions">
               <Link href="/credits/value" className="cr-primary">Open Value Finder <span aria-hidden="true">→</span></Link>

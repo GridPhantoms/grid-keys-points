@@ -386,8 +386,9 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(home, /\/credits/);
   assert.doesNotMatch(overview, /why it surfaced/i);
   assert.doesNotMatch(overview, /Rating coverage/i);
-  assert.match(overview, /CREDITS → STATEMENTS/);
-  assert.match(overview, /Potential \$BALANCE/);
+  assert.match(overview, /CREDITS to Statements to BALANCE value path/);
+  assert.match(overview, /<li><span>\$BALANCE<\/span><small>Announced 1:1 · Pre-TGE<\/small><\/li>/);
+  assert.doesNotMatch(overview, /<span>Potential \$BALANCE<\/span>/);
   assert.match(overview, /Today&apos;s CR benchmark/);
   assert.match(overview, /Estimated \$BALANCE FDV/);
   assert.match(overview, /not a live token price or market cap/);

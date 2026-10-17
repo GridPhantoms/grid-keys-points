@@ -228,6 +228,12 @@ export function summarizeStatementSupply(metadata: StatementMetadata[], original
     }
     return sum + item.credits;
   }, 0);
+  const totalCreditRating = metadata.reduce((sum, item) => {
+    if (!Number.isFinite(item.creditRating) || item.creditRating <= 0) {
+      throw new Error('Statement Credit Rating metadata is invalid');
+    }
+    return sum + item.creditRating;
+  }, 0);
   if (burned > originalSupply) throw new Error('Statement supply exceeds original CREDITS supply');
   const stageCounts = { BASE: 0, LAYERED: 0, INVERTED: 0 };
   for (const item of metadata) {
@@ -240,7 +246,32 @@ export function summarizeStatementSupply(metadata: StatementMetadata[], original
     burned,
     burnedPct: burned / originalSupply * 100,
     activeStatements: metadata.length,
+    totalCreditRating,
     stageCounts,
+  };
+}
+
+export function summarizeLooseValueBasket<T extends { tokenId: number; priceEth: number; creditRating: number; ethPer1kCr: number }>(candidates: T[], size: number) {
+  if (!Number.isInteger(size) || size < 1 || candidates.length < size) {
+    throw new Error('Loose value basket is incomplete');
+  }
+  const ranked = candidates.map((candidate) => {
+    const values = [candidate.priceEth, candidate.creditRating, candidate.ethPer1kCr];
+    if (!Number.isInteger(candidate.tokenId) || candidate.tokenId < 0
+      || values.some((value) => !Number.isFinite(value) || value <= 0)) {
+      throw new Error('Loose value basket candidate is invalid');
+    }
+    return candidate;
+  }).sort((a, b) => a.ethPer1kCr - b.ethPer1kCr || a.priceEth - b.priceEth || a.tokenId - b.tokenId);
+  const selected = ranked.slice(0, size);
+  const eth = selected.reduce((sum, item) => sum + item.priceEth, 0);
+  const cr = selected.reduce((sum, item) => sum + item.creditRating, 0);
+  return {
+    credits: size,
+    tokenIds: selected.map((item) => item.tokenId),
+    eth,
+    cr,
+    ethPer1kCr: eth / cr * 1_000,
   };
 }
 

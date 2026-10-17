@@ -1,7 +1,8 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
+import { JsonRpcProvider, id, zeroPadValue } from 'ethers';
 import statementData from '@/data/credits-statements.json';
-import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, selectMostCrEfficientStatement, summarizeLooseValueHunt, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
+import { normalizeOfficialCreditSnapshot, normalizeOpenSeaStatementMetadata, selectMostCrEfficientStatement, summarizeLooseValueBasket, summarizeLooseValueHunt, summarizeStatementSupply, type StatementMetadata } from '@/lib/credits-intelligence';
 import { fetchEthUsdQuote } from '@/lib/eth-usd';
 
 const OFFICIAL_MARKET_URL = 'https://jack.art/credits/rating/api/market-snapshot';
@@ -22,11 +23,12 @@ export type LiveCreditsOverview = {
   sourceDegraded: boolean;
   looseListings: number;
   looseFloorEth: number;
-  within25PctOfFloor: number;
+  within10PctOfFloor: number;
   ethUsd: number;
   statementAvailable: boolean;
   statementReason: string | null;
   statementOrdersCheckedAt: string | null;
+  statementListedCount: number | null;
   statementMetadataAsOf: string;
   statementFloorEth: number | null;
   statementFloorCr: number | null;
@@ -37,6 +39,10 @@ export type LiveCreditsOverview = {
   looseBasketCredits: number;
   looseBasketEth: number;
   looseBasketCr: number;
+  looseValueBasketCredits: number;
+  looseValueBasketEth: number;
+  looseValueBasketCr: number;
+  looseValueBasketEthPer1kCr: number;
   looseValueHunt: {
     bestTokenId: number;
     bestPriceEth: number;
@@ -49,6 +55,13 @@ export type LiveCreditsOverview = {
   protocolAvailable: boolean;
   protocolCheckedAt: string | null;
   protocolSupply: ReturnType<typeof summarizeStatementSupply> | null;
+  protocolFlow24h: {
+    endBlock: number;
+    asOf: string;
+    statements: number;
+    credits: number;
+    creditRating: number;
+  } | null;
 };
 
 async function fetchJson(url: string, headers: HeadersInit = {}) {
@@ -150,15 +163,56 @@ async function fetchStatementProtocolUncached() {
     if (next) seenCursors.add(next);
     cursor = next;
   } while (cursor);
+  const flow24h = await fetchStatementFlow24h(metadata).catch(() => null);
   return {
     checkedAt: new Date().toISOString(),
     supply: summarizeStatementSupply(metadata, ORIGINAL_CREDITS_SUPPLY),
+    flow24h,
+  };
+}
+
+async function fetchStatementFlow24h(metadata: StatementMetadata[]) {
+  const rpcUrl = process.env.ALCHEMY_API_KEY
+    ? `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
+    : process.env.ETHEREUM_RPC_URL;
+  if (!rpcUrl) throw new Error('Ethereum RPC is unavailable');
+  const provider = new JsonRpcProvider(rpcUrl, 1, { staticNetwork: true });
+  const chainId = await provider.send('eth_chainId', []);
+  if (chainId !== '0x1') throw new Error('Ethereum RPC chain mismatch');
+  const latest = await provider.getBlock('latest');
+  if (!latest) throw new Error('Latest Ethereum block is unavailable');
+  const cutoff = latest.timestamp - 24 * 60 * 60;
+  let low = 0;
+  let high = latest.number;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    const block = await provider.getBlock(mid);
+    if (!block) throw new Error('Ethereum block lookup failed');
+    if (block.timestamp < cutoff) low = mid + 1;
+    else high = mid;
+  }
+  const logs = await provider.getLogs({
+    address: STATEMENTS_CONTRACT,
+    fromBlock: low,
+    toBlock: latest.number,
+    topics: [id('Transfer(address,address,uint256)'), zeroPadValue('0x00', 32)],
+  });
+  const mintedIds = [...new Set(logs.map((log) => Number(BigInt(log.topics[3]))))];
+  const metadataById = new Map(metadata.map((item) => [item.tokenId, item]));
+  const minted = mintedIds.map((tokenId) => metadataById.get(tokenId));
+  if (minted.some((item) => !item)) throw new Error('Recent Statement metadata is incomplete');
+  return {
+    endBlock: latest.number,
+    asOf: new Date(latest.timestamp * 1_000).toISOString(),
+    statements: minted.length,
+    credits: minted.reduce((sum, item) => sum + item!.credits, 0),
+    creditRating: minted.reduce((sum, item) => sum + item!.creditRating, 0),
   };
 }
 
 const loadStatementProtocol = unstable_cache(
   fetchStatementProtocolUncached,
-  ['credits-statement-protocol-v1'],
+  ['credits-statement-protocol-v2'],
   { revalidate: REFRESH_SECONDS },
 );
 
@@ -174,6 +228,7 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   if (looseByPrice.length < 80) throw new Error('The executable 80-CREDIT basket is unavailable');
   const looseFloorEth = looseByPrice[0].priceEth;
   const looseBasket = looseByPrice.slice(0, 80);
+  const looseValueBasket = summarizeLooseValueBasket(normalized.items, 80);
   const looseValue = summarizeLooseValueHunt(normalized.items, 5);
 
   const metadata = statementData.items as StatementMetadata[];
@@ -181,6 +236,7 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   let statementAvailable = false;
   let statementReason: string | null = 'Current Statement orders are unavailable.';
   let statementOrdersCheckedAt: string | null = null;
+  let statementListedCount: number | null = null;
   let statementFloorEth: number | null = null;
   let statementFloorCr: number | null = null;
   let statementFloorTokenId: number | null = null;
@@ -190,12 +246,14 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
   let protocolAvailable = false;
   let protocolCheckedAt: string | null = null;
   let protocolSupply: ReturnType<typeof summarizeStatementSupply> | null = null;
+  let protocolFlow24h: LiveCreditsOverview['protocolFlow24h'] = null;
 
   try {
     const protocol = await loadStatementProtocol();
     protocolAvailable = true;
     protocolCheckedAt = protocol.checkedAt;
     protocolSupply = protocol.supply;
+    protocolFlow24h = protocol.flow24h;
   } catch {
     protocolAvailable = false;
   }
@@ -244,6 +302,7 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     statementValueEth = bestValue.priceEth;
     statementValueCr = bestValue.creditRating;
     statementValueTokenId = bestValue.tokenId;
+    statementListedCount = listedIds.size;
   } catch {
     statementAvailable = false;
   }
@@ -255,11 +314,12 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     sourceDegraded: typeof officialStatus.error === 'string' && officialStatus.error.length > 0,
     looseListings: looseByPrice.length,
     looseFloorEth,
-    within25PctOfFloor: looseByPrice.filter((item) => item.priceEth <= looseFloorEth * 1.25).length,
+    within10PctOfFloor: looseByPrice.filter((item) => item.priceEth <= looseFloorEth * 1.10).length,
     ethUsd,
     statementAvailable,
     statementReason,
     statementOrdersCheckedAt,
+    statementListedCount,
     statementMetadataAsOf: statementData.snapshotAsOf,
     statementFloorEth,
     statementFloorCr,
@@ -270,6 +330,10 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     looseBasketCredits: 80,
     looseBasketEth: looseBasket.reduce((sum, item) => sum + item.priceEth, 0),
     looseBasketCr: looseBasket.reduce((sum, item) => sum + item.creditRating, 0),
+    looseValueBasketCredits: looseValueBasket.credits,
+    looseValueBasketEth: looseValueBasket.eth,
+    looseValueBasketCr: looseValueBasket.cr,
+    looseValueBasketEthPer1kCr: looseValueBasket.ethPer1kCr,
     looseValueHunt: {
       bestTokenId: looseValue.best.tokenId,
       bestPriceEth: looseValue.best.priceEth,
@@ -282,5 +346,6 @@ export async function loadLiveCreditsOverview(): Promise<LiveCreditsOverview> {
     protocolAvailable,
     protocolCheckedAt,
     protocolSupply,
+    protocolFlow24h,
   };
 }

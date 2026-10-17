@@ -11,6 +11,7 @@ import {
   reconcileFreshCreditListings,
   rankStatementListings,
   selectMostCrEfficientStatement,
+  summarizeLooseValueBasket,
   summarizeLooseValueHunt,
   summarizeStatementSupply,
 } from '../lib/credits-intelligence.ts';
@@ -110,8 +111,23 @@ test('live Statement metadata reconciles burn progress and stage counts', () => 
     burned: 880,
     burnedPct: 880 / 122_154 * 100,
     activeStatements: 3,
+    totalCreditRating: 6000,
     stageCounts: { BASE: 1, LAYERED: 1, INVERTED: 1 },
   });
+});
+
+test('idealized loose basket ranks by verified cost per 1K CR', () => {
+  const basket = summarizeLooseValueBasket([
+    { tokenId: 1, priceEth: 0.03, creditRating: 1_000, ethPer1kCr: 0.03 },
+    { tokenId: 2, priceEth: 0.02, creditRating: 500, ethPer1kCr: 0.04 },
+    { tokenId: 3, priceEth: 0.04, creditRating: 2_000, ethPer1kCr: 0.02 },
+  ], 2);
+
+  assert.deepEqual(basket.tokenIds, [3, 1]);
+  assert.equal(basket.credits, 2);
+  assert.equal(basket.eth, 0.07);
+  assert.equal(basket.cr, 3_000);
+  assert.ok(Math.abs(basket.ethPer1kCr - (0.07 / 3)) < 1e-12);
 });
 
 test('live Statement supply fails closed on duplicate or unreconciled metadata', () => {
@@ -370,30 +386,33 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.doesNotMatch(home, /\/credits/);
   assert.doesNotMatch(overview, /why it surfaced/i);
   assert.doesNotMatch(overview, /Rating coverage/i);
-  assert.match(overview, /CREDITS Burn Progress/);
-  assert.match(overview, /Burned\/In Statements/);
-  assert.match(overview, /Two immediate 80-CREDIT routes/);
-  assert.match(overview, /Floor sweep or ready-made Statement\?/);
-  assert.match(overview, /A patient buyer may find better CR efficiency by cherry-picking individual loose CREDITS over time/);
-  assert.match(overview, /Cherry-picked loose CREDITS/);
-  assert.match(overview, /Hunt for stronger CR value one piece at a time/);
-  assert.match(overview, /Best loose snapshot candidate/);
+  assert.match(overview, /CREDITS → STATEMENTS/);
+  assert.match(overview, /Potential \$BALANCE/);
+  assert.match(overview, /Today&apos;s CR benchmark/);
+  assert.match(overview, /Estimated \$BALANCE FDV/);
+  assert.match(overview, /not a live token price or market cap/);
+  assert.match(overview, /Idealized Top \{valueBasket\.credits\} best-value CREDITS/);
+  assert.match(overview, /non-atomic moving basket/);
+  assert.match(overview, /Three goals\. Three honest tradeoffs/);
+  assert.match(overview, /Build from the floor/);
+  assert.match(overview, /Buy packaged CR/);
+  assert.match(overview, /Hunt one by one/);
+  assert.match(overview, /Cherry-picking can beat either bulk route/);
   assert.match(overview, /\/credits\/value\?sort=best-value/);
   assert.match(overviewLoader, /summarizeLooseValueHunt\(normalized\.items, 5\)/);
-  assert.match(overview, /most CR-efficient verified base Statement/);
+  assert.match(overviewLoader, /summarizeLooseValueBasket\(normalized\.items, 80\)/);
+  assert.match(overview, /most CR-efficient verified BASE listing/);
   assert.match(overviewLoader, /selectMostCrEfficientStatement/);
   assert.match(overviewLoader, /details\.stage === 'BASE'/);
-  assert.match(overview, /completed loose-CREDIT snapshot and a separate check of Statement listings/);
-  assert.match(overview, /The percentage compares cost per 1K CR—not total purchase price/);
-  assert.match(overview, /Listings were checked separately, so this is not an executable quote/);
-  assert.match(overview, /lower cost per 1K CR/);
+  assert.match(overview, /Cost per 1K CR · not total-price verdicts/);
+  assert.match(overview, /This compares efficiency—not total purchase price/);
   assert.match(overview, /Find more Credit Rating for less/);
-  assert.match(overview, /View market stats/);
+  assert.match(overview, /Compare routes/);
   assert.match(overview, /Market intelligence provided by GridPhantoms/);
   assert.match(overview, /cr-creditline/);
   assert.match(valuePage, /Market intelligence provided by GridPhantoms/);
   assert.match(valuePage, /cr-creditline/);
-  assert.match(overview, /Public collector tools for understanding CREDITS supply/);
+  assert.match(overview, /Public collector tools for comparing CREDITS routes/);
   assert.match(valuePage, /public collector tool for comparing CREDITS and Statements/);
   assert.match(overviewOg, /READ THE CREDITS/);
   assert.match(overviewOg, /PUBLIC COLLECTOR TOOLS/);
@@ -402,12 +421,17 @@ test('CREDITS Intelligence stays off the main Grid Phantoms navigation', async (
   assert.match(valueOg, /FREE · READ-ONLY/);
   assert.doesNotMatch(valueOg, /KEYHOLDER GOVERNANCE/);
   assert.doesNotMatch(overview, /Value preview/);
-  assert.match(overview, /cr-supply-marker/);
-  assert.doesNotMatch(overview, /cr-supply-marker[^>]*style=/);
-  assert.match(overview, /The Statement Market/);
+  assert.match(overview, /CR inside Statements/);
+  assert.match(overview, /Exact past 24 hours/);
+  assert.match(overviewLoader, /provider\.send\('eth_chainId', \[\]\)/);
+  assert.match(overviewLoader, /Transfer\(address,address,uint256\)/);
+  assert.match(overviewLoader, /latest\.timestamp - 24 \* 60 \* 60/);
+  assert.match(overview, /Supporting tape, not the whole story/);
+  assert.match(overview, /within 10% of snapshot floor/);
+  assert.match(overview, /Value Finder/);
+  assert.match(overview, /Wallet Appraiser/);
   assert.doesNotMatch(overview, /Verified snapshot reference/);
   assert.doesNotMatch(overview, /off the floor now/);
-  assert.match(overview, /cr-build-copy/);
   assert.match(overview, /export const dynamic = 'force-dynamic'/);
   assert.doesNotMatch(overview, /export const revalidate/);
   assert.match(overviewLoader, /unstable_cache/);

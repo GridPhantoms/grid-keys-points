@@ -88,6 +88,8 @@ const statementItems = live.statements.all_active.map((item) => ({
 })).sort((a, b) => a.tokenId - b.tokenId);
 requireValue(new Set(statementItems.map((item) => item.tokenId)).size === active, 'Statement token IDs are not unique');
 requireValue(statementItems.reduce((sum, item) => sum + item.credits, 0) === burned, 'Statement CREDIT total mismatch');
+const totalCreditRating = statementItems.reduce((sum, item) => sum + item.creditRating, 0);
+requireValue(Number.isFinite(totalCreditRating) && totalCreditRating > 0, 'Statement Credit Rating total is invalid');
 
 const capturedAt = verification.market_completed_at_utc;
 const provenance = {
@@ -114,6 +116,7 @@ const overviewBase = {
     active,
     listed,
     totalUnderlyingCredits,
+    totalCreditRating,
     stageCounts,
   },
   archivedReferences: {

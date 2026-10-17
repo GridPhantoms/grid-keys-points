@@ -352,6 +352,7 @@ test('scheduled CREDITS protocol artifacts reconcile identity, supply, and State
     return counts;
   }, {});
   const creditsInStatements = statements.items.reduce((sum: number, item: { credits: number }) => sum + item.credits, 0);
+  const creditRatingInStatements = statements.items.reduce((sum: number, item: { creditRating: number }) => sum + item.creditRating, 0);
 
   assert.equal(overview.snapshotAsOf, statements.snapshotAsOf);
   assert.equal(overview.schemaVersion, 2);
@@ -361,6 +362,7 @@ test('scheduled CREDITS protocol artifacts reconcile identity, supply, and State
   assert.equal(overview.supply.loose + overview.supply.burned, overview.supply.original);
   assert.equal(overview.supply.burned, creditsInStatements);
   assert.equal(overview.statements.active, statements.items.length);
+  assert.equal(overview.statements.totalCreditRating, creditRatingInStatements);
   assert.deepEqual(overview.statements.stageCounts, stageCounts);
   assert.equal(overview.archivedReferences.executableNow, false);
   assert.ok(Number.isFinite(overview.archivedReferences.ethUsdClose));
@@ -374,6 +376,7 @@ test('protocol snapshot generator accepts verification manifests without a dupli
   assert.match(generator, /const active = Number\(live\.statements\.active\)/);
   assert.match(generator, /const listed = Number\(live\.statements\.listed\)/);
   assert.match(generator, /const totalUnderlyingCredits = Number\(live\.statements\.total_underlying_credits\)/);
+  assert.match(generator, /const totalCreditRating = statementItems\.reduce/);
   assert.match(generator, /if \(verification\.statements !== undefined\)/);
   assert.doesNotMatch(generator, /const active = Number\(verification\.statements\.active\)/);
 });

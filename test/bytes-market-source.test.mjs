@@ -202,11 +202,13 @@ test('dashboard and metric contract use corrected valuation and reference-model 
   assert.match(dashboard, /projectedIssuanceShare/);
   assert.match(dashboard, /Those rewards are accrued but unclaimed and do not enter the current token supply unless they are claimed and minted/i);
   assert.match(dashboard, /<strong>so the current stream creates less new inventory for the market to absorb\.<\/strong>/i);
-  assert.match(dashboard, /The Terminal&apos;s August 23, 2026 CoinMarketCap snapshot placed the <strong>\$1 million market-cap line around rank 1,917<\/strong>/i);
-  assert.match(dashboard, /seven figures cleared much of crypto&apos;s ranked long tail/i);
+  assert.match(dashboard, /The Terminal&apos;s October 17, 2026 CoinMarketCap snapshot placed the <strong>\$1 million market-cap line around ranks 1,979–1,984<\/strong>/i);
+  assert.match(dashboard, /well within crypto&apos;s top 2,000 ranked assets/i);
+  assert.match(dashboard, /\$1\.63–\$1\.64 million around ranks 1,735–1,741/i);
   assert.match(dashboard, /More than five years after BYTES began/i);
   assert.match(dashboard, /first-party onchain market cap still sits around/i);
-  assert.match(dashboard, /showed \$1\.00 million through rank 1,917 and \$993,544\.79 at rank 1,918 when checked on August 23, 2026/i);
+  assert.match(dashboard, /showed approximately \$1\.00 million from ranks 1,979 through 1,984, followed by \$998,808 at rank 1,985/i);
+  assert.match(dashboard, /approximately \$1\.63–\$1\.64 million around ranks 1,735 through 1,741/i);
   assert.match(dashboard, /much larger tracked-token count includes assets without ranked market caps, so it is not used as the denominator/i);
   assert.doesNotMatch(dashboard, /CoinGecko|roughly one in seven/i);
   assert.match(dashboard, /It is still here, still staked, and still economically meaningful/i);
